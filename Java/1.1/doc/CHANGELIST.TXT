@@ -1,0 +1,14 @@
+====================================
+===  Changelist for version 1.1
+====================================
+- Removed accidentally included internal Sun JRE classes (com.sun.*) and replaced with Xerces classes. this
+  fixes the NoClassDefFound error you'd encounter on non-sun JREs (like in IBM WebSphere)
+- Re-factored code to remove reliance on setUserData() method to allow the code to run in Java 1.4
+- Escaped '#' in onsiteURI regular expressions to address a known bug in JVM which interpreted the hash mark as
+  a comment character inside of character class definitions []. this flaw allowed disallowed protocol urls (credits 
+  to Richard Rodger of Ricebridge Software for discovering this)
+- Changed code to not leave dangling quote characters to prevent AntiSamy output from being injected into
+  attribute values and creating XSS conditions (e.g., <input value="<%=as.getCleanHTML()%>"> could 
+  be exploited)
+- Changed code comment accidentally crediting HTMLCleaner with the cleaning - should be NekoHTML!
+- Commented out dead code and gave serializable classes default ids

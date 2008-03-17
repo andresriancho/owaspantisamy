@@ -1,0 +1,8 @@
+====================================
+===  Wishlist
+====================================
+
+- i18n of error messages (need help!)
+- combined dependency of action invocations (anchor tag would only filtered if name _and_ href are missing)
+- improved canonicalization/normalization of text
+- can we have height/width restrictions? (what use case doesn't this work with?)
