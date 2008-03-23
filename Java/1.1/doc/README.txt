@@ -1,5 +1,5 @@
 ==============================================================================
-=README.txt (Version 1.0) scraped from http://www.owasp.org/index.php/AntiSamy
+=README.txt (scraped from http://www.owasp.org/index.php/AntiSamy)
 ==============================================================================
 
 = OWASP AntiSamy =
