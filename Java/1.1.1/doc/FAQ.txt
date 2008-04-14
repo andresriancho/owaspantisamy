@@ -1,0 +1,18 @@
+1) How is this different from Microsoft AntiXSS library?
+
+Microsoft's AntiXSS library is excellent. Unfortunately, it doesn't quite fill the niche that AntiSamy does. AntiXSS is about preventing rich
+content from getting through - AntiSamy is about filtering _dangerous_ rich content.
+
+  - AntiSamy allows you to specify tags and attributes to be valid (and whitelist regular expressions for attribute values)
+  - AntiSamy allows you to filter or remove dangerous content at the tag or attribute level
+  - AntiSamy automatically santiizes any broken HTML to prevent fragmenting attacks
+  - AntiSamy provides helpful error messages
+  - AntiSamy works on a document fragment level (produces XHTML 1.0)
+  - AntiXSS doesn't understand style sheets
+
+2) How do I build the code?
+
+  - Get the code from the SVN repository on GoogleCode (http://code.google.com/p/owaspantisamy) or download the source bundle directly
+  - Add the ant-contrib-1.0b3.jar to your set of ant libraries to support the "foreach" task used in our build.xml
+  - Fire off the appropriate build.xml ant task (jar, src, javadocs, etc)
+  - Profit
