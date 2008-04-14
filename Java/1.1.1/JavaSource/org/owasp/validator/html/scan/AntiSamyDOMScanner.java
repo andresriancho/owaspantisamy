@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -30,12 +30,12 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-//import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.xerces.dom.DocumentImpl;
+import org.apache.xml.serialize.HTMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.XHTMLSerializer;
 import org.cyberneko.html.parsers.DOMFragmentParser;
 import org.owasp.validator.css.CssScanner;
 import org.owasp.validator.html.CleanResults;
@@ -71,8 +71,10 @@ public class AntiSamyDOMScanner {
 	private ArrayList errorMessages = new ArrayList();
 	private Document document = new DocumentImpl();
 	private DocumentFragment dom = document.createDocumentFragment();
+	
+	public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
+	
 
-	public static final String ENCODING_ALGORITHM = "UTF-8";
 	
 	/**
 	 * This is where the magic lives.
@@ -80,7 +82,7 @@ public class AntiSamyDOMScanner {
 	 * @return A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code> object and its String representation, as well as some scan statistics.
 	 * @throws ScanException
 	 */
-	public CleanResults scan(String html) throws ScanException {
+	public CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException {
 		
 		if ( html == null ) {
 			throw new ScanException("No input (null)");
@@ -101,16 +103,25 @@ public class AntiSamyDOMScanner {
 		try {
 			
 			/*
+			 * We have to replace any invalid XML characters to prevent NekoHTML from breaking when it gets passed
+			 * encodings like %21.
+			 */
+			
+			html = stripNonValidXMLCharacters(html);
+			
+			/*
 			 * First thing we do is call the HTML cleaner ("NekoHTML") on it with the appropriate options. We choose
-			 * not to omit tags due to the fallability of our own listing in the ever changing world
+			 * not to omit tags due to the fallibility of our own listing in the ever changing world
 			 * of W3C.
 			 */
 			
 			DOMFragmentParser parser = new DOMFragmentParser();
 			parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
+			parser.setProperty("http://cyberneko.org/html/properties/default-encoding",inputEncoding);
+
 			parser.parse(new InputSource(new StringReader(html)),dom);
 	
-			/**
+			/*
 			 * Call the work horse.
 			 */
 			
@@ -120,37 +131,66 @@ public class AntiSamyDOMScanner {
 				
 				recursiveValidateTag(tmp);
 				
-				// this indicates the node was removed
+				/*
+				 * This check indicates if the node that was just scanned
+				 * was removed/failed validation.
+				 */ 
 				if ( tmp.getParentNode() == null ) {
 					i--;
 				}
 				
 			}
 			
-			/**
+			/*
 			 * Serialize the output and then return the resulting
 			 * DOM object and its string representation.
 			 */
 	        
 			OutputFormat format = new OutputFormat();
 			
-	        format.setLineWidth(65);
+			format.setLineWidth(80);
 	        format.setIndenting(true);
 	        format.setIndent(2);
 	        
-	        format.setEncoding(ENCODING_ALGORITHM);
-	        format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")));
-	        format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")));
+	        format.setEncoding(outputEncoding);
+	        format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
+	        format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
+	        format.setPreserveEmptyAttributes(true);
+
 	        
 	        StringWriter sw = new StringWriter();
 
-	        XMLSerializer serializer = new XMLSerializer(sw, format);
-	        	        
-	        serializer.serialize(dom);
+	        /*
+	         * Using the HTMLSerializer is the only way to notify the parser to fire
+	         * events for recognizing HTML-entities. The other ways should, but do not
+	         * work.
+	         * 
+	         * We're using HTMLSerializer even though it's deprecated.
+	         *  
+	         * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for why we 
+	         * know it's still ok to use.
+	         * 
+	         */
+
+	        if ( "true".equals(policy.getDirective("useXHTML"))) {
+	        	
+	        	XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
+		        
+		        serializer.serialize(dom);
+		        
+	        } else {
+	        	
+	        	HTMLSerializer serializer = new HTMLSerializer(sw,format);
+		        
+		        serializer.serialize(dom);
+		        
+	        }
+	        
+	
 	        
 	        /*
 	         * Get the String out of the StringWriter and rip out the
-	         * XML declaration if the Policy says go.
+	         * XML declaration if the Policy says we should.
 	         */
 	        String finalCleanHTML = sw.getBuffer().toString();
 	        
@@ -165,11 +205,10 @@ public class AntiSamyDOMScanner {
 	        	
 	        }
 	        
-	        
 	        /**
 			 * Return DOM object as well as string HTML.
 			 */
-	        
+
 	        results = new CleanResults(start, new Date(), finalCleanHTML, dom, errorMessages );
 				        
 			return results;
@@ -191,33 +230,6 @@ public class AntiSamyDOMScanner {
 	 */
 	
 	private void recursiveValidateTag(Node node) {
-
-		/*
-		 * Uniformly translate all entity references into the &[0-9]{3} format. Lowers
-		 * our attack surface for translation/parsing/encoding attacks.
-		 * 
-		 * Not sure if this is worth the time at the moment, but I think it's a
-		 * nice addition.
-		 */
-
-		if ( node.getTextContent() != null && node.getNodeType() != Node.ELEMENT_NODE ) {
-			//node.setTextContent(replaceEntityCodes(node.getTextContent()));
-		}
-		
-		/*
-		 * Not doing this could lead to possible vulnerability as dangling &quot; characters
-		 * in text nodes, when re-displaying AntiSamy-cleaned HTML, could be used to create
-		 * new attributes. For example:
-		 * &lt;input name='test' value=&quot;&lt;%=cleanResults.getCleanHTML()%&gt;&quot;&gt;
-		 * 
-		 * Credits to Jeff Williams for finding this.
-		 */
-		
-		if ( node.getNodeType() == Node.TEXT_NODE ) {
-		
-			
-			
-		}
 		
 		if ( !(node instanceof Element) ) {
 			return;
@@ -261,7 +273,9 @@ public class AntiSamyDOMScanner {
 				
 				recursiveValidateTag(tmp);
 			
-				// this indicates the node was removed
+				/*
+				 * This indicates the node was removed/failed validation.
+				 */ 
 				if ( tmp.getParentNode() == null ) {
 					i--;
 				}
@@ -291,12 +305,14 @@ public class AntiSamyDOMScanner {
 			
 			if ( "style".equals(tagName.toLowerCase()) && policy.getTagByName("style") != null  ) {
 				
-				// invoke the css parser on this element
+				/*
+				 * Invoke the css parser on this element.
+				 */ 
 				CssScanner styleScanner = new CssScanner(policy);
 				
 				try {
-					
-					CleanResults cr = styleScanner.scanStyleSheet(node.getTextContent());
+
+					CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue());
 					
 					errorMessages.addAll(cr.getErrorMessages());
 
@@ -308,26 +324,27 @@ public class AntiSamyDOMScanner {
 					 * with an empty style tag and break all CSS. To
 					 * prevent that, we have this check.
 					 */
+					
 					if ( cr.getCleanHTML() == null || cr.getCleanHTML().equals("") ) {
 
-						node.setTextContent("/* */");
+						node.getFirstChild().setNodeValue("/* */");
 						
 					} else {
 					
-						node.setTextContent(cr.getCleanHTML());
+						node.getFirstChild().setNodeValue(cr.getCleanHTML());
 						
 					}
 					
 				} catch (DOMException e) {
 				
-					errorMessages.add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.getTextContent()) + "</u> because it was malformed. This may affect the look of the page.");
+					errorMessages.add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) + "</u> because it was malformed. This may affect the look of the page.");
 					parentNode.removeChild(node);
 					
 					return;
 					
 				} catch (ScanException e) {
 					
-					errorMessages.add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.getTextContent()) + "</u> because it was malformed. This may affect the look of the page.");
+					errorMessages.add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) + "</u> because it was malformed. This may affect the look of the page.");
 					parentNode.removeChild(node);
 					
 					return;
@@ -365,6 +382,9 @@ public class AntiSamyDOMScanner {
 				
 				boolean isAttributeValid = false;
 				
+				/*
+				 * We have to special case the "style" attribute since it's validated quite differently.
+				 */
 				if ( "style".equals(name.toLowerCase()) && attr != null ) {
 					
 					// invoke the CSS parser on this element
@@ -457,7 +477,9 @@ public class AntiSamyDOMScanner {
 									
 									recursiveValidateTag(tmp);
 									
-									// this indicates the node was removed
+									/*
+									 * This indicates the node was removed/failed validation.
+									 */
 									if ( tmp.getParentNode() == null ) {
 										i--;
 									}
@@ -520,7 +542,9 @@ public class AntiSamyDOMScanner {
 				
 				recursiveValidateTag(tmp);
 			
-				// this indicates the node was removed
+				/*
+				 * This indicates the node was removed/failed validation.
+				 */
 				if ( tmp.getParentNode() == null ) {
 					i--;
 				}
@@ -683,6 +707,42 @@ public class AntiSamyDOMScanner {
 
 	}
 	
+	/**
+	 * 
+	 * This method was borrowed from Mark McLaren, to whom I owe much beer.
+	 * 
+     * This method ensures that the output String has only
+     * valid XML unicode characters as specified by the
+     * XML 1.0 standard. For reference, please see
+     * <a href="http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char">the
+     * standard</a>. This method will return an empty
+     * String if the input is null or empty.
+     *
+     * @param in The String whose non-valid characters we want to remove.
+     * @return The in String, stripped of non-valid characters.
+     */
+    private String stripNonValidXMLCharacters(String in) {
+        
+    	StringBuffer out = new StringBuffer(); // Used to hold the output.
+        
+    	char current; // Used to reference the current character.
+
+        if (in == null || ("".equals(in))) return ""; // vacancy test.
+        for (int i = 0; i < in.length(); i++) {
+            current = in.charAt(i); // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
+            if ((current == 0x9) ||
+                (current == 0xA) ||
+                (current == 0xD) ||
+                ((current >= 0x20) && (current <= 0xD7FF)) ||
+                ((current >= 0xE000) && (current <= 0xFFFD)) ||
+                ((current >= 0x10000) && (current <= 0x10FFFF)))
+                out.append(current);
+        }
+        
+        return out.toString();
+    
+    }
+    
 	//private void debug(String s) { System.out.println(s); }
 	
 }

@@ -9,7 +9,7 @@
 	<property name="classes.dir"	value="${build.dir}/classes"/>
     <property name="jar.dir"		value="${build.dir}/jar"/>
 	<property name="version.major"	value="1"/>
-	<property name="version.minor"	value="1"/>
+	<property name="version.minor"	value="1.1"/>
 
 	<property name="jarfile"		value="antisamy"/>
 	
@@ -70,7 +70,6 @@
 			<link href="http://xerces.apache.org/xerces-j/apiDocs/" />
 			<link href="http://www.w3.org/Style/CSS/SAC/doc/" />
 			<link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
-			<link href="http://www.dom4j.org/apidocs/" />
 			<link href="http://people.apache.org/~andyc/neko/doc/html/javadoc/" />
 			<link href="http://java.sun.com/webservices/jaxp/dist/1.1/docs/api/" />
 		</javadoc>
@@ -89,7 +88,6 @@
 			<path>
 				<pathelement location="${lib.dir}/batik-util.jar"/>
 				<pathelement location="${lib.dir}/batik-css.jar"/>
-				<pathelement location="${lib.dir}/dom4j.jar"/>
 				<pathelement location="${lib.dir}/nekohtml.jar"/>
 				<pathelement location="${lib.dir}/xercesImpl.jar"/>
 				<pathelement location="${lib.dir}/xml-apis.jar"/>

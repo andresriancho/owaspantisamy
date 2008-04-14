@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -64,7 +64,7 @@ public class Policy {
 
 	
 	private static Policy _instance = null;
-	private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
+	private static final String DEFAULT_POLICY_URI = "resources/antisamy-1.1.xml";
 	private static final String DEFAULT_ONINVALID = "removeAttribute";
 	
 	public static final int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -78,36 +78,8 @@ public class Policy {
 	private HashMap cssRules;
 	private HashMap directives;
 	private HashMap globalAttributes;
-	private HashMap entities; 
 
 	private ArrayList tagNames;
-	
-	
-	
-	private HashMap parseHtmlEntities(Element root) throws PolicyException {
-		
-		HashMap entities = new HashMap();
-		
-		NodeList entityNodes = root.getElementsByTagName("entity");
-		
-		/*
-		 * Loop through the list of entities and add them to the collection.
-		 */
-		for(int i=0;i<entityNodes.getLength();i++) {
-			
-			Element ele = (Element)entityNodes.item(i);
-
-			String name = XMLUtil.getAttributeValue(ele,"name"); 
-			String cdata = XMLUtil.getAttributeValue(ele,"cdata");
-			
-			entities.put(name,cdata);
-		}
-		
-		return entities;
-		
-	}
-
-	
 	
 	/**
 	 * Retrieves a Tag from the Policy.
@@ -244,20 +216,13 @@ public class Policy {
 			this.tagRules = parseTagRules(tagListNode);
 		
 			/**
-			 * Next, we read in the CSS rules.
+			 * Finally, we read in the CSS rules.
 			 */
 			Element cssListNode = (Element)topLevelElement.getElementsByTagName("css-rules").item(0); 
 			
 			this.cssRules = parseCSSRules(cssListNode);
 			
-			/**
-			 * Finally, we read in the HTML entities.
-			 */
-			Element entityListNode = (Element)topLevelElement.getElementsByTagName("html-entities").item(0);
-			
-			this.entities = parseHtmlEntities(entityListNode);
-			
-			
+
 		} catch (SAXException e) {
 			throw new PolicyException(e);
 		} catch (ParserConfigurationException e) {
@@ -424,8 +389,8 @@ public class Policy {
 
 					if ( value != null && value.length() > 0 ) {
 						attribute.addAllowedValue(value);
-					} else if ( literalNode.getTextContent() != null ) {
-						attribute.addAllowedValue(literalNode.getTextContent());
+					} else if ( literalNode.getNodeValue() != null ) {
+						attribute.addAllowedValue(literalNode.getNodeValue());
 					}
 
 				}
@@ -582,8 +547,8 @@ public class Policy {
 							
 							if ( value != null && value.length() > 0 ) {
 								attribute.addAllowedValue(value);
-							} else if ( literalNode.getTextContent() != null ) {
-								attribute.addAllowedValue(literalNode.getTextContent());
+							} else if ( literalNode.getNodeValue() != null ) {
+								attribute.addAllowedValue(literalNode.getNodeValue());
 							}
 							
 						}
@@ -740,17 +705,6 @@ public class Policy {
 		
 	}
 	
-	
-	/**
-	 * Returns an HTML-entity number.
-	 * @param name Return the entity code equivalent when passed the name.
-	 * @return Returns &amp;160; when passed in &amp;nbsp;.
-	 */
-	public String getEntityReferenceCode(String name) {
-		
-		return (String) entities.get(name);
-		
-	}
 	
 	/**
 	 * Return all the tags accepted by the Policy object.

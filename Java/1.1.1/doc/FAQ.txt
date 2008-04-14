@@ -16,3 +16,10 @@ content from getting through - AntiSamy is about filtering _dangerous_ rich cont
   - Add the ant-contrib-1.0b3.jar to your set of ant libraries to support the "foreach" task used in our build.xml
   - Fire off the appropriate build.xml ant task (jar, src, javadocs, etc)
   - Profit
+
+3) Why are you using (X)HTMLSerializers which have been deprecated?
+
+The developers in the Apache group has no plans on an end of life on HTMLSerializer. They just wanted people to know that it is no longer being maintained
+and getting bug fixes, etc. They're in the middle of a move to an xml-commons project. Once that is established, they inferred there will be an alternative
+available. It's not a deprecation to be scared of - they just want to get your attention that it's not being maintained. It does what AntiSamy needs it to
+do, so if a better alternative comes along, great, but we can just use this version forever even if they end-of-life it.

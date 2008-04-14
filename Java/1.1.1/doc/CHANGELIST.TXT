@@ -1,4 +1,18 @@
 ====================================
+===  Changelist for version 1.1.1
+====================================
+
+- Began using (X)HTMLSerializer instead of XMLSerializer to recognize HTML entities
+- Fixed code to remove any lingering Java 1.5 dependencies (for real this time)
+- Cleaned up AntiSamy() main method to be a little more organized
+- Fixed the "dangling quote" scenario discovered by Jeff Williams which could cause XSS if a getCleanHTML() call ended up inside a textbox value attribute
+- Added *true* XHTML support with new directive in policy file ("useXHTML")
+- Removed any invalid XML characters before processing in order to avoid XML exceptions
+- Introduced the ability to specify encoding for input and output
+- Made the policy files tolerant of non-latin characters for i18n support
+- Removed automatic HTML entity translation support (HTML entities are i18n by default, character codes aren't)
+
+====================================
 ===  Changelist for version 1.1
 ====================================
 - Removed accidentally included internal Sun JRE classes (com.sun.*) and replaced with Xerces classes. this

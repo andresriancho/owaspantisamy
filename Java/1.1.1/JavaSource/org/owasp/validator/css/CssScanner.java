@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -88,6 +88,7 @@ public class CssScanner {
 		// Create a queue of all style sheets that need to be validated to
 		// account for any sheets that may be imported by the current CSS
 		LinkedList stylesheets = new LinkedList();
+
 		stylesheets.add(new InputSource(new StringReader(taintedCss)));
 
 		CssHandler handler = new CssHandler(policy, stylesheets);
@@ -170,7 +171,7 @@ public class CssScanner {
 
 		CleanResults results = null;
 
-		results = scanner.scanStyleSheet(".test, demo, #id {border: thick solid red;} ");
+		results = scanner.scanStyleSheet(".test, demo, #id {position:absolute;border: thick solid red;} ");
 		
 		// Test case for live CSS docs. Just change URL to a live CSS on the
 		// internet. Note this is test code and does not handle IO errors

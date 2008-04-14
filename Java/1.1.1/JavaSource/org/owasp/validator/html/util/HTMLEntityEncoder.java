@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -53,7 +53,7 @@ public class HTMLEntityEncoder {
 				buff.append(ch);
 			} else if ( Character.isLetterOrDigit(ch) ) {
 				buff.append(ch);
-			} else if ( Integer.valueOf(ch).intValue() >= 20 && Integer.valueOf(ch).intValue() <= 126 ) {
+			} else if ( (int)ch >= 20 && (int)ch <= 126 ) {
 				buff.append( "&#" + (int)ch + ";" );			
 			}
 			

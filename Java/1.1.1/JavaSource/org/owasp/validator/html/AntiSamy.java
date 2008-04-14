@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -51,15 +51,21 @@ import org.w3c.dom.DocumentFragment;
 
 public class AntiSamy {
 		
+	private String inputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
+	private String outputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
+	
 	/**
 	 * The meat and potatoes. The <code>scan()</code> family of methods are the only methods the outside world should
 	 * be calling to invoke AntiSamy.
 	 * 
 	 * @param taintedHTML Untrusted HTML which may contain malicious code.
+	 * @param inputEncoding The encoding of the input.
+	 * @param outputEncoding The encoding that the output should be in.
 	 * @return A <code>CleanResults</code> object which contains information about the scan (including the results).
 	 * @throws <code>ScanException</code> When there is a problem encountered while scanning the HTML.
 	 * @throws <code>PolicyException</code> When there is a problem reading the policy file.
 	 */
+	
 	public CleanResults scan(String taintedHTML) throws ScanException, PolicyException {
 		
 		Policy policy = null;
@@ -80,15 +86,16 @@ public class AntiSamy {
 		 * Go get 'em!
 		 */
 
-		return antiSamy.scan(taintedHTML);
+		return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
 
 	}
+	
 	
 	/**
 	 * This method wraps <code>scan()</code> using the Policy object passed in.
 	 */
 	public CleanResults scan(String taintedHTML, Policy policy) throws ScanException, PolicyException {
-		return new AntiSamyDOMScanner(policy).scan(taintedHTML);
+		return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
 	}
 	
 	/**
@@ -114,7 +121,7 @@ public class AntiSamy {
 		 * Go get 'em!
 		 */
 
-		return antiSamy.scan(taintedHTML);
+		return antiSamy.scan(taintedHTML,inputEncoding,outputEncoding);
 
 	}
 	
@@ -141,7 +148,7 @@ public class AntiSamy {
 		 * Go get 'em!
 		 */
 
-		return antiSamy.scan(taintedHTML);
+		return antiSamy.scan(taintedHTML,inputEncoding,outputEncoding);
 
 	}
 	
@@ -199,22 +206,10 @@ public class AntiSamy {
 			
 			CleanResults test = as.scan(buff.toString());
 			
-			System.out.println("Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds");
-	        
-	        OutputFormat format = new OutputFormat(test.getCleanXMLDocumentFragment().getOwnerDocument());
-	        format.setLineWidth(80);
-	        format.setIndenting(true);
-	        format.setIndent(2);
-	        format.setEncoding(AntiSamyDOMScanner.ENCODING_ALGORITHM);
-	        
-			DocumentFragment dom = test.getCleanXMLDocumentFragment();
+			System.out.println("[1] Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds");
 			
-			System.out.println("Serialized XHTML:");
-	        XMLSerializer serializer = new XMLSerializer(System.out,format);
-	        serializer.serialize(dom);
-			
-	        System.out.println("\nClean HTML fragment:\n" +  test.getCleanHTML());
-	        System.out.println("Error Messages: "+test.getNumberOfErrors());
+	        System.out.println("\n[2] Clean HTML fragment:\n" +  test.getCleanHTML());
+	        System.out.println("[3] Error Messages ("+test.getNumberOfErrors() +"):");
 	        
 	        
 			for(int i=0;i<test.getErrorMessages().size();i++) {
@@ -225,5 +220,25 @@ public class AntiSamy {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	public String getInputEncoding() {
+		return inputEncoding;
+	}
+
+
+	public void setInputEncoding(String inputEncoding) {
+		this.inputEncoding = inputEncoding;
+	}
+
+
+	public String getOutputEncoding() {
+		return outputEncoding;
+	}
+
+
+	public void setOutputEncoding(String outputEncoding) {
+		this.outputEncoding = outputEncoding;
 	}
 }

@@ -1,4 +1,4 @@
-OWASP AntiSamy 1.1
+OWASP AntiSamy
 
 Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
 

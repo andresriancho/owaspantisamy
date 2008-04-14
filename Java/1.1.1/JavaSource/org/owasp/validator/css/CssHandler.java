@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -54,7 +54,7 @@ import org.w3c.css.sac.SelectorList;
  * SAX should generally be event driven. However, there is not a fully
  * implemented "DOM" equivalent to CSS at this time. Java has a StyleSheet class
  * that could accomplish this "DOM" like behavior but it has yet to be fully
- * implemented
+ * implemented.
  * 
  * @see javax.swing.text.html.StyleSheet
  * @author Jason Li
@@ -340,6 +340,7 @@ public class CssHandler implements DocumentHandler {
 						styleSheet.append(' ');
 					}
 					styleSheet.append(selectorName);
+
 					selectorCount++;
 
 				} else {
@@ -402,12 +403,15 @@ public class CssHandler implements DocumentHandler {
 			throws CSSException {
 		// only bother validating and building if we are either inline or within
 		// a selector tag
+		
+		
 		if (!selectorOpen && !isInline) {
 			return;
 		}
 
 		// validate the property
 		if (validator.isValidProperty(name, value)) {
+
 			styleSheet.append('\t');
 			styleSheet.append(name);
 			styleSheet.append(':');
@@ -422,7 +426,7 @@ public class CssHandler implements DocumentHandler {
 			styleSheet.append('\n');
 
 		} else {
-
+			
 			if (tagName != null) {
 				results
 						.addErrorMessage("The <b>"
