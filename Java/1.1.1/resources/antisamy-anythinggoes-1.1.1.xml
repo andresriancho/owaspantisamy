@@ -20,7 +20,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		remember, this won't work for relative URIs - AntiSamy doesn't
 		know anything about the URL or your web structure
 		-->
-		<directive name="embedStyleSheets" value="false"/> 
+		<directive name="embedStyleSheets" value="true"/> 
 		
 	</directives>
 	
@@ -33,18 +33,17 @@ http://www.w3.org/TR/html401/struct/global.html
 		name or names. Multiple class names must be separated by white 
 		space characters.
 		-->
-		
 		<regexp name="colorNameOrCode" value="(#[0-9a-zA-Z]{6}|(aqua|black|blue|fuchsia|gray|grey|green|lime|maroon|navy|olive|purple|red|silver|teal|white|yellow))"/>
 		<regexp name="number" value="[0-9]+"/>
 		<regexp name="anything" value=".*"/>
 		<regexp name="numberOrPercent" value="(\d)+(%{0,1})"/>
-		<regexp name="paragraph" value="([a-zA-Z0-9,'\.\s-_\(\)]|&amp;[0-9]{2};)*"/>	
+		<regexp name="paragraph" value="([\p{L}\p{N},'\.\s-_\(\)]|&amp;[0-9]{2};)*"/>	
 		<regexp name="htmlId" value="[a-zA-Z0-9-_]+"/>
-		<regexp name="htmlTitle" value="[a-zA-Z0-9\s-_',:\[\]!\./\\\(\)]*"/> <!-- force non-empty with a '+' at the end instead of '*' -->
+		<regexp name="htmlTitle" value="[\p{L}\p{N}\s-_',:\[\]!\./\\\(\)]*"/> <!-- force non-empty with a '+' at the end instead of '*' -->
 		<regexp name="htmlClass" value="[a-zA-Z0-9\s,-_]+"/>
 
 		<regexp name="onsiteURL" value="([\w\\/\.\?=\#&amp;;-~]+|\#(\w)+)"/>
-		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*"/>
+		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[\p{L}\p{N}]+[~\p{L}\p{N}-_\.@#$%&amp;;:,\?=/\+!]*(\s)*"/>
 		
 		<regexp name="boolean" value="(true|false)"/>
 		<regexp name="singlePrintable" value="[a-zA-Z0-9]{1}"/> <!-- \w allows the '_' character -->
@@ -80,7 +79,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="cssAttributeExclusion" value=""/>
 		
 		<!--  This is for resources referenced from CSS (such as background images and other imported stylesheets) -->
-		<regexp name="cssOnsiteUri" value="url(\s)*\([\w\/\.\?=\#&amp;;-~]+|\#(\w)+\)"/>
+		<regexp name="cssOnsiteUri" value="url(\s)*\([\w\/\.\?=&amp;;\#-~]+|\#(\w)+\)"/>
 		<regexp name="cssOffsiteUri" value="url(\s)*\((\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
 		
 		<!--  This is for comments within CSS (ex. /* comment */) -->
