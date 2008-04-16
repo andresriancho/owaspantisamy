@@ -42,7 +42,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="htmlTitle" value="[\p{L}\p{N}\s-_',:\[\]!\./\\\(\)]*"/> <!-- force non-empty with a '+' at the end instead of '*' -->
 		<regexp name="htmlClass" value="[a-zA-Z0-9\s,-_]+"/>
 
-		<regexp name="onsiteURL" value="([\w\\/\.\?=\#&amp;;-~]+|\#(\w)+)"/>
+		<regexp name="onsiteURL" value="([\p{L}\p{N}\\/\.\?=\#&amp;;-~]+|\#(\w)+)"/>
 		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[\p{L}\p{N}]+[~\p{L}\p{N}-_\.@#$%&amp;;:,\?=/\+!]*(\s)*"/>
 		
 		<regexp name="boolean" value="(true|false)"/>
@@ -79,11 +79,11 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="cssAttributeExclusion" value=""/>
 		
 		<!--  This is for resources referenced from CSS (such as background images and other imported stylesheets) -->
-		<regexp name="cssOnsiteUri" value="url(\s)*\([\w\/\.\?=&amp;;\#-~]+|\#(\w)+\)"/>
-		<regexp name="cssOffsiteUri" value="url(\s)*\((\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
+		<regexp name="cssOnsiteUri" value="url(\s)*\([\p{L}\p{N}\/\.\?=&amp;;\#-~]+|\#(\w)+\)"/>
+		<regexp name="cssOffsiteUri" value="url(\s)*\((\s)*((ht|f)tp(s?)://|mailto:)[\p{L}\p{N}]+[~\p{L}\p{N}-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
 		
 		<!--  This is for comments within CSS (ex. /* comment */) -->
-		<regexp name="cssCommentText" value="[a-zA-Z0-9-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:\[\]&quot;']+"/>
+		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:\[\]&quot;']+"/>
 		
 		<regexp name="integer" value="(-|\+)?[0-9]+"/>
 		<regexp name="number" value="(-|\+)?([0-9]+(.[0-9]+)?)"/>		
