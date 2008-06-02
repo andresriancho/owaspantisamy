@@ -25,7 +25,9 @@
 package org.owasp.validator.html;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -64,7 +66,7 @@ public class Policy {
 
 	
 	private static Policy _instance = null;
-	private static final String DEFAULT_POLICY_URI = "resources/antisamy-1.1.xml";
+	private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
 	private static final String DEFAULT_ONINVALID = "removeAttribute";
 	
 	public static final int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -110,7 +112,11 @@ public class Policy {
 	 */
 	public static Policy getInstance() throws PolicyException {
 		
-		_instance = new Policy(DEFAULT_POLICY_URI);
+		try {
+			_instance = new Policy(new FileInputStream(DEFAULT_POLICY_URI));	
+		} catch (IOException e) {
+			throw new PolicyException(e);
+		}
 		
 		return _instance;
 	}
@@ -123,7 +129,11 @@ public class Policy {
 	 */
 	public static Policy getInstance(String filename) throws PolicyException {
 		
-		_instance = new Policy(filename);
+		try {
+			_instance = new Policy(new FileInputStream(filename));
+		} catch (IOException e) {
+			throw new PolicyException(e);
+		}
 		
 		return _instance;
 	}
@@ -136,7 +146,11 @@ public class Policy {
 	 */
 	public static Policy getInstance(File file) throws PolicyException {
 		
-		_instance = new Policy(file.getAbsoluteFile());
+		try {
+			_instance = new Policy(new FileInputStream(file.getAbsoluteFile()));
+		} catch (IOException e) {
+			throw new PolicyException(e);
+		}
 		
 		return _instance;
 	}
@@ -147,8 +161,21 @@ public class Policy {
 	 * @param file Load a policy from the File object.
 	 * @throws PolicyException
 	 */
-	private Policy (File file) throws PolicyException {
-		this(file.getPath());
+	private Policy (File file) throws PolicyException, IOException {
+		this(new FileInputStream(file));
+	}
+	
+	/**
+	 * This retrieves a Policy based on the InputStream object passed in
+	 * @param inputStream An InputStream which contains thhe XML policy information.
+	 * @return A populated Policy object based on the XML policy file pointed to by the inputStream parameter.
+	 * @throws PolicyException If there is a problem parsing the input stream.
+	 */
+	public static Policy getInstance(InputStream inputStream) throws PolicyException {
+
+		_instance = new Policy(inputStream);	
+		
+		return _instance;
 	}
 	
 	/**
@@ -156,7 +183,7 @@ public class Policy {
 	 * @param filename Load a policy from the filename specified.
 	 * @throws PolicyException
 	 */
-	private Policy (String filename) throws PolicyException {
+	private Policy (InputStream is) throws PolicyException {
 
 		try {
 			
@@ -167,7 +194,7 @@ public class Policy {
 			/**
 			 * Load and parse the file.
 			 */
-			dom = db.parse(filename);
+			dom = db.parse(is);
 
 			
 			/**
