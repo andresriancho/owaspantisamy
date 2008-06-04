@@ -165,15 +165,7 @@ public class AntiSamyDOMScanner {
 			 */
 
 			OutputFormat format = new OutputFormat();
-
-			format.setLineWidth(80);
-			format.setIndenting(true);
-			format.setIndent(2);
-
 			format.setEncoding(outputEncoding);
-			format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
-			format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
-			format.setPreserveEmptyAttributes(true);
 
 			StringWriter sw = new StringWriter();
 
@@ -189,10 +181,21 @@ public class AntiSamyDOMScanner {
 			 * 
 			 */
 
+
+			if ( "true".equals(policy.getDirective("formatOutput") ) ) {				
+				format.setLineWidth(80);
+				format.setIndenting(true);
+				format.setIndent(2);
+
+				format.setEncoding(outputEncoding);
+				format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
+				format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
+				format.setPreserveEmptyAttributes(true);
+			}
+			
 			if ( "true".equals(policy.getDirective("useXHTML"))) {
 
 				XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
-
 				serializer.serialize(dom);
 
 			} else {
@@ -202,8 +205,6 @@ public class AntiSamyDOMScanner {
 				serializer.serialize(dom);
 
 			}
-
-
 
 			/*
 			 * Get the String out of the StringWriter and rip out the
@@ -754,7 +755,7 @@ public class AntiSamyDOMScanner {
 
 		if (in == null || ("".equals(in))) return ""; // vacancy test.
 		for (int i = 0; i < in.length(); i++) {
-			current = in.charAt(i); // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
+			current = in.charAt(i);
 			if ((current == 0x9) ||
 					(current == 0xA) ||
 					(current == 0xD) ||

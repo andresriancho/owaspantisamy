@@ -28,7 +28,7 @@ public class AntiSamyHTMLTest extends TestCase {
 		 * Load the policy. You may have to change the path to find the Policy file.
 		 */
 		
-		policy = Policy.getInstance("resources/antisamy-1.1.1.xml");
+		policy = Policy.getInstance("resources/antisamy-1.2.xml");
 		
 		
 	}

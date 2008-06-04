@@ -54,6 +54,14 @@ public class AntiSamy {
 	private String inputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
 	private String outputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
 	
+	private Policy policy = null;
+	
+	public AntiSamy () {}
+	
+	public AntiSamy (Policy policy) {
+		this.policy = policy;
+	}
+	
 	/**
 	 * The meat and potatoes. The <code>scan()</code> family of methods are the only methods the outside world should
 	 * be calling to invoke AntiSamy.
@@ -67,15 +75,11 @@ public class AntiSamy {
 	 */
 	
 	public CleanResults scan(String taintedHTML) throws ScanException, PolicyException {
-		
-		Policy policy = null;
-	
-		/*
-		 * Get or reload the policy document (antisamy.xml). We'll need to pass that to the
-		 * scanner so it knows what to look for.
-		 */
-		policy = Policy.getInstance();
 
+		if ( policy == null ) {
+			throw new PolicyException("No policy loaded");
+		}
+		
 		/*
 		 * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
 		 * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
@@ -240,5 +244,13 @@ public class AntiSamy {
 
 	public void setOutputEncoding(String outputEncoding) {
 		this.outputEncoding = outputEncoding;
+	}
+
+	public Policy getPolicy() {
+		return policy;
+	}
+
+	public void setPolicy(Policy policy) {
+		this.policy = policy;
 	}
 }
