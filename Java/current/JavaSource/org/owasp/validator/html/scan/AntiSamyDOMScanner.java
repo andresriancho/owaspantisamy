@@ -27,7 +27,6 @@ package org.owasp.validator.html.scan;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -47,6 +46,7 @@ import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
+import org.owasp.validator.html.util.ErrorMessageUtil;
 import org.owasp.validator.html.util.HTMLEntityEncoder;
 import org.w3c.dom.Comment;
 import org.w3c.dom.DOMException;
@@ -78,21 +78,6 @@ public class AntiSamyDOMScanner {
 
 	public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
 
-	private static final String ERROR_TAG_NOT_IN_POLICY = "error.tag.notfound";
-	private static final String ERROR_TAG_DISALLOWED = "error.tag.removed";
-	private static final String ERROR_TAG_FILTERED = "error.tag.filtered";
-
-	private static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filter";
-	private static final String ERROR_ATTRIBUTE_INVALID_REMOVED = "error.attribute.invalid.removed";
-	private static final String ERROR_ATTRIBUTE_NOT_IN_POLICY = "error.attribute.notfound";
-	private static final String ERROR_ATTRIBUTE_INVALID = "error.attribute.invalid";
-
-
-	private static final String ERROR_INPUT_SIZE = "error.size.toolarge";
-
-	private static final String ERROR_CSS_ATTRIBUTE_MALFORMED = "error.css.attribute.malformed";
-	private static final String ERROR_CSS_TAG_MALFORMED = "error.css.tag.malformed";
-
 	/**
 	 * This is where the magic lives.
 	 * @param html A String whose contents we want to scan.
@@ -113,7 +98,7 @@ public class AntiSamyDOMScanner {
 		} catch (NumberFormatException nfe) {}
 
 		if ( maxInputSize < html.length() ) {
-			throw new ScanException( getMessage(ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) }) );
+			throw new ScanException( ErrorMessageUtil.getMessage(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) }) );
 		}
 
 		Date start = new Date();
@@ -273,9 +258,9 @@ public class AntiSamyDOMScanner {
 		if ( tag == null || "filter".equals(tag.getAction() )) {
 
 			if ( tag == null ) {
-				addError( ERROR_TAG_NOT_IN_POLICY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );	
+				addError( ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );	
 			} else {
-				addError( ERROR_TAG_FILTERED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );
+				addError( ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );
 			}
 
 
@@ -355,14 +340,14 @@ public class AntiSamyDOMScanner {
 
 				} catch (DOMException e) {
 
-					addError(ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
+					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
 					parentNode.removeChild(node);
 
 					return;
 
 				} catch (ScanException e) {
 
-					addError(ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
+					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
 					parentNode.removeChild(node);
 
 					return;
@@ -422,14 +407,14 @@ public class AntiSamyDOMScanner {
 
 					} catch (DOMException e) {
 
-						addError(ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
+						addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
 
 						ele.removeAttribute(name);
 						currentAttributeIndex--;
 
 					} catch (ScanException e) {
 
-						addError(ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
+						addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
 
 						ele.removeAttribute(name);
 						currentAttributeIndex--;
@@ -480,7 +465,7 @@ public class AntiSamyDOMScanner {
 
 								parentNode.removeChild(ele);
 
-								addError( ERROR_ATTRIBUTE_INVALID_REMOVED, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
+								addError( ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
 
 							} else if ("filterTag".equals(onInvalidAction)) {
 
@@ -505,7 +490,7 @@ public class AntiSamyDOMScanner {
 
 								promoteChildren(ele);
 
-								addError(ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
+								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
 
 							} else { 
 
@@ -518,7 +503,7 @@ public class AntiSamyDOMScanner {
 								currentAttributeIndex--;
 
 								debug("adding error: "+tagName+","+name+","+value);
-								addError(ERROR_ATTRIBUTE_INVALID, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
+								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
 
 								if ( "removeTag".equals(onInvalidAction) || "filterTag".equals(onInvalidAction) ) {
 									return; // can't process any more if we remove/filter the tag
@@ -531,7 +516,7 @@ public class AntiSamyDOMScanner {
 					} else { /* the attribute they specified isn't in our policy - remove it (whitelisting!) */		
 
 						
-						addError( ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name) } );
+						addError( ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name) } );
 
 						ele.removeAttribute(name);
 
@@ -575,7 +560,7 @@ public class AntiSamyDOMScanner {
 
 			while( nnmap.getLength() > 0 ) { 
 
-				addError(ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(nnmap.item(0).getNodeName()) });
+				addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(nnmap.item(0).getNodeName()) });
 
 				ele.removeAttribute(nnmap.item(0).getNodeName());				
 
@@ -609,7 +594,7 @@ public class AntiSamyDOMScanner {
 			 * its contents).
 			 */
 
-			addError(ERROR_TAG_DISALLOWED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName) });
+			addError(ErrorMessageUtil.ERROR_TAG_DISALLOWED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName) });
 
 			parentNode.removeChild(ele);
 
@@ -617,28 +602,9 @@ public class AntiSamyDOMScanner {
 
 	}
 
-	private String getMessage(String errorKey, Object[] objs) {
-
-		String message = localize(errorKey);
-
-		MessageFormat mf = new MessageFormat(message);
-		
-		return MessageFormat.format(message,objs);
-	}
-
 	private void addError(String errorKey, Object[] objs) {
 
-		errorMessages.add( getMessage(errorKey, objs) );
-
-	}
-
-	private String localize(String errorKey) {
-
-		Locale l = Locale.getDefault();
-
-		ResourceBundle messages = ResourceBundle.getBundle("AntiSamy", l);
-
-		return messages.getString(errorKey);
+		errorMessages.add( ErrorMessageUtil.getMessage(errorKey, objs) );
 
 	}
 

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+ * 
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of OWASP nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package org.owasp.validator.html.util;
+
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+public final class ErrorMessageUtil {
+
+	public static final String ERROR_TAG_NOT_IN_POLICY = "error.tag.notfound";
+	public static final String ERROR_TAG_DISALLOWED = "error.tag.removed";
+	public static final String ERROR_TAG_FILTERED = "error.tag.filtered";
+
+	public static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filter";
+	public static final String ERROR_ATTRIBUTE_INVALID_REMOVED = "error.attribute.invalid.removed";
+	public static final String ERROR_ATTRIBUTE_NOT_IN_POLICY = "error.attribute.notfound";
+	public static final String ERROR_ATTRIBUTE_INVALID = "error.attribute.invalid";
+
+	public static final String ERROR_COMMENT_REMOVED = "error.comment.removed";
+	
+	public static final String ERROR_INPUT_SIZE = "error.size.toolarge";
+
+	public static final String ERROR_CSS_ATTRIBUTE_MALFORMED = "error.css.attribute.malformed";
+	public static final String ERROR_CSS_TAG_MALFORMED = "error.css.tag.malformed";
+	
+	public static final String ERROR_STYLESHEET_NOT_ALLOWED = "error.css.disallowed";
+	public static final String ERROR_STYLESHEET_IMPORT_FAIL = "error.css.import.not.located";
+	public static final String ERROR_STYLESHEET_RELATIVE = "error.css.relative";
+	
+	public static final String ERROR_PROPERTY_NOT_IN_POLICY = "error.property.notfound";
+	public static final String ERROR_SELECTOR_NOT_ALLOWED = "error.selector.disallowerd";
+	
+	private ErrorMessageUtil() {}
+	
+	public static String getMessage(String errorKey, Object[] objs) {
+
+		String message = localize(errorKey);
+
+		MessageFormat mf = new MessageFormat(message);
+		
+		return MessageFormat.format(message,objs);
+	}
+
+	public static String localize(String errorKey) {
+
+		Locale l = Locale.getDefault();
+
+		ResourceBundle messages = ResourceBundle.getBundle("AntiSamy", l);
+
+		return messages.getString(errorKey);
+
+	}
+}
