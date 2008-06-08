@@ -38,7 +38,6 @@ import java.util.Date;
 import java.util.LinkedList;
 
 import org.apache.batik.css.parser.Parser;
-import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpContentTooLargeException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -115,13 +114,15 @@ public class CssScanner {
 
 	// parse the stylesheet
 	parser.setDocumentHandler(handler);
-	
+
 	try {
 	    // parse the style declaration
 	    // note this does not count against the size limit because it
 	    // should already have been counted by the caller since it was
 	    // embedded in the HTML
-	    parser.parseStyleSheet(new InputSource(new StringReader(taintedCss)));
+	    parser
+		    .parseStyleSheet(new InputSource(new StringReader(
+			    taintedCss)));
 	} catch (IOException ioe) {
 	    throw new ScanException(ioe);
 	}
@@ -178,8 +179,7 @@ public class CssScanner {
 	    throw new ScanException(ioe);
 	}
 
-	parseImportedStylesheets(stylesheets, handler, errorMessages,
-		sizeLimit);
+	parseImportedStylesheets(stylesheets, handler, errorMessages, sizeLimit);
 
 	return new CleanResults(startOfScan, new Date(), handler
 		.getCleanStylesheet(), null, errorMessages);
@@ -203,33 +203,56 @@ public class CssScanner {
      *                 if an error occurs during scanning
      */
     private void parseImportedStylesheets(LinkedList stylesheets,
-	    CssHandler handler, ArrayList errorMessages,
-	    int sizeLimit) throws ScanException {
+	    CssHandler handler, ArrayList errorMessages, int sizeLimit)
+	    throws ScanException {
+
+	int importedStylesheets = 0;
 
 	// if stylesheets were imported by the inline style declaration,
 	// continue parsing the nested styles. Note this only happens
 	// if CSS importing was enabled in the policy file
 	if (!stylesheets.isEmpty()) {
 	    HttpClient httpClient = new HttpClient();
-	    	    
+
 	    // Ensure that we have appropriate timeout values so we don't
 	    // get DoSed waiting for returns
 	    HttpConnectionManagerParams params = httpClient
 		    .getHttpConnectionManager().getParams();
-	    
+
 	    int timeout = DEFAULT_TIMEOUT;
-	    
+
 	    try {
-		timeout = Integer.parseInt(policy.getDirective(Policy.CONNECTION_TIMEOUT));
-	    } catch (NumberFormatException nfe) {}
-	    
+		timeout = Integer.parseInt(policy
+			.getDirective(Policy.CONNECTION_TIMEOUT));
+	    } catch (NumberFormatException nfe) {
+	    }
+
 	    params.setConnectionTimeout(timeout);
 	    params.setSoTimeout(timeout);
 	    httpClient.getHttpConnectionManager().setParams(params);
 
+	    int allowedImports = Policy.DEFAULT_MAX_STYLESHEET_IMPORTS;
+	    try {
+		allowedImports = Integer.parseInt(policy
+			.getDirective("maxStyleSheetImports"));
+	    } catch (NumberFormatException nfe) {
+	    }
+
 	    while (!stylesheets.isEmpty()) {
+
 		URI stylesheetUri = (URI) stylesheets.removeFirst();
-		
+
+		if (++importedStylesheets > allowedImports) {
+		    errorMessages.add(ErrorMessageUtil.getMessage(
+			    ErrorMessageUtil.ERROR_CSS_IMPORT_EXCEEDED,
+			    new Object[] {
+				    HTMLEntityEncoder
+					    .htmlEntityEncode(stylesheetUri
+						    .toString()),
+				    String.valueOf(allowedImports) }));
+		    continue;
+		}
+
 		GetMethod stylesheetRequest = new GetMethod(stylesheetUri
 			.toString());
 
@@ -239,18 +262,23 @@ public class CssScanner {
 		    httpClient.executeMethod(stylesheetRequest);
 		    stylesheet = stylesheetRequest.getResponseBody(sizeLimit);
 		} catch (HttpContentTooLargeException hctle) {
-		    errorMessages.add(ErrorMessageUtil.getMessage(
-			    ErrorMessageUtil.ERROR_CSS_IMPORT_INPUT_SIZE,
-			    new Object[] {
-				    HTMLEntityEncoder.htmlEntityEncode(stylesheetUri.toString()), 
-				    String.valueOf(policy.getMaxInputSize())}));
+		    errorMessages
+			    .add(ErrorMessageUtil
+				    .getMessage(
+					    ErrorMessageUtil.ERROR_CSS_IMPORT_INPUT_SIZE,
+					    new Object[] {
+						    HTMLEntityEncoder
+							    .htmlEntityEncode(stylesheetUri
+								    .toString()),
+						    String.valueOf(policy
+							    .getMaxInputSize()) }));
 		} catch (IOException ioe) {
 		    errorMessages.add(ErrorMessageUtil
 			    .getMessage(
 				    ErrorMessageUtil.ERROR_CSS_IMPORT_FAILURE,
 				    new Object[] { HTMLEntityEncoder
 					    .htmlEntityEncode(stylesheetUri
-						    .toString()) }));		    
+						    .toString()) }));
 		} finally {
 		    stylesheetRequest.releaseConnection();
 		}
@@ -258,8 +286,8 @@ public class CssScanner {
 		if (stylesheet != null) {
 		    // decrease the size limit based on the
 		    sizeLimit -= stylesheet.length;
-		    try {
 
+		    try {
 			InputSource nextStyleSheet = new InputSource(
 				new InputStreamReader(new ByteArrayInputStream(
 					stylesheet)));
@@ -268,6 +296,7 @@ public class CssScanner {
 		    } catch (IOException ioe) {
 			throw new ScanException(ioe);
 		    }
+
 		}
 	    }
 	}
@@ -288,26 +317,27 @@ public class CssScanner {
 
 	CleanResults results = null;
 
-	
 	results = scanner
 		.scanStyleSheet(
-			"@import url(http://www.owasp.org/skins/monobook/main.css);",
-			Policy.DEFAULT_MAX_INPUT_SIZE);
+			"@import url(http://www.owasp.org/skins/monobook/main.css);"
+				+ "@import url(http://www.w3schools.com/stdtheme.css);"
+				+ "@import url(http://www.google.com/ig/f/t1wcX5O39cc/ig.css); ",
+			Integer.MAX_VALUE);
 
 	// Test case for live CSS docs. Just change URL to a live CSS on
 	// the internet. Note this is test code and does not handle IO
 	// errors
-//	StringBuffer sb = new StringBuffer();
-//	BufferedReader reader = new BufferedReader(new InputStreamReader(
-//		new URL("http://www.owasp.org/skins/monobook/main.css")
-//			.openStream()));
-//	String line = null;
-//	while ((line = reader.readLine()) != null) {
-//	    sb.append(line);
-//	    sb.append("\n");
-//	}
-//	 results = scanner.scanStyleSheet(sb.toString(),
-//	 Policy.DEFAULT_MAX_INPUT_SIZE);
+	// StringBuffer sb = new StringBuffer();
+	// BufferedReader reader = new BufferedReader(new InputStreamReader(
+	// new URL("http://www.owasp.org/skins/monobook/main.css")
+	// .openStream()));
+	// String line = null;
+	// while ((line = reader.readLine()) != null) {
+	// sb.append(line);
+	// sb.append("\n");
+	// }
+	// results = scanner.scanStyleSheet(sb.toString(),
+	// Policy.DEFAULT_MAX_INPUT_SIZE);
 
 	System.out.println("Cleaned result:");
 	System.out.println(results.getCleanHTML());
