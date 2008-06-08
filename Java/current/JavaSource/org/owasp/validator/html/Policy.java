@@ -68,8 +68,18 @@ public class Policy {
 	private static Policy _instance = null;
 	private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
 	private static final String DEFAULT_ONINVALID = "removeAttribute";
-	
+			
 	public static final int DEFAULT_MAX_INPUT_SIZE = 100000;
+	public static final int DEFAULT_MAX_STYLESHEET_IMPORTS = 1;
+	
+	public static final String OMIT_XML_DECLARATION = "omitXmlDeclaration";
+	public static final String OMIT_DOCTYPE_DECLARATION = "omitDoctypeDeclaration";
+	public static final String MAX_INPUT_SIZE = "maxInputSize";
+	public static final String USE_XHTML = "useXHTML";
+	public static final String FORMAT_OUTPUT = "formatOutput";
+	
+	public static final String EMBED_STYLESHEETS = "embedStyleSheets";
+	public static final String CONNECTION_TIMEOUT = "connectionTimeout";
 	
 	private static char REGEXP_BEGIN = '^';
 	private static char REGEXP_END = '$';
@@ -749,6 +759,20 @@ public class Policy {
 		return (String) directives.get(name);
 	}
 
+	/**
+	 * Returns the maximum input size. If this value is not specified by
+	 * the policy, the <code>DEFAULT_MAX_INPUT_SIZE</code> is used.
+	 * @return the maximium input size.
+	 */
+	public int getMaxInputSize() {
+		int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
+
+		try {
+			maxInputSize = Integer.parseInt(getDirective("maxInputSize"));
+		} catch (NumberFormatException nfe) {}
+		
+		return maxInputSize;
+	}
 	
 	/**
 	 * Main test unit.

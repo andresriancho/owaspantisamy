@@ -30,8 +30,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
 import org.apache.xerces.dom.DocumentImpl;
@@ -90,13 +88,9 @@ public class AntiSamyDOMScanner {
 		if ( html == null ) {
 			throw new ScanException("No input (null)");
 		}
-
-		int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
-
-		try {
-			maxInputSize = Integer.parseInt(policy.getDirective("maxInputSize"));
-		} catch (NumberFormatException nfe) {}
-
+		
+		int maxInputSize = policy.getMaxInputSize();
+		
 		if ( maxInputSize < html.length() ) {
 			throw new ScanException( ErrorMessageUtil.getMessage(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) }) );
 		}
@@ -315,7 +309,7 @@ public class AntiSamyDOMScanner {
 
 				try {
 
-					CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue());
+					CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue(), policy.getMaxInputSize());
 
 					errorMessages.addAll(cr.getErrorMessages());
 
@@ -397,7 +391,7 @@ public class AntiSamyDOMScanner {
 
 					try {
 
-						CleanResults cr = styleScanner.scanInlineStyle(value,tagName);
+						CleanResults cr = styleScanner.scanInlineStyle(value,tagName, policy.getMaxInputSize());
 
 						attribute.setNodeValue(cr.getCleanHTML());
 

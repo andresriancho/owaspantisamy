@@ -33,10 +33,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.owasp.validator.html.scan.AntiSamyDOMScanner;
-import org.w3c.dom.DocumentFragment;
 
 
 /**

@@ -80,8 +80,8 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="cssAttributeExclusion" value=""/>
 		
 		<!--  This is for resources referenced from CSS (such as background images and other imported stylesheets) -->
-		<regexp name="cssOnsiteUri" value="url(\s)*\([\p{L}\p{N}\/\.\?=&amp;;\-\_\#~]+|\#(\w)+\)"/>
-		<regexp name="cssOffsiteUri" value="url(\s)*\((\s)*((ht|f)tp(s?)://|mailto:)[\p{L}\p{N}]+[~\p{L}\p{N}\-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
+		<regexp name="cssOnsiteUri" value="url\(([\p{L}\p{N}\\/\.\?=\#&amp;;\-_~]+|\#(\w)+)\)"/>
+		<regexp name="cssOffsiteUri" value="url\((\s)*((ht|f)tp(s?)://)[\p{L}\p{N}]+[~\p{L}\p{N}\p{Zs}\-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
 		
 		<!--  This is for comments within CSS (ex. /* comment */) -->
 		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:\[\]&quot;']+"/>

@@ -31,11 +31,12 @@ package org.owasp.validator.css;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
-import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
+import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.model.AntiSamyPattern;
 import org.owasp.validator.html.model.Property;
 import org.owasp.validator.html.util.HTMLEntityEncoder;
+
 import org.w3c.css.sac.AttributeCondition;
 import org.w3c.css.sac.CombinatorCondition;
 import org.w3c.css.sac.Condition;
@@ -124,8 +125,8 @@ public class CssValidator {
 	 *            messages to
 	 * @return true if this selector name is valid; false otherwise
 	 */
-	public boolean isValidSelector(String selectorName, Selector selector,
-			CleanResults results) {
+	public boolean isValidSelector(String selectorName, Selector selector)
+			throws ScanException {
 
 		// determine correct behavior
 		switch (selector.getSelectorType()) {
@@ -134,41 +135,38 @@ public class CssValidator {
 		case Selector.SAC_PSEUDO_ELEMENT_SELECTOR:
 		case Selector.SAC_ROOT_NODE_SELECTOR:
 			// these selectors are the most base selectors
-			return validateSimpleSelector((SimpleSelector) selector, results);
+			return validateSimpleSelector((SimpleSelector) selector);
 		case Selector.SAC_CHILD_SELECTOR:
 		case Selector.SAC_DESCENDANT_SELECTOR:
 			// these are compound selectors - decompose into simple selectors
 			DescendantSelector descSelector = (DescendantSelector) selector;
 			return isValidSelector(selectorName, descSelector
-					.getSimpleSelector(), results)
+					.getSimpleSelector())
 					& isValidSelector(selectorName, descSelector
-							.getAncestorSelector(), results);
+							.getAncestorSelector());
 		case Selector.SAC_CONDITIONAL_SELECTOR:
 			// this is a compound selector - decompose into simple selectors
 			ConditionalSelector condSelector = (ConditionalSelector) selector;
 			return isValidSelector(selectorName, condSelector
-					.getSimpleSelector(), results)
+					.getSimpleSelector())
 					& isValidCondition(selectorName, condSelector
-							.getCondition(), results);
+							.getCondition());
 		case Selector.SAC_DIRECT_ADJACENT_SELECTOR:
 			// this is a compound selector - decompose into simple selectors
 			SiblingSelector sibSelector = (SiblingSelector) selector;
 			return isValidSelector(selectorName, sibSelector
-					.getSiblingSelector(), results)
-					& isValidSelector(selectorName, sibSelector.getSelector(),
-							results);
+					.getSiblingSelector())
+					& isValidSelector(selectorName, sibSelector.getSelector());
 		case Selector.SAC_NEGATIVE_SELECTOR:
 			// this is a compound selector with one simple selector
-			return validateSimpleSelector((NegativeSelector) selector, results);
+			return validateSimpleSelector((NegativeSelector) selector);
 		case Selector.SAC_CDATA_SECTION_NODE_SELECTOR:
 		case Selector.SAC_COMMENT_NODE_SELECTOR:
 		case Selector.SAC_PROCESSING_INSTRUCTION_NODE_SELECTOR:
 		case Selector.SAC_TEXT_NODE_SELECTOR:
 		default:
-			results.addErrorMessage("Unknown selector in selector "
-					+ HTMLEntityEncoder.htmlEntityEncode(selectorName)
-					+ " encountered");
-			return false;
+		    
+			throw new UnknownSelectorException(HTMLEntityEncoder.htmlEntityEncode(selector.toString()));
 		}
 	}
 
@@ -182,8 +180,7 @@ public class CssValidator {
 	 *            messages to
 	 * @return true if this selector name is valid; false otherwise
 	 */
-	private boolean validateSimpleSelector(SimpleSelector selector,
-			CleanResults results) {
+	private boolean validateSimpleSelector(SimpleSelector selector) {
 		// ensure the name follows the valid pattern and is not blacklisted
 		// by the exclusion pattern.
 		// NOTE: intentionally using non-short-circuited AND operator to
@@ -208,35 +205,35 @@ public class CssValidator {
 	 *            messages to
 	 * @return true if this condition is valid; false otherwise
 	 */
-	public boolean isValidCondition(String selectorName, Condition condition,
-			CleanResults results) {
+	public boolean isValidCondition(String selectorName, Condition condition)
+			throws ScanException {
 		switch (condition.getConditionType()) {
 		case Condition.SAC_AND_CONDITION:
 		case Condition.SAC_OR_CONDITION:
 			// these are compound condition - decompose into simple conditions
 			CombinatorCondition comboCondition = (CombinatorCondition) condition;
 			return isValidCondition(selectorName, comboCondition
-					.getFirstCondition(), results)
+					.getFirstCondition())
 					& isValidCondition(selectorName, comboCondition
-							.getSecondCondition(), results);
+							.getSecondCondition());
 		case Condition.SAC_CLASS_CONDITION:
 			// this is a basic class condition; compare condition against
 			// valid pattern and is not blacklisted by exclusion pattern
 			return validateCondition((AttributeCondition) condition, policy
 					.getRegularExpression("cssClassSelector"), policy
-					.getRegularExpression("cssClassExclusion"), results);
+					.getRegularExpression("cssClassExclusion"));
 		case Condition.SAC_ID_CONDITION:
 			// this is a basic ID condition; compare condition against
 			// valid pattern and is not blacklisted by exclusion pattern
 			return validateCondition((AttributeCondition) condition, policy
 					.getRegularExpression("cssIDSelector"), policy
-					.getRegularExpression("cssIDExclusion"), results);
+					.getRegularExpression("cssIDExclusion"));
 		case Condition.SAC_PSEUDO_CLASS_CONDITION:
 			// this is a basic psuedo element condition; compare condition
 			// against valid pattern and is not blacklisted by exclusion pattern
 			return validateCondition((AttributeCondition) condition, policy
 					.getRegularExpression("cssPseudoElementSelector"), policy
-					.getRegularExpression("cssPsuedoElementExclusion"), results);
+					.getRegularExpression("cssPsuedoElementExclusion"));
 		case Condition.SAC_BEGIN_HYPHEN_ATTRIBUTE_CONDITION:
 		case Condition.SAC_ONE_OF_ATTRIBUTE_CONDITION:
 		case Condition.SAC_ATTRIBUTE_CONDITION:
@@ -244,11 +241,11 @@ public class CssValidator {
 			// valid pattern and is not blacklisted by exclusion pattern
 			return validateCondition((AttributeCondition) condition, policy
 					.getRegularExpression("cssAttributeSelector"), policy
-					.getRegularExpression("cssAttributeExclusion"), results);
+					.getRegularExpression("cssAttributeExclusion"));
 		case Condition.SAC_NEGATIVE_CONDITION:
 			// this is a compound condition; decompose to simple condition
 			return isValidCondition(selectorName,
-					((NegativeCondition) condition).getCondition(), results);
+					((NegativeCondition) condition).getCondition());
 		case Condition.SAC_ONLY_CHILD_CONDITION:
 		case Condition.SAC_ONLY_TYPE_CONDITION:
 			// :only-child and :only-of-type are constants
@@ -257,10 +254,7 @@ public class CssValidator {
 		case Condition.SAC_CONTENT_CONDITION:
 		case Condition.SAC_LANG_CONDITION:
 		default:
-			results.addErrorMessage("Unknown condition for selector "
-					+ HTMLEntityEncoder.htmlEntityEncode(selectorName)
-					+ " encountered");
-			return false;
+		    	throw new UnknownSelectorException(HTMLEntityEncoder.htmlEntityEncode(selectorName));
 		}
 	}
 
@@ -280,8 +274,7 @@ public class CssValidator {
 	 * @return true if this selector name is valid; false otherwise
 	 */
 	private boolean validateCondition(AttributeCondition condition,
-			AntiSamyPattern pattern, AntiSamyPattern exclusionPattern,
-			CleanResults results) {
+			AntiSamyPattern pattern, AntiSamyPattern exclusionPattern) {
 		// check that the name of the condition matches valid pattern and does
 		// not match exclusion pattern
 		// NOTE: intentionally using non-short-circuited AND operator to

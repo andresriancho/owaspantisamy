@@ -46,19 +46,32 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_CSS_TAG_MALFORMED = "error.css.tag.malformed";
 	
 	public static final String ERROR_STYLESHEET_NOT_ALLOWED = "error.css.disallowed";
-	public static final String ERROR_STYLESHEET_IMPORT_FAIL = "error.css.import.not.located";
-	public static final String ERROR_STYLESHEET_RELATIVE = "error.css.relative";
 	
-	public static final String ERROR_PROPERTY_NOT_IN_POLICY = "error.property.notfound";
-	public static final String ERROR_SELECTOR_NOT_ALLOWED = "error.selector.disallowerd";
+	public static final String ERROR_CSS_IMPORT_DISABLED = "error.css.import.disabled";
+	public static final String ERROR_CSS_IMPORT_FAILURE = "error.css.import.failure";
+	public static final String ERROR_CSS_IMPORT_INPUT_SIZE = "error.css.import.toolarge";
+	public static final String ERROR_CSS_IMPORT_URL_INVALID = "error.css.import.url.invalid";
+
+	public static final String ERROR_STYLESHEET_RELATIVE = "error.css.stylesheet.relative";
+	public static final String ERROR_CSS_TAG_RELATIVE = "error.css.tag.relative";
+	
+	public static final String ERROR_STYLESHEET_RULE_NOTFOUND = "error.css.stylesheet.rule.notfound";
+	public static final String ERROR_CSS_TAG_RULE_NOTFOUND = "error.css.tag.rule.notfound";
+	
+	public static final String ERROR_STYLESHEET_SELECTOR_NOTFOUND = "error.css.stylesheet.selector.notfound";
+	public static final String ERROR_CSS_TAG_SELECTOR_NOTFOUND = "error.css.tag.selector.notfound";
+	
+	public static final String ERROR_STYLESHEET_SELECTOR_DISALLOWED = "error.css.stylesheet.selector.disallowed";
+	public static final String ERROR_CSS_TAG_SELECTOR_DISALLOWED = "error.css.tag.selector.disallowed";
+	
+	public static final String ERROR_STYLESHEET_PROPERTY_INVALID = "error.css.stylesheet.property.invalid";
+	public static final String ERROR_CSS_TAG_PROPERTY_INVALID = "error.css.tag.property.invalid";	
 	
 	private ErrorMessageUtil() {}
 	
 	public static String getMessage(String errorKey, Object[] objs) {
 
 		String message = localize(errorKey);
-
-		MessageFormat mf = new MessageFormat(message);
 		
 		return MessageFormat.format(message,objs);
 	}
