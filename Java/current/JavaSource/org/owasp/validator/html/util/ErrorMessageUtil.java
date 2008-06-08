@@ -48,6 +48,7 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_STYLESHEET_NOT_ALLOWED = "error.css.disallowed";
 	
 	public static final String ERROR_CSS_IMPORT_DISABLED = "error.css.import.disabled";
+	public static final String ERROR_CSS_IMPORT_EXCEEDED = "error.css.import.exceeded";
 	public static final String ERROR_CSS_IMPORT_FAILURE = "error.css.import.failure";
 	public static final String ERROR_CSS_IMPORT_INPUT_SIZE = "error.css.import.toolarge";
 	public static final String ERROR_CSS_IMPORT_URL_INVALID = "error.css.import.url.invalid";
