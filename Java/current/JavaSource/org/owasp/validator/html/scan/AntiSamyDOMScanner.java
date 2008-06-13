@@ -507,8 +507,7 @@ public class AntiSamyDOMScanner {
 						}
 						
 					} else { /* the attribute they specified isn't in our policy - remove it (whitelisting!) */		
-
-						
+		
 						addError( ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name) } );
 
 						ele.removeAttribute(name);
@@ -518,25 +517,6 @@ public class AntiSamyDOMScanner {
 					} // end if attribute is or is not found in policy file
 
 				} // end while loop through attributes 
-
-				/*
-				 * Validate the children of this node.
-				 */
-
-				for(int i=0;i<node.getChildNodes().getLength();i++) {
-
-					tmp = node.getChildNodes().item(i);
-
-					recursiveValidateTag(tmp);
-
-					/*
-					 * This indicates the node was removed/failed validation.
-					 */
-					if ( tmp.getParentNode() == null ) {
-						i--;
-					}
-
-				} // end for loop validating the children of this node
 
 			} // loop through each attribute
 
