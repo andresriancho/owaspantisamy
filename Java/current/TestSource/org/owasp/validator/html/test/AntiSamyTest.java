@@ -1,11 +1,11 @@
 package org.owasp.validator.html.test;
 
-import org.owasp.validator.html.AntiSamy;
-import org.owasp.validator.html.Policy;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import org.owasp.validator.html.AntiSamy;
+import org.owasp.validator.html.Policy;
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which should be immune to XSS and 
@@ -136,29 +136,32 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<EMBED SRC=\"data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==\" type=\"image/svg+xml\" AllowScriptAccess=\"always\"></EMBED>", policy).getCleanHTML().indexOf("<embed") == -1 );
 			
 			assertTrue ( as.scan("<SCRIPT a=\">\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
-			assertTrue ( as.scan("<SCRIPT =\">\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<SCRIPT a=\">\" '' SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
-			assertTrue ( as.scan("<SCRIPT \"a='>'\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
+
 			assertTrue ( as.scan("<SCRIPT a=`>` SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<SCRIPT a=\">'>\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<SCRIPT>document.write(\"<SCRI\");</SCRIPT>PT SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("script") == -1 );
 			assertTrue ( as.scan("<SCRIPT SRC=http://ha.ckers.org/xss.js",policy).getCleanHTML().indexOf("<script") == -1 );
 			
-			assertTrue ( as.scan("<div/style=&#92&#45&#92&#109&#111&#92&#122&#92&#45&#98&#92&#105&#92&#110&#100&#92&#105&#110&#92&#103:&#92&#117&#114&#108&#40&#47&#47&#98&#117&#115&#105&#110&#101&#115&#115&#92&#105&#92&#110&#102&#111&#46&#99&#111&#46&#117&#107&#92&#47&#108&#97&#98&#115&#92&#47&#120&#98&#108&#92&#47&#120&#98&#108&#92&#46&#120&#109&#108&#92&#35&#120&#115&#115&#41&>", policy).getCleanHTML().indexOf("style=\"\"") != -1 );
+			assertTrue ( as.scan("<div/style=&#92&#45&#92&#109&#111&#92&#122&#92&#45&#98&#92&#105&#92&#110&#100&#92&#105&#110&#92&#103:&#92&#117&#114&#108&#40&#47&#47&#98&#117&#115&#105&#110&#101&#115&#115&#92&#105&#92&#110&#102&#111&#46&#99&#111&#46&#117&#107&#92&#47&#108&#97&#98&#115&#92&#47&#120&#98&#108&#92&#47&#120&#98&#108&#92&#46&#120&#109&#108&#92&#35&#120&#115&#115&#41&>", policy).getCleanHTML().indexOf("style") == -1 );
 			
 			assertTrue ( as.scan("<a href='aim: &c:\\windows\\system32\\calc.exe' ini='C:\\Documents and Settings\\All Users\\Start Menu\\Programs\\Startup\\pwnd.bat'>",policy).getCleanHTML().indexOf("aim.exe") == -1 );
 			assertTrue ( as.scan("<!--\n<A href=\n- --><a href=javascript:alert:document.domain>test-->",policy).getCleanHTML().indexOf("javascript") == -1 );
 			assertTrue ( as.scan("<a></a style=\"\"xx:expr/**/ession(document.appendChild(document.createElement('script')).src='http://h4k.in/i.js')\">",policy).getCleanHTML().indexOf("document") == -1 );
-			
-			assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<style>position:absolute</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			
-			assertTrue ( as.scan("<input type=passwoRD>",policy).getCleanHTML().indexOf("<") == -1 );
-			
+						
 		} catch(Exception e) {
-			fail("Caught exception in testImgSrcAttacks(): "+e.getMessage());
+			fail("Caught exception in testHrefSrcAttacks(): "+e.getMessage());
 		}
+	}
+	
+	public void testCssAttacks() {
+	    try {
+		assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
+		assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
+		assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
+		assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );		
+	    } catch (Exception e) {
+		fail("Caught exception in testCssAttacks(): "+e.getMessage());		
+	    }
 	}
 }
