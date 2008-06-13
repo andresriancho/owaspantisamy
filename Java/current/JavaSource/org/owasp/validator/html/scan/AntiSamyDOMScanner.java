@@ -496,7 +496,6 @@ public class AntiSamyDOMScanner {
 
 								currentAttributeIndex--;
 
-								debug("adding error: "+tagName+","+name+","+value);
 								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
 
 								if ( "removeTag".equals(onInvalidAction) || "filterTag".equals(onInvalidAction) ) {
@@ -541,6 +540,22 @@ public class AntiSamyDOMScanner {
 
 			} // loop through each attribute
 
+			for(int i=0;i<node.getChildNodes().getLength();i++) {
+
+				tmp = node.getChildNodes().item(i);
+
+				recursiveValidateTag(tmp);
+
+				/*
+				 * This indicates the node was removed/failed validation.
+				 */
+				if ( tmp.getParentNode() == null ) {
+					i--;
+				}
+			}
+			
+			return;
+			
 		} else if ( "truncate".equals(tag.getAction()) ) {
 
 			/*
