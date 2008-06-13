@@ -1,5 +1,7 @@
 package org.owasp.validator.html.test;
 
+import java.util.Arrays;
+
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
 
@@ -155,4 +157,26 @@ public class AntiSamyHTMLTest extends TestCase {
 	/*
 	 * Test CSS protections. 
 	 */
+	public void testCssAttacks() {
+	    try {
+        	    assertTrue( as.scan("<style>color: expression(alert('XSS'))</style>").getCleanHTML().indexOf("alert") == -1);
+        	    assertTrue( as.scan("<b style=\"color: expression(alert('XSS'))\"").getCleanHTML().indexOf("alert") == -1 );
+        	    assertTrue( as.scan("<div style=\"position: absolute; left: 0px; top: 0px; width: 1900px; height: 1300px; z-index: 1000; background-color:white; padding: 1em;\">Overlay</div>").getCleanHTML().indexOf("absolute") == -1);
+        	    
+        	    // TODO: Need some way to modify policy file to check for selector/ID blacklisting
+        	            	    
+        	    Policy p = as.getPolicy();
+        	    int maxInputSize = p.getMaxInputSize();
+        	    char[] junk = new char[maxInputSize+1];
+        	    Arrays.fill(junk, '0');
+        	    assertTrue( as.scan(new String(junk)).getCleanHTML().length() == 0);
+
+        	    // TODO: need some wayh to modify policy file to enable stylesheet imports and to
+        	    //   lower size limit and/or import recursion
+        	    //as.scan("<style>@import url(http://www.owasp.org/skins/monobook/main.css);</style>");
+
+	    } catch(Exception e) {
+		fail("Caught exception in testCssAttacks(): " + e.getMessage());
+	    }
+	}
 }
