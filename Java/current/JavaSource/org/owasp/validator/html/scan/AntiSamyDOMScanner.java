@@ -116,7 +116,12 @@ public class AntiSamyDOMScanner {
 			parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
 			parser.setProperty("http://cyberneko.org/html/properties/default-encoding",inputEncoding);
 
-			parser.parse(new InputSource(new StringReader(html)),dom);
+			try {
+				parser.parse(new InputSource(new StringReader(html)),dom);	
+			} catch (Exception e) {
+				throw new ScanException(e);
+			}
+			
 
 			/*
 			 * Call the work horse.

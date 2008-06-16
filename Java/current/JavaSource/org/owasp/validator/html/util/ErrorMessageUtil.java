@@ -25,6 +25,7 @@ package org.owasp.validator.html.util;
 
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 public final class ErrorMessageUtil {
@@ -68,6 +69,8 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_STYLESHEET_PROPERTY_INVALID = "error.css.stylesheet.property.invalid";
 	public static final String ERROR_CSS_TAG_PROPERTY_INVALID = "error.css.tag.property.invalid";	
 	
+	private static final String DEFAULT_LOCALE = "en_US";
+	
 	private ErrorMessageUtil() {}
 	
 	public static String getMessage(String errorKey, Object[] objs) {
@@ -80,8 +83,13 @@ public final class ErrorMessageUtil {
 	public static String localize(String errorKey) {
 
 		Locale l = Locale.getDefault();
-
-		ResourceBundle messages = ResourceBundle.getBundle("AntiSamy", l);
+		ResourceBundle messages = null;
+		
+		try {
+			messages = ResourceBundle.getBundle("AntiSamy", l);
+		} catch (MissingResourceException mre) {
+			messages = ResourceBundle.getBundle("AntiSamy_"+DEFAULT_LOCALE);
+		}
 
 		return messages.getString(errorKey);
 
