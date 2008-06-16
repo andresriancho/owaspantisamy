@@ -1,5 +1,11 @@
 package org.owasp.validator.html.test;
 
+import java.util.Arrays;
+
+import org.owasp.validator.html.AntiSamy;
+import org.owasp.validator.html.Policy;
+
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -17,7 +23,7 @@ import org.owasp.validator.html.Policy;
 
 public class AntiSamyTest extends TestCase {
 
-	AntiSamy as = new AntiSamy();
+	private AntiSamy as = new AntiSamy();
 	private Policy policy = null;
 	
 	public AntiSamyTest (String s) { super(s); }
@@ -154,6 +160,10 @@ public class AntiSamyTest extends TestCase {
 		}
 	}
 	
+	/*
+	 * Test CSS protections. 
+	 */
+	
 	public void testCssAttacks() {
 	    try {
 		assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
@@ -164,4 +174,5 @@ public class AntiSamyTest extends TestCase {
 		fail("Caught exception in testCssAttacks(): "+e.getMessage());		
 	    }
 	}
+
 }
