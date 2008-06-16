@@ -69,7 +69,8 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_STYLESHEET_PROPERTY_INVALID = "error.css.stylesheet.property.invalid";
 	public static final String ERROR_CSS_TAG_PROPERTY_INVALID = "error.css.tag.property.invalid";	
 	
-	private static final String DEFAULT_LOCALE = "en_US";
+	private static final String DEFAULT_LOCALE_LANG = "en";
+	private static final String DEFAULT_LOCALE_LOC = "US";
 	
 	private ErrorMessageUtil() {}
 	
@@ -88,7 +89,7 @@ public final class ErrorMessageUtil {
 		try {
 			messages = ResourceBundle.getBundle("AntiSamy", l);
 		} catch (MissingResourceException mre) {
-			messages = ResourceBundle.getBundle("AntiSamy_"+DEFAULT_LOCALE);
+			messages = ResourceBundle.getBundle("AntiSamy",new Locale(DEFAULT_LOCALE_LANG,DEFAULT_LOCALE_LOC));
 		}
 
 		return messages.getString(errorKey);
