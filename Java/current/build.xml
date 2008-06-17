@@ -6,15 +6,15 @@
 	<property name="lib.dir"		value="lib"/>
 	<property name="dist.dir"		value="dist"/>
 	<property name="docs.dir"		value="doc"/>
-	<property name="classes.dir"	value="${build.dir}/classes"/>
+	<property name="resources.dir"	value="resources"/>
     <property name="jar.dir"		value="${build.dir}/jar"/>
 	<property name="version.major"	value="1"/>
 	<property name="version.minor"	value="2"/>
 
 	<property name="jarfile"		value="antisamy"/>
 	
-	<taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach"/>
-	
+	<!-- <taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach"/> -->
+		
 	<path id="compile.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="*.jar"/>
@@ -28,10 +28,12 @@
     </target>
 
     <target name="compile">
-        <mkdir dir="${classes.dir}"/>
+
+    	<mkdir dir="${build.dir}"/>
+    	
         <javac
     		srcdir="${src.dir}"
-        	destdir="${classes.dir}"
+        	destdir="${build.dir}"
         	classpath="${lib.dir}/*.jar">
         	<classpath refid="compile.classpath"/>
         </javac>
@@ -54,12 +56,16 @@
 
 	</target>
 	
-	<target name="build-dist" depends="clean,compile,jar">
+	<target name="build-dist" depends="clean,compile,jar, build-src-dist, build-bin-dist, javadoc">
 		
-		<mkdir dir="${dist.dir}"/>
+		<copy file="${resources.dir}/antisamy-slashdot.xml" tofile="${dist.dir}/antisamy-slashdot-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-ebay.xml" tofile="${dist.dir}/antisamy-ebay-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-myspace.xml" tofile="${dist.dir}/antisamy-myspace-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-anythinggoes.xml" tofile="${dist.dir}/antisamy-anythinggoes-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy.xml" tofile="${dist.dir}/antisamy-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy.xsd" tofile="${dist.dir}/antisamy-${version.major}.${version.minor}.xsd"/>
 		
-		<copy file="${build.dir}/${jarfile}-dist.${version.major}.${version.minor}.zip" 
-			todir="${dist.dir}"/>
+		<zip destfile="${dist.dir}/antisamy-required-libs-${version.major}.${version.minor}.zip" basedir="${lib.dir}" includes="*.jar"/>
 		
 	</target>
 	
@@ -82,34 +88,13 @@
 
 	<target name="jar" depends="clean,compile">
 		
-		<mkdir dir="${dist.dir}"/>
-		
-		<foreach parallel="false" target="_unzipToClassPool" param="fileName">
-			<path>
-				<pathelement location="${lib.dir}/batik-util.jar"/>
-				<pathelement location="${lib.dir}/batik-css.jar"/>
-				<pathelement location="${lib.dir}/nekohtml.jar"/>
-				<pathelement location="${lib.dir}/xercesImpl.jar"/>
-				<pathelement location="${lib.dir}/xml-apis.jar"/>
-				<pathelement location="${lib.dir}/xml-apis-ext.jar"/>
-				<pathelement location="${lib.dir}/commons-httpclient-3.1.jar"/>
-				<pathelement location="${lib.dir}/commons-codec-1.3.jar"/>
-				<pathelement location="${lib.dir}/commons-logging-1.1.1.jar"/>
-				<pathelement location="${lib.dir}/junit-4.4.jar"/>				
-			</path>
-		</foreach>
-		
-		
 		<copy todir="${build.dir}">
-		    <fileset dir="${classes.dir}">
-		      <include name="**/*.class"/>
-		    </fileset>
 		    <fileset dir="${src.dir}">
 		    	<include name="**/*.properties"/>
 		    </fileset>
 		</copy>
 
-		<!-- now all antisamy classes and jar classes reside in ${build.dir} -->
+		<!-- now all antisamy classes reside in ${build.dir} -->
 		
         <jar destfile="${build.dir}/${jarfile}-bin.${version.major}.${version.minor}.jar" basedir="${build.dir}">
             <manifest>
@@ -122,8 +107,10 @@
         	
 	</target>
 	
+	<!--
 	<target name="_unzipToClassPool">
 		<unzip src="${fileName}" dest="${build.dir}"/>
 	</target>
+	-->
 	
 </project>
