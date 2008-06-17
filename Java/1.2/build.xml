@@ -1,0 +1,116 @@
+<project name="AntiSamy" basedir="." default="main">
+
+	<property name="app.name"		value="AntiSamy"/>
+    <property name="src.dir"    	value="JavaSource"/>
+    <property name="build.dir"		value="build"/>
+	<property name="lib.dir"		value="lib"/>
+	<property name="dist.dir"		value="dist"/>
+	<property name="docs.dir"		value="doc"/>
+	<property name="resources.dir"	value="resources"/>
+    <property name="jar.dir"		value="${build.dir}/jar"/>
+	<property name="version.major"	value="1"/>
+	<property name="version.minor"	value="2"/>
+
+	<property name="jarfile"		value="antisamy"/>
+	
+	<!-- <taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach"/> -->
+		
+	<path id="compile.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    	<delete dir="${dist.dir}"/>
+    	<delete dir="${docs.dir}/api"/>
+    </target>
+
+    <target name="compile">
+
+    	<mkdir dir="${build.dir}"/>
+    	
+        <javac
+    		srcdir="${src.dir}"
+        	destdir="${build.dir}"
+        	classpath="${lib.dir}/*.jar">
+        	<classpath refid="compile.classpath"/>
+        </javac>
+    </target>
+
+    <target name="main" depends="clean,compile,jar"/>
+
+	<target name="build-src-dist" depends="clean,compile">
+		<mkdir dir="${dist.dir}"/>
+		<zip destfile="${dist.dir}/${jarfile}-src.${version.major}.${version.minor}.zip" basedir="${src.dir}"/>
+		<zip destfile="${dist.dir}/${jarfile}-src.${version.major}.${version.minor}.zip" basedir="" includes="build.xml,${docs.dir}/*.TXT, ${docs.dir}/*.txt" update="true"/>
+	</target>
+	
+	<target name="build-bin-dist" depends="clean,compile,jar">
+
+		<mkdir dir="${dist.dir}"/>
+		
+		<copy file="${build.dir}/${jarfile}-bin.${version.major}.${version.minor}.jar" 
+					todir="${dist.dir}"/>
+
+	</target>
+	
+	<target name="build-dist" depends="clean,compile,jar, build-src-dist, build-bin-dist, javadoc">
+		
+		<copy file="${resources.dir}/antisamy-slashdot.xml" tofile="${dist.dir}/antisamy-slashdot-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-ebay.xml" tofile="${dist.dir}/antisamy-ebay-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-myspace.xml" tofile="${dist.dir}/antisamy-myspace-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy-anythinggoes.xml" tofile="${dist.dir}/antisamy-anythinggoes-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy.xml" tofile="${dist.dir}/antisamy-${version.major}.${version.minor}.xml"/>
+		<copy file="${resources.dir}/antisamy.xsd" tofile="${dist.dir}/antisamy-${version.major}.${version.minor}.xsd"/>
+		
+		<zip destfile="${dist.dir}/antisamy-required-libs-${version.major}.${version.minor}.zip" basedir="${lib.dir}" includes="*.jar"/>
+		
+	</target>
+	
+	<target name="javadoc">
+
+		<javadoc access="public" author="true" classpath="lib/nekohtml.jar;lib/xercesImpl.jar;lib/batik-util.jar;lib/dom4j.jar;lib/xml-apis.jar;lib/xml-apis-ext.jar;lib/batik-css.jar" destdir="doc/api" doctitle="OWASP AntiSamy" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="org.owasp.validator.html.model,org.owasp.validator.html.util,org.owasp.validator.css,org.owasp.validator.html.scan,org.owasp.validator.html" source="1.4" sourcepath="JavaSource/" splitindex="true" use="true" version="true">
+			<link href="http://xmlgraphics.apache.org/batik/javadoc/" />
+			<link href="http://xerces.apache.org/xerces-j/apiDocs/" />
+			<link href="http://www.w3.org/Style/CSS/SAC/doc/" />
+			<link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
+			<link href="http://people.apache.org/~andyc/neko/doc/html/javadoc/" />
+			<link href="http://java.sun.com/webservices/jaxp/dist/1.1/docs/api/" />
+		</javadoc>
+
+		<mkdir dir="${dist.dir}"/>
+		
+		<zip destfile="${dist.dir}/${jarfile}-javadocs.${version.major}.${version.minor}.zip" basedir="${docs.dir}/api"/>
+		
+    </target>
+
+	<target name="jar" depends="clean,compile">
+		
+		<copy todir="${build.dir}">
+		    <fileset dir="${src.dir}">
+		    	<include name="**/*.properties"/>
+		    </fileset>
+		</copy>
+
+		<!-- now all antisamy classes reside in ${build.dir} -->
+		
+        <jar destfile="${build.dir}/${jarfile}-bin.${version.major}.${version.minor}.jar" basedir="${build.dir}">
+            <manifest>
+            	<attribute name="Project" value="${app.name}"/>
+                <attribute name="Version" value="${version.major}.${version.minor}"/>
+            	<attribute name="Publisher" value="OWASP (http://www.owasp.org)"/>
+            	<attribute name="Main-Class" value="org.owasp.validator.html.AntiSamy"/>
+            </manifest>
+        </jar>
+        	
+	</target>
+	
+	<!--
+	<target name="_unzipToClassPool">
+		<unzip src="${fileName}" dest="${build.dir}"/>
+	</target>
+	-->
+	
+</project>
