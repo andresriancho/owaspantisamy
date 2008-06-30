@@ -1,0 +1,8 @@
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\bin\Debug\AntiSamy.pdb
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\obj\Debug\AntiSamy.pdb
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\bin\Debug\AntiSamy.exe
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\obj\Debug\AntiSamy.exe
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\bin\Debug\Interop.TidyCOM.dll
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\obj\Debug\Interop.TidyCOM.dll
+C:\Documents and Settings\Administrator\My Documents\Visual Studio 2008\Projects\Antisamy.net\AntiSamy\obj\Debug\AntiSamy.csproj.ResolveComReference.cache
