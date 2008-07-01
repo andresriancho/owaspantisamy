@@ -34,7 +34,7 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_TAG_DISALLOWED = "error.tag.removed";
 	public static final String ERROR_TAG_FILTERED = "error.tag.filtered";
 
-	public static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filter";
+	public static final String ERROR_ATTRIBUTE_INVALID_FILTERED = "error.attribute.invalid.filtered";
 	public static final String ERROR_ATTRIBUTE_INVALID_REMOVED = "error.attribute.invalid.removed";
 	public static final String ERROR_ATTRIBUTE_NOT_IN_POLICY = "error.attribute.notfound";
 	public static final String ERROR_ATTRIBUTE_INVALID = "error.attribute.invalid";

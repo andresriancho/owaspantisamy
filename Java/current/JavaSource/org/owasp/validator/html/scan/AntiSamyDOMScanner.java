@@ -489,7 +489,7 @@ public class AntiSamyDOMScanner {
 
 								promoteChildren(ele);
 
-								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
+								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_FILTERED, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
 
 							} else { 
 
