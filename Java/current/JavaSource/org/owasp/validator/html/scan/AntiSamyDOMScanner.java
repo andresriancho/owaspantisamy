@@ -149,34 +149,21 @@ public class AntiSamyDOMScanner {
 			 */
 
 			OutputFormat format = new OutputFormat();
+
 			format.setEncoding(outputEncoding);
-
-			StringWriter sw = new StringWriter();
-
-			/*
-			 * Using the HTMLSerializer is the only way to notify the parser to fire
-			 * events for recognizing HTML-entities. The other ways should, but do not
-			 * work.
-			 * 
-			 * We're using HTMLSerializer even though it's deprecated.
-			 *  
-			 * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for why we 
-			 * know it's still ok to use.
-			 * 
-			 */
-
+			format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
+			format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
+			format.setPreserveEmptyAttributes(true);
 
 			if ( "true".equals(policy.getDirective("formatOutput") ) ) {				
 				format.setLineWidth(80);
 				format.setIndenting(true);
 				format.setIndent(2);
 
-				format.setEncoding(outputEncoding);
-				format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
-				format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
-				format.setPreserveEmptyAttributes(true);
 			}
-			
+
+			StringWriter sw = new StringWriter();
+
 			if ( "true".equals(policy.getDirective("useXHTML"))) {
 
 				XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
@@ -184,8 +171,19 @@ public class AntiSamyDOMScanner {
 
 			} else {
 
-				HTMLSerializer serializer = new HTMLSerializer(sw,format);
+				/*
+				 * Using the HTMLSerializer is the only way to notify the parser to fire
+				 * events for recognizing HTML-entities. The other ways should, but do not
+				 * work.
+				 * 
+				 * We're using HTMLSerializer even though it's deprecated.
+				 *  
+				 * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for why we 
+				 * know it's still ok to use.
+				 * 
+				 */
 
+				HTMLSerializer serializer = new HTMLSerializer(sw,format);
 				serializer.serialize(dom);
 
 			}
