@@ -53,10 +53,8 @@ public class AntiSamyTest extends TestCase {
 		/*
 		 * Load the policy. You may have to change the path to find the Policy file.
 		 */
+		policy = Policy.getInstance("resources/antisamy.xml");
 
-		//policy = Policy.getInstance("resources/antisamy.xml");
-		policy = Policy.getInstance("/Users/joni/Scratch/antisamy/policy/antisamy-1.1.1.xml");
-                
 	}
 	
 	protected void tearDown() throws Exception { }
@@ -187,27 +185,38 @@ public class AntiSamyTest extends TestCase {
 	
 	public void testCssAttacks() {
 	    try {
-		assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
-		assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
-		assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
-		assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );		
+			assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
+			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
+			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
+			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );		
 	    } catch (Exception e) {
-		fail("Caught exception in testCssAttacks(): "+e.getMessage());		
+	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());		
 	    }
 	}
         
-        public void testIllegalXML() {
-            for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
-                try {
-                    String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
-                    as.scan(testStr, policy);
-                    fail("Should have thrown a ScanException");
-                } catch (ScanException ex) {
-                    // this is correct
-                } catch (Throwable ex) {
-                    fail("Caught unexpected exception in testIllegalXML(): " + ex.getMessage());
-                }
-            }
-        }
+    public void testIllegalXML() {
+		for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
+			try {
+				String testStr = new String(Base64
+						.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
+				as.scan(testStr, policy);
+				fail("Should have thrown a ScanException");
+			} catch (ScanException ex) {
+				// this is correct
+			} catch (Throwable ex) {
+				fail("Caught unexpected exception in testIllegalXML(): "
+						+ ex.getMessage());
+			}
+		}
+	}
+        
+    public void testRegression() {
+    	try {
+    		assertTrue ( as.scan("<style> a.test { background-image: url(/smiley-from_dude.gif); } </style>", policy).getCleanHTML().contains("/smiley-from_dude.gif") );
+    	} catch (Exception e) {
+    		fail("Caught exception in testRegression(): " + e.getMessage());
+    	}
+
+    }
         
 }
