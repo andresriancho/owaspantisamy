@@ -10,8 +10,7 @@ Slashdot allowed tags taken from "Reply" page:
 <b> <i> <p> <br> <a> <ol> <ul> <li> <dl> <dt> <dd> <em> <strong> <tt> <blockquote> <div> <ecode> <quote>
 -->
 
-<anti-samy-rules xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:noNamespaceSchemaLocation="antisamy.xsd">
+<anti-samy-rules xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="antisamy.xsd">
 	
 	<directives>
 		<directive name="omitXmlDeclaration" value="true"/>
@@ -54,7 +53,6 @@ Slashdot allowed tags taken from "Reply" page:
 
 	<common-attributes>
 		
-
 		<attribute name="lang" description="The 'lang' attribute tells the browser what language the element's attribute values and content are written in">
 		 	<regexp-list>
 		 		<regexp value="[a-zA-Z]{2,20}"/>

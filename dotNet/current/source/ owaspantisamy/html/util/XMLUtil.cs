@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+* Copyright (c) 2008, Jerry Hoff
 * 
 * All rights reserved.
 * 

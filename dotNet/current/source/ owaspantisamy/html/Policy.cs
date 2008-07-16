@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+* Copyright (c) 2008, Jerry Hoff
 * 
 * All rights reserved.
 * 
@@ -348,10 +348,12 @@ namespace org.owasp.validator.html
                         if (regExpName != null && regExpName.Length > 0)
                         {
                             attribute.addAllowedRegExp(getRegularExpression(regExpName).ToString());
+                            //attribute.addAllowedRegExp(getRegularExpression(regExpName));
                         }
                         else
                         {
                             attribute.addAllowedRegExp(REGEXP_BEGIN + value + REGEXP_END);
+                            //attribute.addAllowedRegExp(REGEXP_BEGIN + value + REGEXP_END);
                         }
                     }
                 }

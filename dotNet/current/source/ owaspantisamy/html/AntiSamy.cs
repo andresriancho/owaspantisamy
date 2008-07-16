@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+* Copyright (c) 2008, Jerry Hoff
 * 
 * All rights reserved.
 * 
@@ -31,129 +31,125 @@ using org.owasp.validator.html.scan;
 
 namespace org.owasp.validator.html
 {
-	
-	
-	/// <summary> 
-	/// This is the only class from which the outside world should be calling. The <code>scan()</code> method holds
-	/// the meat and potatoes of AntiSamy. The file contains a number of ways for <code>scan()</code>'ing depending
-	/// on the accessibility of the policy file.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
+    /// <summary> 
+    /// This is the only class from which the outside world should be calling. The <code>scan()</code> method holds
+    /// the meat and potatoes of AntiSamy. The file contains a number of ways for <code>scan()</code>'ing depending
+    /// on the accessibility of the policy file.
+    /// 
+    /// </summary>
+    /// <author>  Arshan Dabirsiaghi
+    /// 
+    /// </author>
 
     public class AntiSamy
-	{
+    {
         private string inputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
-		private string outputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
+        private string outputEncoding = AntiSamyDOMScanner.DEFAULT_ENCODING_ALGORITHM;
 
-		/// <summary> The meat and potatoes. The <code>scan()</code> family of methods are the only methods the outside world should
-		/// be calling to invoke AntiSamy.
-		/// 
-		/// </summary>
-		/// <param name="taintedHTML">Untrusted HTML which may contain malicious code.
-		/// </param>
-		/// <param name="inputEncoding">The encoding of the input.
-		/// </param>
-		/// <param name="outputEncoding">The encoding that the output should be in.
-		/// </param>
-		/// <returns> A <code>CleanResults</code> object which contains information about the scan (including the results).
-		/// </returns>
-		/// <throws>  <code>ScanException</code> When there is a problem encountered while scanning the HTML. </throws>
-		/// <throws>  <code>PolicyException</code> When there is a problem reading the policy file. </throws>
-		
-		public virtual CleanResults scan(string taintedHTML)
-		{			
-			Policy policy = null;
-			
-			/*
-			* Get or reload the policy document (antisamy.xml). We'll need to pass that to the
-			* scanner so it knows what to look for.
-			*/
-			policy = Policy.getInstance();
-			
-			/*
-			* We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-			* own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-			*/
-			AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-			
-			/*
-			* Go get 'em!
-			*/
-			
-			return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
-            return null;  //take this out later
-		}
-		
-		
-		/// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
-/*		public CleanResults scan(string taintedHTML, Policy policy)
-		{
-			return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
-		}
- */
-		
-		/// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
-		public virtual CleanResults scan(string taintedHTML, string filename) 
-		{
-			
-			Policy policy = null;
-			
-			/*
-			* Get or reload the policy document (antisamy.xml). We'll need to pass that to the
-			* scanner so it knows what to look for.
-			*/
-			policy = Policy.getInstance(filename);
-			
-			/*
-			* We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-			* own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-			*/
-//			AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-			
-			/*
-			* Go get 'em!
-			*/
-			
-//			return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
-            return null; //take this out later
-		}
-		
-		/// <summary> This method wraps <code>scan()</code> using the policy File object passed in.</summary>
-		public virtual CleanResults scan(string taintedHTML, FileInfo policyFile)
-		{
-			
-			Policy policy = null;
-			
-			/*
-			* Get or reload the policy document (antisamy.xml). We'll need to pass that to the
-			* scanner so it knows what to look for.
-			*/
-			policy = Policy.getInstance(policyFile);
-			
-			/*
-			* We use NekoHTML's HTML HTML-XHTML parser combined with our
-			* own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-			*/
-//			AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-			
-			/*
-			* Go get 'em!
-			*/
-			
-//			return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
-            return null; //take this out later
-		}
-		
-		/// <summary> Main method for testing AntiSamy.</summary>
-		/// <param name="args">Command line arguments. Only 1 argument is processed, and it should be a URL or filename to run through AntiSamy using the default policy location.
-		/// </param>
+        /// <summary> The meat and potatoes. The <code>scan()</code> family of methods are the only methods the outside world should
+        /// be calling to invoke AntiSamy.
+        /// 
+        /// </summary>
+        /// <param name="taintedHTML">Untrusted HTML which may contain malicious code.
+        /// </param>
+        /// <param name="inputEncoding">The encoding of the input.
+        /// </param>
+        /// <param name="outputEncoding">The encoding that the output should be in.
+        /// </param>
+        /// <returns> A <code>CleanResults</code> object which contains information about the scan (including the results).
+        /// </returns>
+        /// <throws>  <code>ScanException</code> When there is a problem encountered while scanning the HTML. </throws>
+        /// <throws>  <code>PolicyException</code> When there is a problem reading the policy file. </throws>
+
+        public virtual CleanResults scan(string taintedHTML)
+        {
+            Policy policy = null;
+
+            /*
+            * Get or reload the policy document (antisamy.xml). We'll need to pass that to the
+            * scanner so it knows what to look for.
+            */
+
+            policy = Policy.getInstance();
+
+            /*
+            * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
+            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
+            */
+            AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
+
+            /*
+            * Go get 'em!
+            */
+            return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
+        }
+
+
+        /// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
+        /*		public CleanResults scan(string taintedHTML, Policy policy)
+                {
+                    return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
+                }
+        */
+        /// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
+        public virtual CleanResults scan(string taintedHTML, string filename)
+        {
+            Policy policy = null;
+
+            /*
+            * Get or reload the policy document (antisamy.xml). We'll need to pass that to the
+            * scanner so it knows what to look for.
+            */
+
+            policy = Policy.getInstance(filename);
+
+            /*
+            * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
+            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
+            */
+            AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
+
+            /*
+            * Go get 'em!
+            */
+
+            return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
+            //            return null; //take this out later
+        }
+
+        /// <summary> This method wraps <code>scan()</code> using the policy File object passed in.</summary>
+        public virtual CleanResults scan(string taintedHTML, FileInfo policyFile)
+        {
+
+            Policy policy = null;
+
+            /*
+            * Get or reload the policy document (antisamy.xml). We'll need to pass that to the
+            * scanner so it knows what to look for.
+            */
+            policy = Policy.getInstance(policyFile);
+
+            /*
+            * We use NekoHTML's HTML HTML-XHTML parser combined with our
+            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
+            */
+            AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
+
+            /*
+            * Go get 'em!
+            */
+
+            return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
+            //            return null; //take this out later
+        }
+
+        /// <summary> Main method for testing AntiSamy.</summary>
+        /// <param name="args">Command line arguments. Only 1 argument is processed, and it should be a URL or filename to run through AntiSamy using the default policy location.
+        /// </param>
 
         [STAThread]
-		static void Main(string[] args)
-		{
+        static void Main(string[] args)
+        {
             string filename = "c:\\test.html";
             //string filename = "http://i8jesus.com:9080/AntiSamyDemoWebApp/antisamy-ebay-1.1.1.xml";
             /*
@@ -165,8 +161,8 @@ namespace org.owasp.validator.html
 				return ;
 			}
 			*/
-			try
-			{
+            try
+            {
 
                 string buff = "";
                 if (!File.Exists(filename))
@@ -203,32 +199,32 @@ namespace org.owasp.validator.html
                     }
                     finally
                     {
-                        if(fileStream != null) fileStream.Close();
-                        if(streamReader != null) streamReader.Close();
+                        if (fileStream != null) fileStream.Close();
+                        if (streamReader != null) streamReader.Close();
                     }
                 }
 
                 AntiSamy _as = new AntiSamy();
-				CleanResults test = _as.scan(buff);
+                CleanResults test = _as.scan(buff);
+                
+                Console.WriteLine("[1] Finished scan [" + test.getCleanHTML().Length + " bytes] in " + test.getScanTime() + " seconds");
+                Console.WriteLine("\n[2] Clean HTML fragment:\n" + test.getCleanHTML());
+                Console.WriteLine("[3] Error Messages (" + test.getNumberOfErrors() + "):");
 
-                //TODO: fix this
-//				System.Console.Out.WriteLine("[1] Finished scan [" + test.CleanHTML.Length + " bytes] in " + test.ScanTime + " seconds");
-//				System.Console.Out.WriteLine("\n[2] Clean HTML fragment:\n" + test.CleanHTML);
-//				System.Console.Out.WriteLine("[3] Error Messages (" + test.NumberOfErrors + "):");
-				
-/*				
-				for (int i = 0; i < test.ErrorMessages.Count; i++)
-				{
-					string s = (string) test.ErrorMessages[i];
-					Console.WriteLine(s);
-				}
-*/
-			}
-			catch (Exception e)
-			{
+                				
+                                for (int i = 0; i < test.getErrorMessages().Count; i++)
+                                {
+                                    string s = test.getErrorMessages()[i].ToString();
+                                    Console.WriteLine(s);
+                                }
+                
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine(e.StackTrace);
-			}
-		}
+            }
+            Console.ReadLine();
+        }
 
         public string InputEncoding
         {
@@ -240,5 +236,5 @@ namespace org.owasp.validator.html
             get { return outputEncoding; }
             set { outputEncoding = value; }
         }
-	}
+    }
 }

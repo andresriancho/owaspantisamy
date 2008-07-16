@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+* Copyright (c) 2008, Jerry Hoff
 * 
 * All rights reserved.
 * 
@@ -27,7 +27,6 @@ using System.Text.RegularExpressions;
 
 namespace org.owasp.validator.html.model
 {
-	
 	/// <summary> A model for HTML attributes and the "rules" they must follow (either literals or regular expressions) in
 	/// order to be considered valid.
 	/// 

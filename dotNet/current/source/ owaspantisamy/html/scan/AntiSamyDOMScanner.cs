@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+* Copyright (c) 2008, Jerry Hoff
 * 
 * All rights reserved.
 * 
@@ -29,487 +29,341 @@ using System.IO;
 using System.Xml;
 using System.Text;
 using System.Collections;
-using TidyCOM;
 using org.owasp.validator.html.model;
 using System.Web;
+using HtmlAgilityPack;
+using Attribute = org.owasp.validator.html.model.Attribute;
 
 
 namespace org.owasp.validator.html.scan
 {
-	/// <summary> This is where the magic lives. All the scanning/filtration logic resides here, but it should not be called
-	/// directly. All scanning should be done through a <code>AntiSamy.scan()</code> method.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
-	
-	public class AntiSamyDOMScanner
-	{
-		private void  InitBlock()
-		{
-			dom = document.CreateDocumentFragment();
-		}
-        
-		virtual public CleanResults Results
-		{
-			get { return results; }
-			set { this.results = value; }
-		}
-		
-		private Policy policy;
-		private CleanResults results = null;
-		private ArrayList errorMessages = new ArrayList();
-		private XmlDocument document = new XmlDocument();
-		private XmlDocumentFragment dom;
-		public const System.String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
+    /// <summary> This is where the magic lives. All the scanning/filtration logic resides here, but it should not be called
+    /// directly. All scanning should be done through a <code>AntiSamy.scan()</code> method.
+    /// </summary>
+    
+    public class AntiSamyDOMScanner
+    {
+        private void InitBlock()
+        {
+            dom = document.CreateDocumentFragment();
+        }
 
-		/// <summary> This is where the magic lives.</summary>
-		/// <param name="html">A String whose contents we want to scan.
-		/// </param>
-		/// <returns> A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code> object and its String representation, as well as some scan statistics.
-		/// </returns>
-		/// <throws>  ScanException </throws>
-		public virtual CleanResults scan(string html, string inputEncoding, string outputEncoding)
-		{	
-			if (html == null)
-			{
-				throw new ScanException("No input (null)");
-			}
-			
-			int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
-			
-			try
-			{
-				maxInputSize = int.Parse(policy.getDirective("maxInputSize"));
-			}
-			catch (System.FormatException nfe)
-			{
-			}
-			
-			if (maxInputSize < html.Length)
-			{
-				throw new ScanException("File size [" + html.Length + "] is larger than maximum [" + maxInputSize + "]");
-			}
-			
-			DateTime start =DateTime.Now;
-			/*
-			try
-			{
-				*/
-				html = stripNonValidXMLCharacters(html);
-                TidyObject o = new TidyObject();
-                o.Options.AddXmlDecl = false;
-                o.Options.OutputXhtml = true;
-                o.Options.UppercaseTags = false;
-                o.Options.UppercaseAttributes = false;
-                o.Options.Clean = false;
-                o.Options.EncloseBlockText = false;
-                o.Options.Doctype = "omit";
-                //o.Options.OutputXhtml = false;
-                o.Options.EncloseText = false;
-                o.Options.DropFontTags = true;
-                o.Options.Indent = TidyCOM.IndentScheme.AutoIndent;
-                o.Options.TabSize = 2;
-                string output = o.TidyMemToMem(html);
-                Console.Write(output);
+        virtual public CleanResults Results
+        {
+            get { return results; }
+            set { this.results = value; }
+        }
 
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(output);
+        private Policy policy;
+        private CleanResults results = null;
+        private ArrayList errorMessages = new ArrayList();
+        private XmlDocument document = new XmlDocument();
+        private XmlDocumentFragment dom;
+        public const System.String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
 
-                try
-                {
-                    doc.LoadXml(output);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+        /// <summary> This is where the magic lives.</summary>
+        /// <param name="html">A String whose contents we want to scan.
+        /// </param>
+        /// <returns> A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code> object and its String representation, as well as some scan statistics.
+        /// </returns>
+        /// <throws>  ScanException </throws>
+        public virtual CleanResults scan(string html, string inputEncoding, string outputEncoding)
+        {
+            if (html == null)
+            {
+                throw new ScanException("No input (null)");
+            }
 
-                foreach (XmlNode node in doc.ChildNodes)
-                {
-                    recursiveValidateTag(node);
-                }
+            int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
 
-                //parse this into a dom and then do a recusive tag search
-        
-                /*
-				DOMFragmentParser parser = new DOMFragmentParser();
-				parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
-				parser.setProperty("http://cyberneko.org/html/properties/default-encoding", inputEncoding);
-				
-				parser.parse(new XmlSourceSupport(new System.IO.StringReader(html)), dom);
+            try
+            {
+                maxInputSize = int.Parse(policy.getDirective("maxInputSize"));
+            }
+            catch (System.FormatException nfe)
+            {
+            }
 
-				for (int i = 0; i < dom.ChildNodes.Count; i++)
-				{	
-					System.Xml.XmlNode tmp = dom.ChildNodes.Item(i);
-					
-					recursiveValidateTag(tmp);
-					
-					if (tmp.ParentNode == null)
-					{
-						i--;
-					}
-				}
-				
-				OutputFormat format = new OutputFormat();
-				
-				format.setLineWidth(80);
-				format.setIndenting(true);
-				format.setIndent(2);
-				
-				format.setEncoding(outputEncoding);
-				format.setOmitXMLDeclaration("true".Equals(policy.getDirective("omitXmlDeclaration")));
-				format.setOmitDocumentType("true".Equals(policy.getDirective("omitDoctypeDeclaration")));
-				format.setPreserveEmptyAttributes(true);
-				
-				
-				System.IO.StringWriter sw = new System.IO.StringWriter();
-				
-				if ("true".Equals(policy.getDirective("useXHTML")))
-				{
-					XHTMLSerializer serializer = new XHTMLSerializer(sw, format);
-					serializer.serialize(dom);
-				}
-				else
-				{
-					HTMLSerializer serializer = new HTMLSerializer(sw, format);
-					serializer.serialize(dom);
-				}
-				
-				System.String finalCleanHTML = sw.GetStringBuilder().ToString();
-				
-				if ("true".Equals(policy.getDirective("omitXmlDeclaration")))
-				{
-					int bpos = finalCleanHTML.IndexOf("<?xml");
-					int epos = finalCleanHTML.IndexOf("?>");
-                 * 
-					if (bpos != - 1 && bpos != - 1 && bpos < epos)
-					{
-						finalCleanHTML = finalCleanHTML.Substring(epos + 1);
-					}
-				}
-				
-				System.DateTime tempAux = System.DateTime.Now;
-				results = new CleanResults(ref start, ref tempAux, finalCleanHTML, dom, errorMessages);
-				
-				return results;
-			}			
-			catch (XmlException e)
-			{
-				throw new ScanException(e);
-			}
-			catch (System.IO.IOException e)
-			{
-				throw new ScanException(e);
-			}
-             */
-            return null; //remove this - just for testing purposes
-		}
-		/*
-		
-		/// <summary> The workhorse of the scanner. Recursively scans document elements
-		/// according to the policy. This should be called implicitly through
-		/// the AntiSamy.scan() method.
-		/// </summary>
-		/// <param name="node">The node to validate.
-		/// </param>
-		*/
-		private void  recursiveValidateTag(XmlNode node)
-		{
-			Console.WriteLine(node.Name);
+            if (maxInputSize < html.Length)
+            {
+                throw new ScanException("File size [" + html.Length + "] is larger than maximum [" + maxInputSize + "]");
+            }
 
-			if (!(node is System.Xml.XmlElement))
-			{
-				return ;
-			}
-			
-			XmlElement ele = (XmlElement) node;
-			XmlNode parentNode = ele.ParentNode;
-			XmlNode tmp = null;
-			string tagName = ele.Name;
+            DateTime start = DateTime.Now;
+            //HtmlNode.ElementsFlags.Add("form", HtmlElementFlag.CanOverlap | HtmlElementFlag.Empty);
+
+            HtmlNode.ElementsFlags.Add("iframe", HtmlElementFlag.Empty);
+            HtmlNode.ElementsFlags.Remove("form");
+
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            Console.WriteLine(doc.DocumentNode.ParentNode);
+            //doc.OptionWriteEmptyNodes = false;
+            //doc.OptionWriteEmptyNodes = true;
+            //doc.OptionFixNestedTags = false;
+            doc.OptionAutoCloseOnEnd = true;
+            doc.OptionOutputAsXml = true;
 
             
+            foreach (HtmlNode node in doc.DocumentNode.ChildNodes)
+            {
+                recursiveValidateTag(node);
+            }
+
+            Random r = new Random(DateTime.Now.Millisecond);
+            string parentTag = r.Next().ToString();
+
+            string finalCleanHTML2 = doc.DocumentNode.OuterHtml;
+            Console.WriteLine(finalCleanHTML2);
+
+            if (doc.DocumentNode.ChildNodes.Count != 1)
+            {
+                HtmlDocument doc2 = new HtmlDocument();
+                doc2.DocumentNode.AppendChild(doc2.CreateElement(parentTag));
+                doc2.DocumentNode.ChildNodes[0].AppendChildren(doc.DocumentNode.ChildNodes);
+                doc = doc2;
+                //HtmlNode parentdoc.CreateElement(parentTag));
+                //doc.DocumentNode.ParentNode.AppendChildren(doc.DocumentNode.ChildNodes);
+                //doc.DocumentNode.RemoveAllChildren();
+                doc2.OptionOutputAsXml = true;
+                //remove the random tag and the xml declaration
+            }
+            
+
+            string finalCleanHTML = doc.DocumentNode.OuterHtml;
+
+            DateTime end = DateTime.Now;
+            results = new CleanResults(start, end, finalCleanHTML, dom, errorMessages);
+            
+            Console.WriteLine("Final Clean HTML");
+            Console.WriteLine(finalCleanHTML);
+
+            //take this out
+            Console.ReadLine();
+
+            return results;
+        }
+
+        int num = 0;
+
+        private void recursiveValidateTag(HtmlNode node)
+        {
+            
+            num++;
+            
+            HtmlNode parentNode = node.ParentNode;
+            HtmlNode tmp = null;
+            string tagName = node.Name;
+
+            //check this out
+            //might not be robust enough
+            if (tagName.ToLower().Equals("#text"))
+            {
+                //Console.WriteLine("#text: " + node.OuterHtml);
+                return;
+            }
+
             Tag tag = policy.getTagByName(tagName.ToLower());
-            
+
             if (tag == null || "filter".Equals(tag.Action))
             {
-				
-                System.Text.StringBuilder errBuff = new System.Text.StringBuilder();
+                StringBuilder errBuff = new StringBuilder();
 
-                //errBuff.Append("The <b>" + HttpServerUtility.HtmlEncode(tagName.ToLower()));
-                errBuff.Append("</b> tag has been filtered for security reasons. The contents of the tag will ");
+                errBuff.Append("tag has been filtered for security reasons. The contents of the tag will ");
                 errBuff.Append("remain in place.");
-				
+
                 errorMessages.Add(errBuff.ToString());
-				
+
                 for (int i = 0; i < node.ChildNodes.Count; i++)
                 {
-                    tmp = node.ChildNodes.Item(i);
-					
+                    tmp = node.ChildNodes[i];
                     recursiveValidateTag(tmp);
-					
+
                     if (tmp.ParentNode == null)
                     {
                         i--;
                     }
                 }
-				
-				
-                //promoteChildren(ele);
-				
-                return ;
+                promoteChildren(node);
+                return;
             }
-            /*
             else if ("validate".Equals(tag.Action))
             {
-				
-				
-                if ("style".Equals(tagName.ToLower()) && policy.getTagByName("style") != null)
+                //no stylesheet support yet.  We'll add this in next release.
+                HtmlAttribute attribute = null;
+                for (int currentAttributeIndex = 0; currentAttributeIndex < node.Attributes.Count; currentAttributeIndex++)
                 {
-                    CssScanner styleScanner = new CssScanner(policy);
-					
-                    try
-                    {
-						
-                        CleanResults cr = styleScanner.scanStyleSheet(node.FirstChild.Value);
-						
-                        errorMessages.AddRange(cr.ErrorMessages);
-						
-                        if (cr.CleanHTML == null || cr.CleanHTML.Equals(""))
-                        {
-							
-                            //This was preventing me from commenting out this whole block
-                            //so change it back to the comment chars
-                            //change the | to /
-                            //node.FirstChild.Value = "|* *|";
-                        }
-                        else
-                        {
-							
-                            node.FirstChild.Value = cr.CleanHTML;
-                        }
-                    }
-                    catch (System.Exception e)
-                    {
-						
-                        errorMessages.Add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.FirstChild.Value) + "</u> because it was malformed. This may affect the look of the page.");
-                        parentNode.RemoveChild(node);
-						
-                        return ;
-                    }
-                    catch (ScanException e)
-                    {
-						
-                        errorMessages.Add("The <b>style</b> tag with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.FirstChild.Value) + "</u> because it was malformed. This may affect the look of the page.");
-                        parentNode.RemoveChild(node);
-						
-                        return ;
-                    }
-                }
-				
-                XmlNode attribute = null;
-				
-                for (int currentAttributeIndex = 0; currentAttributeIndex < ((System.Xml.XmlAttributeCollection) ele.Attributes).Count; currentAttributeIndex++)
-                {
-					
-                    attribute = ((System.Xml.XmlAttributeCollection) ele.Attributes).Item(currentAttributeIndex);
-					
-                    System.String name = attribute.Name;
-                    System.String value_Renamed = attribute.Value;
-					
+                    attribute = node.Attributes[currentAttributeIndex];
+                    
+                    string name = attribute.Name;
+                    string value_Renamed = attribute.Value;
+
                     Attribute attr = tag.getAttributeByName(name);
-					
-					
+
                     if (attr == null)
                     {
                         attr = policy.getGlobalAttributeByName(name);
                     }
-					
+
                     bool isAttributeValid = false;
-					
+
                     if ("style".Equals(name.ToLower()) && attr != null)
                     {
-						
-                        // invoke the CSS parser on this element
-                        CssScanner styleScanner = new CssScanner(policy);
-						
-                        try
-                        {
-							
-                            CleanResults cr = styleScanner.scanInlineStyle(value_Renamed, tagName);
-							
-                            attribute.Value = cr.CleanHTML;
-							
-                            System.Collections.ArrayList cssScanErrorMessages = cr.ErrorMessages;
-                            errorMessages.AddRange(cssScanErrorMessages);
-                        }
-                        catch (System.Exception e)
-                        {
-							
-                            errorMessages.Add("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag had a <b>style</b> attribute with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.Value) + "</u> that could not be accepted for security reasons. This may affect the look of the page.");
-                            ele.RemoveAttribute(name);
-                            currentAttributeIndex--;
-                        }
-                        catch (ScanException e)
-                        {
-							
-                            errorMessages.Add("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag had a <b>style</b> attribute with a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(node.Value) + "</u> that could not be accepted for security reasons. This may affect the look of the page.");
-                            ele.RemoveAttribute(name);
-                            currentAttributeIndex--;
-                        }
+                        //TODO: styles not supported yet
                     }
                     else
                     {
-						
+
                         if (attr != null)
                         {
-							
+
                             System.Collections.IEnumerator allowedValues = attr.AllowedValues.GetEnumerator();
-							
+
                             while (allowedValues.MoveNext() && !isAttributeValid)
                             {
-								
-                                System.String allowedValue = (System.String) allowedValues.Current;
-								
+                                string allowedValue = (string)allowedValues.Current;
+
                                 if (allowedValue != null && allowedValue.ToLower().Equals(value_Renamed.ToLower()))
                                 {
                                     isAttributeValid = true;
                                 }
                             }
-							
-                            System.Collections.IEnumerator allowedRegexps = attr.AllowedRegExp.GetEnumerator();
-							
+
+                            IEnumerator allowedRegexps = attr.AllowedRegExp.GetEnumerator();
+
                             while (allowedRegexps.MoveNext() && !isAttributeValid)
                             {
-								
-                                Pattern pattern = (Pattern) allowedRegexps.Current;
-								
+                                Console.WriteLine("do regex stuff here");
+                                Console.WriteLine(allowedRegexps.Current.ToString());
+                                //Regex regex = new Regex(allowedRegexps.Current.ToString);
+                                //TODO: fix this
+                                //Pattern pattern = (Pattern) allowedRegexps.Current;
+                                /*
                                 if (pattern != null && pattern.matcher(value_Renamed.ToLower()).matches())
                                 {
                                     isAttributeValid = true;
                                 }
+                                */
                             }
-							
+
                             if (!isAttributeValid)
                             {
-								
-								
-                                System.String onInvalidAction = attr.OnInvalid;
-                                System.Text.StringBuilder errBuff = new System.Text.StringBuilder();
-								
-                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
-                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
+                                string onInvalidAction = attr.OnInvalid;
+                                StringBuilder errBuff = new StringBuilder();
+
+                                //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
+                                //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
                                 errBuff.Append("This value could not be accepted for security reasons. We have chosen to ");
-								
+
                                 if ("removeTag".Equals(onInvalidAction))
                                 {
-									
-                                    parentNode.RemoveChild(ele);
-									
+                                    //parentNode.RemoveChild(ele);	
+                                    parentNode.RemoveChild(node);
                                     errBuff.Append("remove the <b>" + tagName + "</b> tag and its contents in order to process this input. ");
                                 }
                                 else if ("filterTag".Equals(onInvalidAction))
                                 {
-									
                                     for (int i = 0; i < node.ChildNodes.Count; i++)
                                     {
-                                        tmp = node.ChildNodes.Item(i);
-										
+                                        //tmp = node.ChildNodes.Item(i);		
+                                        tmp = node.ChildNodes[i];
                                         recursiveValidateTag(tmp);
-										
                                         if (tmp.ParentNode == null)
                                         {
                                             i--;
                                         }
                                     }
-									
-                                    promoteChildren(ele);
-									
-                                    errBuff.Append("filter the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag and leave its contents in place so that we could process this input.");
+
+                                    promoteChildren(node);
+
+                                    //errBuff.Append("filter the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag and leave its contents in place so that we could process this input.");
+                                    errBuff.Append("filter the <b>" + tagName + "</b> tag and leave its contents in place so that we could process this input.");
                                 }
                                 else
                                 {
-									
-									
-                                    ele.RemoveAttribute(attr.Name);
-									
+                                    node.Attributes.Remove(attr.Name);
+                                    //ele.RemoveAttribute(attr.Name);
+
                                     currentAttributeIndex--;
-									
-                                    errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
+
+                                    //errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
+                                    errBuff.Append("remove the <b>" + name + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
                                 }
-								
+
                                 errorMessages.Add(errBuff.ToString());
-								
+
                                 if ("removeTag".Equals(onInvalidAction) || "filterTag".Equals(onInvalidAction))
                                 {
-                                    return ; // can't process any more if we remove/filter the tag	
+                                    return; // can't process any more if we remove/filter the tag	
                                 }
                             }
                         }
                         else
                         {
-							
-							
-                            System.Text.StringBuilder errBuff = new System.Text.StringBuilder();
-							
-                            errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name));
-                            errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
+                            StringBuilder errBuff = new StringBuilder();
+
+                            //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name));
+                            //errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
                             errBuff.Append("This removal should not affect the display of the HTML submitted.");
-							
+
                             errorMessages.Add(errBuff.ToString());
-							
-                            ele.RemoveAttribute(name);
-							
+
+                            //ele.RemoveAttribute(name);
+                            node.Attributes.Remove(name);
+
                             currentAttributeIndex--;
                         } // end if attribute is or is not found in policy file
                     } // end if style.equals("name") 
                 } // end while loop through attributes 
-				
-				
+
+
                 for (int i = 0; i < node.ChildNodes.Count; i++)
                 {
-				    tmp = node.ChildNodes.Item(i);
-					
+                    tmp = node.ChildNodes[i];
+
                     recursiveValidateTag(tmp);
-			
+
                     if (tmp.ParentNode == null)
                     {
                         i--;
                     }
                 }
+
             }
             else if ("truncate".Equals(tag.Action))
             {
-				
-				
-                System.Xml.XmlNamedNodeMap nnmap = (System.Xml.XmlAttributeCollection) ele.Attributes;
-				
+                Console.WriteLine("truncate");
+                //System.Xml.XmlNamedNodeMap nnmap = (System.Xml.XmlAttributeCollection) ele.Attributes;
+                HtmlAttributeCollection nnmap = node.Attributes;
+
                 while (nnmap.Count > 0)
                 {
-					
-                    System.Text.StringBuilder errBuff = new System.Text.StringBuilder();
-					
-                    errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap.Item(0).Name));
-                    errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
+
+                    StringBuilder errBuff = new System.Text.StringBuilder();
+
+                    //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap.Item(0).Name));
+                    //errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
                     errBuff.Append("This removal should not affect the display of the HTML submitted.");
-					
-                    ele.RemoveAttribute(nnmap.Item(0).Name);
-					
+
+                    //ele.RemoveAttribute(nnmap.Item(0).Name);
+                    node.Attributes.Remove(nnmap[0].Name);
+
                     errorMessages.Add(errBuff.ToString());
+
                 }
-				
-                System.Xml.XmlNodeList cList = ele.ChildNodes;
-				
+
+                HtmlNodeCollection cList = node.ChildNodes;
+
                 int i = 0;
                 int j = 0;
                 int length = cList.Count;
-				
+
                 while (i < length)
                 {
-					
-                    System.Xml.XmlNode nodeToRemove = cList.Item(j);
-					
+
+                    HtmlNode nodeToRemove = cList[j];
+                    /*
                     if (System.Convert.ToInt16(nodeToRemove.NodeType) != (short) System.Xml.XmlNodeType.Text && System.Convert.ToInt16(nodeToRemove.NodeType) != (short) System.Xml.XmlNodeType.Comment)
                     {
                         ele.RemoveChild(nodeToRemove);
@@ -518,103 +372,66 @@ namespace org.owasp.validator.html.scan
                     {
                         j++;
                     }		
+                    */
                     i++;
                 }
+
             }
             else
             {
-                errorMessages.Add("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons.");
-                parentNode.RemoveChild(ele);
+                Console.WriteLine("Deleting node: " + node.OuterHtml);
+                errorMessages.Add("The <b>" + tagName + "</b> tag has been removed for security reasons.");
+                parentNode.RemoveChild(node);
             }
-            */
-		}
-		
-		
-		
-		/// <summary> This method replaces all entity codes with a normalized version of all entity references contained in order to reduce our encoding/parsing
-		/// attack surface.
-		/// </summary>
-		/// <param name="txt">The string to be normalized.
-		/// </param>
-		/// <returns> The normalized version of the string.
-		/// </returns>
-		/*
-		[STAThread]
-		public static void  Main(System.String[] args)
-		{
-			
-			System.DateTime start = System.DateTime.Now;
-			
-			//System.out.println( new AntiSamyDOMScanner().replaceEntityCodes ("This is &nbsp;&nbsp;, so &iexcl; omfg sdf &infg;") );
-			
-			System.DateTime end = System.DateTime.Now;
-			
-			System.Console.Out.WriteLine((end.Ticks - start.Ticks) / 1000D);
-		}
-		*/
-		public AntiSamyDOMScanner(Policy policy)
-		{
-			InitBlock();
-			this.policy = policy;
-		}
-		
-		public AntiSamyDOMScanner()
-		{
-			InitBlock();
-			this.policy = Policy.getInstance();
-		}
+        }
 
-		/*
-		/// <summary> Used to promote the children of a parent to accomplish the "filterTag" action.</summary>
-		/// <param name="ele">The Element we want to filter.
-		/// </param>
-		private void  promoteChildren(System.Xml.XmlElement ele)
-		{
-			System.Xml.XmlNodeList nodeList = ele.ChildNodes;
-			System.Xml.XmlNode parent = ele.ParentNode;
-			
-			while (nodeList.Count > 0)
-			{
-				System.Xml.XmlNode node = ele.RemoveChild(nodeList.Item(0));
-				parent.InsertBefore(node, ele);
-			}
-			
-			parent.RemoveChild(ele);
-		}
-		*/
+        public AntiSamyDOMScanner(Policy policy)
+        {
+            InitBlock();
+            this.policy = policy;
+        }
 
-		/// <summary> 
-		/// This method was borrowed from Mark McLaren, to whom I owe much beer.
-		/// 
-		/// This method ensures that the output String has only
-		/// valid XML unicode characters as specified by the
-		/// XML 1.0 standard. For reference, please see
-		/// <a href="http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char">the
-		/// standard</a>. This method will return an empty
-		/// String if the input is null or empty.
-		/// 
-		/// </summary>
-		/// <param name="in">The String whose non-valid characters we want to remove.
-		/// </param>
-		/// <returns> The in String, stripped of non-valid characters.
-		/// </returns>
-		private string stripNonValidXMLCharacters(string in_Renamed)
-		{
-			
-			System.Text.StringBuilder out_Renamed = new System.Text.StringBuilder(); // Used to hold the output.
-			
-			char current; // Used to reference the current character.
-			
-			if (in_Renamed == null || ("".Equals(in_Renamed)))
-				return ""; // vacancy test.
-			for (int i = 0; i < in_Renamed.Length; i++)
-			{
-				current = in_Renamed[i]; // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
-				if ((current == 0x9) || (current == 0xA) || (current == 0xD) || ((current >= 0x20) && (current <= 0xD7FF)) || ((current >= 0xE000) && (current <= 0xFFFD)) || ((current >= 0x10000) && (current <= 0x10FFFF)))
-					out_Renamed.Append(current);
-			}
-			
-			return out_Renamed.ToString();
-		}
-	}
+        public AntiSamyDOMScanner()
+        {
+            InitBlock();
+            this.policy = Policy.getInstance();
+        }
+
+        private void promoteChildren(HtmlNode node)
+        {
+            
+            //XmlNodeList nodeList = ele.ChildNodes;
+            HtmlNodeCollection nodeList = node.ChildNodes;
+            //XmlNode parent = ele.ParentNode;
+            HtmlNode parent = node.ParentNode;
+
+            while (nodeList.Count > 0)
+            {
+                //System.Xml.XmlNode node = ele.RemoveChild(nodeList.Item(0));
+                HtmlNode removeNode = node.RemoveChild(nodeList[0]);
+                parent.InsertBefore(removeNode, node);
+            }
+
+            parent.RemoveChild(node);
+        }
+
+        private string stripNonValidXMLCharacters(string in_Renamed)
+        {
+
+            System.Text.StringBuilder out_Renamed = new System.Text.StringBuilder(); // Used to hold the output.
+
+            char current; // Used to reference the current character.
+
+            if (in_Renamed == null || ("".Equals(in_Renamed)))
+                return ""; // vacancy test.
+            for (int i = 0; i < in_Renamed.Length; i++)
+            {
+                current = in_Renamed[i]; // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
+                if ((current == 0x9) || (current == 0xA) || (current == 0xD) || ((current >= 0x20) && (current <= 0xD7FF)) || ((current >= 0xE000) && (current <= 0xFFFD)) || ((current >= 0x10000) && (current <= 0x10FFFF)))
+                    out_Renamed.Append(current);
+            }
+
+            return out_Renamed.ToString();
+        }
+    }
 }
