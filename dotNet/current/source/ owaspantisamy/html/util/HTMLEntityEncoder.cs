@@ -25,55 +25,55 @@ using System;
 using System.Text;
 
 namespace org.owasp.validator.html.util
-{	
-	public class HTMLEntityEncoder
-	{
-		
-		/// <summary> A helper method for HTML entity-encoding a String value.</summary>
-		/// <param name="value">A String containing HTML control characters.
-		/// </param>
-		/// <returns> An HTML-encoded String.
-		/// </returns>
-		public static String htmlEntityEncode(String _value)
-		{
-			
-			StringBuilder buff = new StringBuilder();
-			
-			if (_value == null)
-			{
-				return null;
-			}
-			
-			for (int i = 0; i < _value.Length; i++)
-			{	
-				char ch = _value[i];
-				
-				if (ch == '&')
-				{
-					buff.Append("&amp;");
-				}
-				else if (ch == '<')
-				{
-					buff.Append("&lt;");
-				}
-				else if (ch == '>')
-				{
-					buff.Append("&gt;");
-				}
-				else if (System.Char.IsWhiteSpace(ch))
-				{
-					buff.Append(ch);
-				}
-				else if (System.Char.IsLetterOrDigit(ch))
-				{
-					buff.Append(ch);
-				}
-				else if ((int) ch >= 20 && (int) ch <= 126)
-				{
-					buff.Append("&#" + (int) ch + ";");
-				}
-			}			
-			return buff.ToString();
-		}
-	}
+{
+    public class HTMLEntityEncoder
+    {
+
+        /// <summary> A helper method for HTML entity-encoding a String value.</summary>
+        /// <param name="value">A String containing HTML control characters.
+        /// </param>
+        /// <returns> An HTML-encoded String.
+        /// </returns>
+        public static String htmlEntityEncode(String _value)
+        {
+
+            StringBuilder buff = new StringBuilder();
+
+            if (_value == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < _value.Length; i++)
+            {
+                char ch = _value[i];
+
+                if (ch == '&')
+                {
+                    buff.Append("&amp;");
+                }
+                else if (ch == '<')
+                {
+                    buff.Append("&lt;");
+                }
+                else if (ch == '>')
+                {
+                    buff.Append("&gt;");
+                }
+                else if (System.Char.IsWhiteSpace(ch))
+                {
+                    buff.Append(ch);
+                }
+                else if (System.Char.IsLetterOrDigit(ch))
+                {
+                    buff.Append(ch);
+                }
+                else if ((int)ch >= 20 && (int)ch <= 126)
+                {
+                    buff.Append("&#" + (int)ch + ";");
+                }
+            }
+            return buff.ToString();
+        }
+    }
 }

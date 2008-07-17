@@ -17,7 +17,7 @@ Slashdot allowed tags taken from "Reply" page:
 		<directive name="omitDoctypeDeclaration" value="true"/>
 		<directive name="maxInputSize" value="5000"/>
 		<directive name="embedStyleSheets" value="false"/>
-	</directives>
+	</directives> 
 	
 	
 	<common-regexps>
@@ -28,11 +28,12 @@ Slashdot allowed tags taken from "Reply" page:
 		element. Any number of elements may be assigned the same class
 		name or names. Multiple class names must be separated by white 
 		space characters.
+    <regexp name="onsiteURL" value="^(([\w\\/\.\?=&amp;;#-~]+|#(\w)+))$"/>
 		-->
 		
-		<regexp name="htmlTitle" value="[a-zA-Z0-9\s-_',:\[\]!\./\\\(\)]*"/> <!-- force non-empty with a '+' at the end instead of '*' -->
-		<regexp name="onsiteURL" value="([\w\\/\.\?=&amp;;#-~]+|#(\w)+)"/>
-		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*"/>
+		<regexp name="htmlTitle" value="^([a-zA-Z0-9\s-_',:\[\]!\./\\\(\)]*)$"/> <!-- force non-empty with a '+' at the end instead of '*' -->
+    <regexp name="onsiteURL" value="^^((\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*)$"/>
+		<regexp name="offsiteURL" value="^((\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!]*(\s)*)$"/>
 	
 	</common-regexps>
 	
@@ -84,14 +85,13 @@ Slashdot allowed tags taken from "Reply" page:
 
 	</common-attributes>
 
-
 	<!--
 	This requires normal updates as browsers continue to diverge from the W3C and each other. As long as the browser wars continue
 	this is going to continue. I'm not sure war is the right word for what's going on. Doesn't somebody have to win a war after 
 	a while?
 	 -->
-	
-	<global-tag-attributes>
+  
+  <global-tag-attributes>
 		<attribute name="title"/>
 		<attribute name="lang"/>
 	</global-tag-attributes>
@@ -266,7 +266,6 @@ Slashdot allowed tags taken from "Reply" page:
 		<entity name="yacute" cdata="&amp;#253;"/> <!--latin small letter y with acute, U+00FD ISOlat1 -->
 		<entity name="thorn" cdata="&amp;#254;"/> <!--latin small letter thorn, U+00FE ISOlat1 -->
 		<entity name="yuml" cdata="&amp;#255;"/> <!--latin small letter y with diaeresis, U+00FF ISOlat1 -->
-		                                  
 		<entity name="fnof" cdata="&amp;#402;"/> <!--latin small f with hook = function = florin, U+0192 ISOtech -->
 		
 		<!-- Greek -->

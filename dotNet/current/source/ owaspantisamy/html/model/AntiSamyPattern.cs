@@ -21,23 +21,20 @@
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/*
 using System;
 using System.Text.RegularExpressions;
 
 namespace org.owasp.validator.html.model
 {
-	
-	/// <summary> 
-	/// An extension of the Pattern to give it a "lookup name" that we can use from a
-	/// centralized store.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
-	
+
+    /// <summary> 
+    /// An extension of the Pattern to give it a "lookup name" that we can use from a
+    /// centralized store.
+    /// </summary>
+    
     public class AntiSamyPattern
-	{
+    {
         private string name;
         private string pattern;
 
@@ -49,12 +46,12 @@ namespace org.owasp.validator.html.model
         public string Name
         {
             get { return name; }
-            set {name = value; }
+            set { name = value; }
         }
         public string Pattern
         {
             get { return pattern; }
             set { pattern = value; }
-        } 
-	}
-}
+        }
+    }
+}*/

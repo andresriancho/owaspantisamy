@@ -32,51 +32,51 @@ using System.Collections;
 
 namespace org.owasp.validator.html.model
 {
-	
-	/// <summary> A model for CSS properties and the "rules" they must follow (either literals
-	/// or regular expressions) in order to be considered valid.
-	/// 
-	/// </summary>
-	/// <author>  Jason Li
-	/// 
-	/// </author>
-	public class Property
-	{
+
+    /// <summary> A model for CSS properties and the "rules" they must follow (either literals
+    /// or regular expressions) in order to be considered valid.
+    /// 
+    /// </summary>
+    /// <author>  Jason Li
+    /// 
+    /// </author>
+    public class Property
+    {
         private string name;
-		private string onInvalid;		
-		private string description;
-		private ArrayList allowedValues = new ArrayList();
-		private ArrayList allowedRegExp = new ArrayList();
-		private ArrayList shorthandRefs = new ArrayList();
-		
-		public Property(string name)
-		{
-			this.name = name;
-		}
-		
-		/// <summary> Add the specified value to the allowed list of valid values.</summary>
-		/// <param name="safeValue">The new valid value to add to the list.
-		/// </param>
-		public void addAllowedValue(string safeValue)
-		{
-			this.allowedValues.Add(safeValue);
-		}
-		
-		/// <summary> Add the specified value to the allowed list of valid regular expressions.</summary>
-		/// <param name="safeRegExpValue">The new valid regular expression to add to the list.
-		/// </param>
-		public virtual void addAllowedRegExp(string safeRegExpValue)
-		{
-			this.allowedRegExp.Add(safeRegExpValue);
-		}
-		
-		/// <summary> Add the specified value to the allowed list of valid shorthand values.</summary>
-		/// <param name="shorthandValue">The new valid shorthand value to add to the list.
-		/// </param>
-		public void addShorthandRef(string shorthandValue)
-		{
-			this.shorthandRefs.Add(shorthandValue);
-		}
+        private string onInvalid;
+        private string description;
+        private ArrayList allowedValues = new ArrayList();
+        private ArrayList allowedRegExp = new ArrayList();
+        private ArrayList shorthandRefs = new ArrayList();
+
+        public Property(string name)
+        {
+            this.name = name;
+        }
+
+        /// <summary> Add the specified value to the allowed list of valid values.</summary>
+        /// <param name="safeValue">The new valid value to add to the list.
+        /// </param>
+        public void addAllowedValue(string safeValue)
+        {
+            this.allowedValues.Add(safeValue);
+        }
+
+        /// <summary> Add the specified value to the allowed list of valid regular expressions.</summary>
+        /// <param name="safeRegExpValue">The new valid regular expression to add to the list.
+        /// </param>
+        public virtual void addAllowedRegExp(string safeRegExpValue)
+        {
+            this.allowedRegExp.Add(safeRegExpValue);
+        }
+
+        /// <summary> Add the specified value to the allowed list of valid shorthand values.</summary>
+        /// <param name="shorthandValue">The new valid shorthand value to add to the list.
+        /// </param>
+        public void addShorthandRef(string shorthandValue)
+        {
+            this.shorthandRefs.Add(shorthandValue);
+        }
         public ArrayList AllowedRegExp
         {
             get { return allowedRegExp; }
@@ -107,5 +107,5 @@ namespace org.owasp.validator.html.model
             get { return description; }
             set { description = value; }
         }
-	}
+    }
 }

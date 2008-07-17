@@ -35,11 +35,7 @@ namespace org.owasp.validator.html
     /// This is the only class from which the outside world should be calling. The <code>scan()</code> method holds
     /// the meat and potatoes of AntiSamy. The file contains a number of ways for <code>scan()</code>'ing depending
     /// on the accessibility of the policy file.
-    /// 
     /// </summary>
-    /// <author>  Arshan Dabirsiaghi
-    /// 
-    /// </author>
 
     public class AntiSamy
     {
@@ -114,7 +110,6 @@ namespace org.owasp.validator.html
             */
 
             return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
-            //            return null; //take this out later
         }
 
         /// <summary> This method wraps <code>scan()</code> using the policy File object passed in.</summary>
@@ -150,17 +145,20 @@ namespace org.owasp.validator.html
         [STAThread]
         static void Main(string[] args)
         {
-            string filename = "c:\\test.html";
+            string filename;
+            filename = "c:\\test.html";
+
             //string filename = "http://i8jesus.com:9080/AntiSamyDemoWebApp/antisamy-ebay-1.1.1.xml";
-            /*
-			args[0] = "c:\\antisamy-slashdot.xml";
-			if (args.Length == 0)
-			{
-				System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
-                System.Console.ReadLine();
-				return ;
-			}
-			*/
+            //filename = args[0];
+
+
+            if (args.Length == 0)
+            {
+                //	System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
+                //  System.Console.ReadLine();
+                //	return ;
+            }
+
             try
             {
 
@@ -194,7 +192,7 @@ namespace org.owasp.validator.html
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Please specify a URL or file name to filter - thanks!");
+                        Console.WriteLine("Please specify a valid file name to filter - thanks!");
                         Console.WriteLine(ex.StackTrace);
                     }
                     finally
@@ -206,18 +204,18 @@ namespace org.owasp.validator.html
 
                 AntiSamy _as = new AntiSamy();
                 CleanResults test = _as.scan(buff);
-                
+
                 Console.WriteLine("[1] Finished scan [" + test.getCleanHTML().Length + " bytes] in " + test.getScanTime() + " seconds");
                 Console.WriteLine("\n[2] Clean HTML fragment:\n" + test.getCleanHTML());
                 Console.WriteLine("[3] Error Messages (" + test.getNumberOfErrors() + "):");
 
-                				
-                                for (int i = 0; i < test.getErrorMessages().Count; i++)
-                                {
-                                    string s = test.getErrorMessages()[i].ToString();
-                                    Console.WriteLine(s);
-                                }
-                
+
+                for (int i = 0; i < test.getErrorMessages().Count; i++)
+                {
+                    string s = test.getErrorMessages()[i].ToString();
+                    Console.WriteLine(s);
+                }
+
             }
             catch (Exception e)
             {

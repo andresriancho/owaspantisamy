@@ -24,30 +24,28 @@
 using System;
 namespace org.owasp.validator.html
 {
-	
-	/// <summary> 
-	/// This exception gets thrown when there is an unexpected error parsing
-	/// the tainted HTML. The code is sturdy, but the unlikely <code>IOException</code> or
-	/// SAX exceptions are always theoretically possible.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
-	
-	[Serializable]
-	public class ScanException:Exception
-	{
-		
-		/// <summary> </summary>
-		private const long serialVersionUID = 1L;
-		
-		public ScanException(Exception e):base(e.Message)
-		{
-		}
-		
-		public ScanException(String s):base(s)
-		{
-		}
-	}
+
+    /// <summary> 
+    /// This exception gets thrown when there is an unexpected error parsing
+    /// the tainted HTML. The code is sturdy, but the unlikely <code>IOException</code> or
+    /// SAX exceptions are always theoretically possible.
+    /// </summary>
+
+    [Serializable]
+    public class ScanException : Exception
+    {
+
+        /// <summary> </summary>
+        private const long serialVersionUID = 1L;
+
+        public ScanException(Exception e)
+            : base(e.Message)
+        {
+        }
+
+        public ScanException(String s)
+            : base(s)
+        {
+        }
+    }
 }

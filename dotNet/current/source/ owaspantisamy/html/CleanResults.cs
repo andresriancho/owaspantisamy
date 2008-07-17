@@ -27,17 +27,13 @@ using System.Collections;
 
 namespace org.owasp.validator.html
 {
-	
-	/// <summary> This class contains the results of a scan.
-	/// 
-	/// The list of error messages (<code>errorMessages</code>) will let the user know
-	/// what, if any HTML errors existed, and what, if any, security or
-	/// validation-related errors existed, and what was done about them.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
+
+    /// <summary> This class contains the results of a scan.
+    /// 
+    /// The list of error messages (<code>errorMessages</code>) will let the user know
+    /// what, if any HTML errors existed, and what, if any, security or
+    /// validation-related errors existed, and what was done about them.
+    /// </summary>
 
     public class CleanResults
     {

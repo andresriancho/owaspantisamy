@@ -22,25 +22,24 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 using System;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Xml;
 using System.Text;
-using System.Collections;
-using org.owasp.validator.html.model;
 using System.Web;
+using System.Collections;
 using HtmlAgilityPack;
+using org.owasp.validator.html.model;
 using Attribute = org.owasp.validator.html.model.Attribute;
-
+using org.owasp.validator.html.util;
 
 namespace org.owasp.validator.html.scan
 {
     /// <summary> This is where the magic lives. All the scanning/filtration logic resides here, but it should not be called
     /// directly. All scanning should be done through a <code>AntiSamy.scan()</code> method.
     /// </summary>
-    
+
     public class AntiSamyDOMScanner
     {
         private void InitBlock()
@@ -62,9 +61,9 @@ namespace org.owasp.validator.html.scan
         public const System.String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
 
         /// <summary> This is where the magic lives.</summary>
-        /// <param name="html">A String whose contents we want to scan.
-        /// </param>
-        /// <returns> A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code> object and its String representation, as well as some scan statistics.
+        /// <param name="html">A String whose contents we want to scan.</param>
+        /// <returns> A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code>
+        ///  object and its String representation, as well as some scan statistics.
         /// </returns>
         /// <throws>  ScanException </throws>
         public virtual CleanResults scan(string html, string inputEncoding, string outputEncoding)
@@ -80,8 +79,9 @@ namespace org.owasp.validator.html.scan
             {
                 maxInputSize = int.Parse(policy.getDirective("maxInputSize"));
             }
-            catch (System.FormatException nfe)
+            catch (FormatException fe)
             {
+                Console.WriteLine("Format Exception: " + fe.ToString());
             }
 
             if (maxInputSize < html.Length)
@@ -90,58 +90,22 @@ namespace org.owasp.validator.html.scan
             }
 
             DateTime start = DateTime.Now;
-            //HtmlNode.ElementsFlags.Add("form", HtmlElementFlag.CanOverlap | HtmlElementFlag.Empty);
-
             HtmlNode.ElementsFlags.Add("iframe", HtmlElementFlag.Empty);
             HtmlNode.ElementsFlags.Remove("form");
 
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(html);
-
-            Console.WriteLine(doc.DocumentNode.ParentNode);
-            //doc.OptionWriteEmptyNodes = false;
-            //doc.OptionWriteEmptyNodes = true;
-            //doc.OptionFixNestedTags = false;
             doc.OptionAutoCloseOnEnd = true;
             doc.OptionOutputAsXml = true;
 
-            
             foreach (HtmlNode node in doc.DocumentNode.ChildNodes)
             {
                 recursiveValidateTag(node);
             }
 
-            Random r = new Random(DateTime.Now.Millisecond);
-            string parentTag = r.Next().ToString();
-
-            string finalCleanHTML2 = doc.DocumentNode.OuterHtml;
-            Console.WriteLine(finalCleanHTML2);
-
-            if (doc.DocumentNode.ChildNodes.Count != 1)
-            {
-                HtmlDocument doc2 = new HtmlDocument();
-                doc2.DocumentNode.AppendChild(doc2.CreateElement(parentTag));
-                doc2.DocumentNode.ChildNodes[0].AppendChildren(doc.DocumentNode.ChildNodes);
-                doc = doc2;
-                //HtmlNode parentdoc.CreateElement(parentTag));
-                //doc.DocumentNode.ParentNode.AppendChildren(doc.DocumentNode.ChildNodes);
-                //doc.DocumentNode.RemoveAllChildren();
-                doc2.OptionOutputAsXml = true;
-                //remove the random tag and the xml declaration
-            }
-            
-
-            string finalCleanHTML = doc.DocumentNode.OuterHtml;
-
+            string finalCleanHTML = doc.DocumentNode.InnerHtml;
             DateTime end = DateTime.Now;
             results = new CleanResults(start, end, finalCleanHTML, dom, errorMessages);
-            
-            Console.WriteLine("Final Clean HTML");
-            Console.WriteLine(finalCleanHTML);
-
-            //take this out
-            Console.ReadLine();
-
             return results;
         }
 
@@ -149,9 +113,9 @@ namespace org.owasp.validator.html.scan
 
         private void recursiveValidateTag(HtmlNode node)
         {
-            
+
             num++;
-            
+
             HtmlNode parentNode = node.ParentNode;
             HtmlNode tmp = null;
             string tagName = node.Name;
@@ -160,7 +124,6 @@ namespace org.owasp.validator.html.scan
             //might not be robust enough
             if (tagName.ToLower().Equals("#text"))
             {
-                //Console.WriteLine("#text: " + node.OuterHtml);
                 return;
             }
 
@@ -195,7 +158,7 @@ namespace org.owasp.validator.html.scan
                 for (int currentAttributeIndex = 0; currentAttributeIndex < node.Attributes.Count; currentAttributeIndex++)
                 {
                     attribute = node.Attributes[currentAttributeIndex];
-                    
+
                     string name = attribute.Name;
                     string value_Renamed = attribute.Value;
 
@@ -214,15 +177,12 @@ namespace org.owasp.validator.html.scan
                     }
                     else
                     {
-
                         if (attr != null)
                         {
-
-                            System.Collections.IEnumerator allowedValues = attr.AllowedValues.GetEnumerator();
-
+                            IEnumerator allowedValues = attr.AllowedValues.GetEnumerator();
                             while (allowedValues.MoveNext() && !isAttributeValid)
                             {
-                                string allowedValue = (string)allowedValues.Current;
+                                string allowedValue = allowedValues.Current.ToString();
 
                                 if (allowedValue != null && allowedValue.ToLower().Equals(value_Renamed.ToLower()))
                                 {
@@ -231,20 +191,17 @@ namespace org.owasp.validator.html.scan
                             }
 
                             IEnumerator allowedRegexps = attr.AllowedRegExp.GetEnumerator();
-
+                            
                             while (allowedRegexps.MoveNext() && !isAttributeValid)
                             {
-                                Console.WriteLine("do regex stuff here");
-                                Console.WriteLine(allowedRegexps.Current.ToString());
-                                //Regex regex = new Regex(allowedRegexps.Current.ToString);
-                                //TODO: fix this
-                                //Pattern pattern = (Pattern) allowedRegexps.Current;
-                                /*
-                                if (pattern != null && pattern.matcher(value_Renamed.ToLower()).matches())
+                                string pattern = allowedRegexps.Current.ToString();
+                                //Console.WriteLine(attr.AllowedRegExp[i].ToString());
+
+                                Match m = Regex.Match(value_Renamed, pattern);
+                                if (m.Success)
                                 {
                                     isAttributeValid = true;
                                 }
-                                */
                             }
 
                             if (!isAttributeValid)
@@ -252,21 +209,19 @@ namespace org.owasp.validator.html.scan
                                 string onInvalidAction = attr.OnInvalid;
                                 StringBuilder errBuff = new StringBuilder();
 
-                                //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
-                                //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
+                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
+                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
                                 errBuff.Append("This value could not be accepted for security reasons. We have chosen to ");
 
                                 if ("removeTag".Equals(onInvalidAction))
                                 {
-                                    //parentNode.RemoveChild(ele);	
                                     parentNode.RemoveChild(node);
-                                    errBuff.Append("remove the <b>" + tagName + "</b> tag and its contents in order to process this input. ");
+                                    errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag and its contents in order to process this input. ");
                                 }
                                 else if ("filterTag".Equals(onInvalidAction))
                                 {
                                     for (int i = 0; i < node.ChildNodes.Count; i++)
                                     {
-                                        //tmp = node.ChildNodes.Item(i);		
                                         tmp = node.ChildNodes[i];
                                         recursiveValidateTag(tmp);
                                         if (tmp.ParentNode == null)
@@ -277,18 +232,14 @@ namespace org.owasp.validator.html.scan
 
                                     promoteChildren(node);
 
-                                    //errBuff.Append("filter the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag and leave its contents in place so that we could process this input.");
-                                    errBuff.Append("filter the <b>" + tagName + "</b> tag and leave its contents in place so that we could process this input.");
+                                    errBuff.Append("filter the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag and leave its contents in place so that we could process this input.");
                                 }
                                 else
                                 {
                                     node.Attributes.Remove(attr.Name);
-                                    //ele.RemoveAttribute(attr.Name);
-
                                     currentAttributeIndex--;
-
-                                    //errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
-                                    errBuff.Append("remove the <b>" + name + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
+                                    errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
+                                    
                                 }
 
                                 errorMessages.Add(errBuff.ToString());
@@ -303,16 +254,14 @@ namespace org.owasp.validator.html.scan
                         {
                             StringBuilder errBuff = new StringBuilder();
 
-                            //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name));
-                            //errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
+                            errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name));
+                            errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
                             errBuff.Append("This removal should not affect the display of the HTML submitted.");
 
                             errorMessages.Add(errBuff.ToString());
-
-                            //ele.RemoveAttribute(name);
                             node.Attributes.Remove(name);
-
                             currentAttributeIndex--;
+
                         } // end if attribute is or is not found in policy file
                     } // end if style.equals("name") 
                 } // end while loop through attributes 
@@ -321,9 +270,7 @@ namespace org.owasp.validator.html.scan
                 for (int i = 0; i < node.ChildNodes.Count; i++)
                 {
                     tmp = node.ChildNodes[i];
-
                     recursiveValidateTag(tmp);
-
                     if (tmp.ParentNode == null)
                     {
                         i--;
@@ -334,23 +281,18 @@ namespace org.owasp.validator.html.scan
             else if ("truncate".Equals(tag.Action))
             {
                 Console.WriteLine("truncate");
-                //System.Xml.XmlNamedNodeMap nnmap = (System.Xml.XmlAttributeCollection) ele.Attributes;
                 HtmlAttributeCollection nnmap = node.Attributes;
 
                 while (nnmap.Count > 0)
                 {
 
                     StringBuilder errBuff = new System.Text.StringBuilder();
-
-                    //errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap.Item(0).Name));
-                    //errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
+                    
+                    errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap[0].Name));
+                    errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
                     errBuff.Append("This removal should not affect the display of the HTML submitted.");
-
-                    //ele.RemoveAttribute(nnmap.Item(0).Name);
                     node.Attributes.Remove(nnmap[0].Name);
-
                     errorMessages.Add(errBuff.ToString());
-
                 }
 
                 HtmlNodeCollection cList = node.ChildNodes;
@@ -363,24 +305,21 @@ namespace org.owasp.validator.html.scan
                 {
 
                     HtmlNode nodeToRemove = cList[j];
-                    /*
-                    if (System.Convert.ToInt16(nodeToRemove.NodeType) != (short) System.Xml.XmlNodeType.Text && System.Convert.ToInt16(nodeToRemove.NodeType) != (short) System.Xml.XmlNodeType.Comment)
+                    if (nodeToRemove.NodeType != HtmlNodeType.Text && nodeToRemove.NodeType != HtmlNodeType.Comment)
                     {
-                        ele.RemoveChild(nodeToRemove);
+                        node.RemoveChild(nodeToRemove);
                     }
                     else
                     {
                         j++;
-                    }		
-                    */
+                    }
                     i++;
                 }
 
             }
             else
             {
-                Console.WriteLine("Deleting node: " + node.OuterHtml);
-                errorMessages.Add("The <b>" + tagName + "</b> tag has been removed for security reasons.");
+                errorMessages.Add("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons.");
                 parentNode.RemoveChild(node);
             }
         }
@@ -399,26 +338,23 @@ namespace org.owasp.validator.html.scan
 
         private void promoteChildren(HtmlNode node)
         {
-            
-            //XmlNodeList nodeList = ele.ChildNodes;
+
             HtmlNodeCollection nodeList = node.ChildNodes;
-            //XmlNode parent = ele.ParentNode;
             HtmlNode parent = node.ParentNode;
 
             while (nodeList.Count > 0)
             {
-                //System.Xml.XmlNode node = ele.RemoveChild(nodeList.Item(0));
                 HtmlNode removeNode = node.RemoveChild(nodeList[0]);
                 parent.InsertBefore(removeNode, node);
             }
 
             parent.RemoveChild(node);
         }
-
+        /*
         private string stripNonValidXMLCharacters(string in_Renamed)
         {
 
-            System.Text.StringBuilder out_Renamed = new System.Text.StringBuilder(); // Used to hold the output.
+            StringBuilder out_Renamed = new StringBuilder(); // Used to hold the output.
 
             char current; // Used to reference the current character.
 
@@ -433,5 +369,6 @@ namespace org.owasp.validator.html.scan
 
             return out_Renamed.ToString();
         }
+        */
     }
 }

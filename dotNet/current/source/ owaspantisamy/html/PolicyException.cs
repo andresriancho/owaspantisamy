@@ -24,29 +24,25 @@
 using System;
 namespace org.owasp.validator.html
 {
-	
-	/// <summary> This exception gets thrown when there is a problem validating or parsing
-	/// the policy file. Any validation errors not caught by the XML validation
-	/// will be thrown with this exception.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
-	
-	[Serializable]
-	public class PolicyException:Exception
-	{
-		
-		/// <summary> </summary>
-		private const long serialVersionUID = 1L;
-		
-		public PolicyException(System.Exception e):base(e.Message)
-		{
-		}
-		
-		public PolicyException(String _value):base(_value)
-		{
-		}
-	}
+
+    /// <summary> This exception gets thrown when there is a problem validating or parsing
+    /// the policy file. Any validation errors not caught by the XML validation
+    /// will be thrown with this exception.
+    /// </summary>
+
+    [Serializable]
+    public class PolicyException : Exception
+    {
+        private const long serialVersionUID = 1L;
+
+        public PolicyException(System.Exception e)
+            : base(e.Message)
+        {
+        }
+
+        public PolicyException(String _value)
+            : base(_value)
+        {
+        }
+    }
 }

@@ -27,86 +27,77 @@ using System.Text.RegularExpressions;
 
 namespace org.owasp.validator.html.model
 {
-	/// <summary> A model for HTML attributes and the "rules" they must follow (either literals or regular expressions) in
-	/// order to be considered valid.
-	/// 
-	/// </summary>
-	/// <author>  Arshan Dabirsiaghi
-	/// 
-	/// </author>
-	
-	public class Attribute : ICloneable
-	{
+    /// <summary> A model for HTML attributes and the "rules" they must follow (either literals or regular expressions) in
+    /// order to be considered valid.
+    /// </summary>
+
+    public class Attribute : ICloneable
+    {
         private string name;
         private string description;
         private string onInvalid;
         private IList allowedValues = new ArrayList();
         private IList allowedRegExp = new ArrayList();
-		
-		public IList AllowedRegExp
-		{
-			get { return allowedRegExp;}	
-			set { allowedRegExp = value;}
-		}
 
-		public IList AllowedValues
-		{
-			get{ return allowedValues; }
-			set { this.allowedValues = value; }
-		}
-        
+        public IList AllowedRegExp
+        {
+            get { return allowedRegExp; }
+            set { allowedRegExp = value; }
+        }
+
+        public IList AllowedValues
+        {
+            get { return allowedValues; }
+            set { this.allowedValues = value; }
+        }
+
         public string Name
-		{
-			get{ return name; }
-			set{ this.name = value; }
-		}
+        {
+            get { return name; }
+            set { this.name = value; }
+        }
         public string OnInvalid
-		{
-			get{ return onInvalid; }
-			
-			set{ this.onInvalid = value; }
-			
-		}
+        {
+            get { return onInvalid; }
+            set { this.onInvalid = value; }
+        }
         public string Description
-		{
-			get{ return description; }
-			set{ this.description = value; }
-		}
-		public Attribute(string name)
-		{
-			this.name = name;
-		}
-		/// <summary> </summary>
-		/// <param name="safeValue">A legal literal value that an attribute can have, according to the Policy
-		/// </param>
-		public virtual void  addAllowedValue(string safeValue)
-		{
-			this.allowedValues.Add(safeValue);
-		}
-		
-		/// <summary> </summary>
-		/// <param name="safeRegExpValue">A legal regular expression value that an attribute could have, according to the Policy
-		/// </param>
-		public virtual void  addAllowedRegExp(string safeRegExpValue)
-		{
-			this.allowedRegExp.Add(safeRegExpValue);
-		}
-		
-		/// <summary> We need to implement <code>clone()</code> to make the Policy file work with common attributes and the ability
-		/// to use a common-attribute with an alternative <code>onInvalid</code> action.
-		/// </summary>
-        
-		public object Clone()
-		{
-			
-			Attribute toReturn = new Attribute(name);
-			
-			toReturn.Description = description;
-			toReturn.OnInvalid = onInvalid;
-			toReturn.AllowedValues = allowedValues;
-			toReturn.AllowedRegExp = allowedRegExp;
-			
-			return toReturn;
-		}
-	}
+        {
+            get { return description; }
+            set { this.description = value; }
+        }
+        public Attribute(string name)
+        {
+            this.name = name;
+        }
+        /// <summary> </summary>
+        /// <param name="safeValue">A legal literal value that an attribute can have, according to the Policy
+        /// </param>
+        public virtual void addAllowedValue(string safeValue)
+        {
+            this.allowedValues.Add(safeValue);
+        }
+
+        /// <summary> </summary>
+        /// <param name="safeRegExpValue">A legal regular expression value that an attribute could have, according to the Policy
+        /// </param>
+        public virtual void addAllowedRegExp(string safeRegExpValue)
+        {
+            this.allowedRegExp.Add(safeRegExpValue);
+        }
+
+        /// <summary> We need to implement <code>clone()</code> to make the Policy file work with common attributes and the ability
+        /// to use a common-attribute with an alternative <code>onInvalid</code> action.
+        /// </summary>
+
+        public object Clone()
+        {
+            Attribute toReturn = new Attribute(name);
+            toReturn.Description = description;
+            toReturn.OnInvalid = onInvalid;
+            toReturn.AllowedValues = allowedValues;
+            toReturn.AllowedRegExp = allowedRegExp;
+            return toReturn;
+        }
+    }
 }
