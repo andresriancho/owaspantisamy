@@ -68,10 +68,6 @@ namespace org.owasp.validator.html
 
             policy = Policy.getInstance();
 
-            /*
-            * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-            */
             AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
 
             /*
@@ -99,10 +95,6 @@ namespace org.owasp.validator.html
 
             policy = Policy.getInstance(filename);
 
-            /*
-            * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-            */
             AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
 
             /*
@@ -113,21 +105,9 @@ namespace org.owasp.validator.html
         }
 
         /// <summary> This method wraps <code>scan()</code> using the policy File object passed in.</summary>
-        public virtual CleanResults scan(string taintedHTML, FileInfo policyFile)
+        public virtual CleanResults scan(string taintedHTML, Policy policy)
         {
 
-            Policy policy = null;
-
-            /*
-            * Get or reload the policy document (antisamy.xml). We'll need to pass that to the
-            * scanner so it knows what to look for.
-            */
-            policy = Policy.getInstance(policyFile);
-
-            /*
-            * We use NekoHTML's HTML HTML-XHTML parser combined with our
-            * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-            */
             AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
 
             /*
@@ -135,7 +115,6 @@ namespace org.owasp.validator.html
             */
 
             return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
-            //            return null; //take this out later
         }
 
         /// <summary> Main method for testing AntiSamy.</summary>
@@ -146,17 +125,15 @@ namespace org.owasp.validator.html
         static void Main(string[] args)
         {
             string filename;
-            filename = "c:\\test.html";
-
-            //string filename = "http://i8jesus.com:9080/AntiSamyDemoWebApp/antisamy-ebay-1.1.1.xml";
+            filename = "c:\\AntiSamytest.java";
             //filename = args[0];
 
 
             if (args.Length == 0)
             {
-                //	System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
-                //  System.Console.ReadLine();
-                //	return ;
+            //    System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
+            //    System.Console.ReadLine();
+            //    return;
             }
 
             try
@@ -205,8 +182,8 @@ namespace org.owasp.validator.html
                 AntiSamy _as = new AntiSamy();
                 CleanResults test = _as.scan(buff);
 
-                Console.WriteLine("[1] Finished scan [" + test.getCleanHTML().Length + " bytes] in " + test.getScanTime() + " seconds");
-                Console.WriteLine("\n[2] Clean HTML fragment:\n" + test.getCleanHTML());
+                Console.WriteLine("[1] Finished scan [" + test.getCleanHTML().Length + " bytes] in " + test.getScanTime() + " seconds\n");
+                Console.WriteLine("[2] Clean HTML fragment:\n" + test.getCleanHTML());
                 Console.WriteLine("[3] Error Messages (" + test.getNumberOfErrors() + "):");
 
 

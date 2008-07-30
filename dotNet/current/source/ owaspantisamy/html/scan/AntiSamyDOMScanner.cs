@@ -90,7 +90,8 @@ namespace org.owasp.validator.html.scan
             }
 
             DateTime start = DateTime.Now;
-            HtmlNode.ElementsFlags.Add("iframe", HtmlElementFlag.Empty);
+            if (!HtmlNode.ElementsFlags.Contains("iframe"))
+                HtmlNode.ElementsFlags.Add("iframe", HtmlElementFlag.Empty);
             HtmlNode.ElementsFlags.Remove("form");
 
             HtmlDocument doc = new HtmlDocument();
@@ -98,9 +99,14 @@ namespace org.owasp.validator.html.scan
             doc.OptionAutoCloseOnEnd = true;
             doc.OptionOutputAsXml = true;
 
-            foreach (HtmlNode node in doc.DocumentNode.ChildNodes)
+            for (int i = 0; i < doc.DocumentNode.ChildNodes.Count; i++)
             {
-                recursiveValidateTag(node);
+                HtmlNode tmp = doc.DocumentNode.ChildNodes[i];
+                recursiveValidateTag(tmp);
+                if (tmp.ParentNode == null)
+                {
+                    i--;
+                }
             }
 
             string finalCleanHTML = doc.DocumentNode.InnerHtml;
@@ -122,7 +128,7 @@ namespace org.owasp.validator.html.scan
 
             //check this out
             //might not be robust enough
-            if (tagName.ToLower().Equals("#text"))
+            if (tagName.ToLower().Equals("#text"))// || tagName.ToLower().Equals("#comment"))
             {
                 return;
             }
@@ -132,7 +138,10 @@ namespace org.owasp.validator.html.scan
             if (tag == null || "filter".Equals(tag.Action))
             {
                 StringBuilder errBuff = new StringBuilder();
-
+                if (tagName == null || tagName.Trim().Equals(""))
+                    errBuff.Append("An unprocessable ");
+                else
+                    errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName.ToLower()) + "</b> ");
                 errBuff.Append("tag has been filtered for security reasons. The contents of the tag will ");
                 errBuff.Append("remain in place.");
 
@@ -191,7 +200,7 @@ namespace org.owasp.validator.html.scan
                             }
 
                             IEnumerator allowedRegexps = attr.AllowedRegExp.GetEnumerator();
-                            
+
                             while (allowedRegexps.MoveNext() && !isAttributeValid)
                             {
                                 string pattern = allowedRegexps.Current.ToString();
@@ -212,6 +221,8 @@ namespace org.owasp.validator.html.scan
                                 errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
                                 errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
                                 errBuff.Append("This value could not be accepted for security reasons. We have chosen to ");
+                                
+                                Console.WriteLine(policy);
 
                                 if ("removeTag".Equals(onInvalidAction))
                                 {
@@ -239,7 +250,7 @@ namespace org.owasp.validator.html.scan
                                     node.Attributes.Remove(attr.Name);
                                     currentAttributeIndex--;
                                     errBuff.Append("remove the <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute from the tag and leave everything else in place so that we could process this input.");
-                                    
+
                                 }
 
                                 errorMessages.Add(errBuff.ToString());
@@ -287,7 +298,7 @@ namespace org.owasp.validator.html.scan
                 {
 
                     StringBuilder errBuff = new System.Text.StringBuilder();
-                    
+
                     errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap[0].Name));
                     errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
                     errBuff.Append("This removal should not affect the display of the HTML submitted.");

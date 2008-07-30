@@ -43,7 +43,7 @@ namespace org.owasp.validator.html
     {
 
         private static Policy _instance = null;
-        private const string DEFAULT_POLICY_URI = "..//..//antisamy-slashdot.xml"; //jer testing
+        private const string DEFAULT_POLICY_URI = @"properties/antisamy-slashdot.xml";
         private const string DEFAULT_ONINVALID = "removeAttribute";
 
         public const int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -67,7 +67,7 @@ namespace org.owasp.validator.html
         /// </returns>
         public Tag getTagByName(string tagName)
         {
-            return (Tag)tagRules[tagName];
+                return (Tag)tagRules[tagName];
         }
 
         /// <summary> Retrieves a CSS Property from the Policy.</summary>
@@ -167,7 +167,6 @@ namespace org.owasp.validator.html
         /// </returns>
         private Hashtable parseDirectives(XmlNode directiveListNode)
         {
-
             XmlNodeList directiveNodes = directiveListNode.SelectNodes("directive");
             Hashtable directives = new Hashtable();
             string _name = "", _value = "";
@@ -340,6 +339,7 @@ namespace org.owasp.validator.html
 
                     tagNames.Add(name);
                     tag.Action = action;
+                    //XmlNodeList attributeList = tagNode.SelectNodes("attribute");
                     XmlNodeList attributeList = tagNode.SelectNodes("attribute");
                     foreach (XmlNode attributeNode in attributeList)
                     {
@@ -369,7 +369,7 @@ namespace org.owasp.validator.html
                         {
                             /* Custom attribute for this tag */
                             Attribute attribute = new Attribute(attributeNode.Attributes["name"].Value);
-                            attribute.OnInvalid = (attributeNode.Attributes["oninvalid"] != null ? attributeNode.Attributes["oninvalid"].Value : null);
+                            attribute.OnInvalid = (attributeNode.Attributes["onInvalid"] != null ? attributeNode.Attributes["onInvalid"].Value : null);
                             attribute.Description = (attributeNode.Attributes["description"] != null ? attributeNode.Attributes["description"].Value : null);
                             XmlNode regExpListNode = attributeNode.SelectNodes("regexp-list")[0];
                             if (regExpListNode != null)
@@ -551,6 +551,7 @@ namespace org.owasp.validator.html
         /// </returns>
         public virtual string getDirective(string name)
         {
+            Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
             return (string)directives[name];
         }
     }
