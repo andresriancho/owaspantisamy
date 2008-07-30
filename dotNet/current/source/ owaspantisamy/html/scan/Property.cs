@@ -37,9 +37,7 @@ namespace org.owasp.validator.html.model
     /// or regular expressions) in order to be considered valid.
     /// 
     /// </summary>
-    /// <author>  Jason Li
-    /// 
-    /// </author>
+
     public class Property
     {
         private string name;

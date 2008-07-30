@@ -222,7 +222,7 @@ namespace org.owasp.validator.html.scan
                                 errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
                                 errBuff.Append("This value could not be accepted for security reasons. We have chosen to ");
                                 
-                                Console.WriteLine(policy);
+                                //Console.WriteLine(policy);
 
                                 if ("removeTag".Equals(onInvalidAction))
                                 {

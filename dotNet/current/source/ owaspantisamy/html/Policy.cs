@@ -43,7 +43,7 @@ namespace org.owasp.validator.html
     {
 
         private static Policy _instance = null;
-        private const string DEFAULT_POLICY_URI = @"properties/antisamy-slashdot.xml";
+        private const string DEFAULT_POLICY_URI = @"../../antisamy-slashdot.xml";
         private const string DEFAULT_ONINVALID = "removeAttribute";
 
         public const int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -154,6 +154,7 @@ namespace org.owasp.validator.html
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Problem Parsing Policy File: ");
                 Console.WriteLine(ex.Message);
             }
         }
@@ -551,7 +552,6 @@ namespace org.owasp.validator.html
         /// </returns>
         public virtual string getDirective(string name)
         {
-            Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
             return (string)directives[name];
         }
     }
