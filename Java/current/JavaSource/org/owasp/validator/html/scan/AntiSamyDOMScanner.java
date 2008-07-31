@@ -86,7 +86,7 @@ public class AntiSamyDOMScanner {
 	public CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException {
 
 		if ( html == null ) {
-			throw new ScanException("No input (null)");
+			throw new ScanException(new NullPointerException("Null input"));
 		}
 		
 		int maxInputSize = policy.getMaxInputSize();
