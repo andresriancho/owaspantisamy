@@ -205,7 +205,7 @@ public class AntiSamy {
 
 			AntiSamy as = new AntiSamy();
 			
-			CleanResults test = as.scan(buff.toString(), Policy.getInstance("resources/antisamy-ebay-1.2.xml"));
+			CleanResults test = as.scan(buff.toString(), Policy.getInstance("resources/antisamy-ebay.xml"));
 			
 			System.out.println("[1] Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds");
 			

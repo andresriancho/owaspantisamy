@@ -312,28 +312,33 @@ public class AntiSamyDOMScanner {
 
 				try {
 
-					CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue(), policy.getMaxInputSize());
+					if ( node.getFirstChild() != null ) {
 
-					errorMessages.addAll(cr.getErrorMessages());
+						CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue(), policy.getMaxInputSize());
 
-					/*
-					 * If IE gets an empty style tag, i.e. <style/>
-					 * it will break all CSS on the page. I wish I
-					 * was kidding. So, if after validation no CSS
-					 * properties are left, we would normally be left
-					 * with an empty style tag and break all CSS. To
-					 * prevent that, we have this check.
-					 */
+						errorMessages.addAll(cr.getErrorMessages());
 
-					if ( cr.getCleanHTML() == null || cr.getCleanHTML().equals("") ) {
+						/*
+						 * If IE gets an empty style tag, i.e. <style/>
+						 * it will break all CSS on the page. I wish I
+						 * was kidding. So, if after validation no CSS
+						 * properties are left, we would normally be left
+						 * with an empty style tag and break all CSS. To
+						 * prevent that, we have this check.
+						 */
 
-						node.getFirstChild().setNodeValue("/* */");
+						if ( cr.getCleanHTML() == null || cr.getCleanHTML().equals("") ) {
 
-					} else {
+							node.getFirstChild().setNodeValue("/* */");
 
-						node.getFirstChild().setNodeValue(cr.getCleanHTML());
+						} else {
 
+							node.getFirstChild().setNodeValue(cr.getCleanHTML());
+
+						}
+						
 					}
+					
 
 				} catch (DOMException e) {
 
