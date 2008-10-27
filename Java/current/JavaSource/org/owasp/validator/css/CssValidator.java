@@ -398,6 +398,8 @@ public class CssValidator {
 		case LexicalUnit.SAC_INHERIT:
 			// constant
 			return "inherit";
+		case LexicalUnit.SAC_OPERATOR_COMMA:
+		    	return ",";
 		case LexicalUnit.SAC_ATTR:
 		case LexicalUnit.SAC_COUNTER_FUNCTION:
 		case LexicalUnit.SAC_COUNTERS_FUNCTION:
