@@ -33,7 +33,10 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_TAG_NOT_IN_POLICY = "error.tag.notfound";
 	public static final String ERROR_TAG_DISALLOWED = "error.tag.removed";
 	public static final String ERROR_TAG_FILTERED = "error.tag.filtered";
-
+	public static final String ERROR_TAG_ENCODED = "error.tag.encoded";
+	
+	public static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filtered";
+	public static final String ERROR_ATTRIBUTE_CAUSE_ENCODE = "error.attribute.invalid.encoded";
 	public static final String ERROR_ATTRIBUTE_INVALID_FILTERED = "error.attribute.invalid.filtered";
 	public static final String ERROR_ATTRIBUTE_INVALID_REMOVED = "error.attribute.invalid.removed";
 	public static final String ERROR_ATTRIBUTE_NOT_IN_POLICY = "error.attribute.notfound";
@@ -68,31 +71,11 @@ public final class ErrorMessageUtil {
 	
 	public static final String ERROR_STYLESHEET_PROPERTY_INVALID = "error.css.stylesheet.property.invalid";
 	public static final String ERROR_CSS_TAG_PROPERTY_INVALID = "error.css.tag.property.invalid";	
-	
-	private static final String DEFAULT_LOCALE_LANG = "en";
-	private static final String DEFAULT_LOCALE_LOC = "US";
-	
+
 	private ErrorMessageUtil() {}
+
+	public static String getMessage(ResourceBundle messages, String msgKey, Object[] arguments) {	
+		return MessageFormat.format( messages.getString(msgKey), arguments );
+	}
 	
-	public static String getMessage(String errorKey, Object[] objs) {
-
-		String message = localize(errorKey);
-		
-		return MessageFormat.format(message,objs);
-	}
-
-	public static String localize(String errorKey) {
-
-		Locale l = Locale.getDefault();
-		ResourceBundle messages = null;
-		
-		try {
-			messages = ResourceBundle.getBundle("AntiSamy", l);
-		} catch (MissingResourceException mre) {
-			messages = ResourceBundle.getBundle("AntiSamy",new Locale(DEFAULT_LOCALE_LANG,DEFAULT_LOCALE_LOC));
-		}
-
-		return messages.getString(errorKey);
-
-	}
 }

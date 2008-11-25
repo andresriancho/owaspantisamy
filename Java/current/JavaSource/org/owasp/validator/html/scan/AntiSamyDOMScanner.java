@@ -27,9 +27,13 @@ package org.owasp.validator.html.scan;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
 import org.apache.xerces.dom.DocumentImpl;
@@ -75,7 +79,22 @@ public class AntiSamyDOMScanner {
 	private DocumentFragment dom = document.createDocumentFragment();
 
 	public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
-
+	
+	private static final String DEFAULT_LOCALE_LANG = "en";
+	private static final String DEFAULT_LOCALE_LOC = "US";
+	
+	private ResourceBundle messages = null;
+	private Locale locale = Locale.getDefault();
+	
+	public void initializeErrors() {
+		
+		try {
+			messages = ResourceBundle.getBundle("AntiSamy", locale);
+		} catch (MissingResourceException mre) {
+			messages = ResourceBundle.getBundle("AntiSamy", new Locale(DEFAULT_LOCALE_LANG,DEFAULT_LOCALE_LOC));
+		}
+	}
+	
 	/**
 	 * This is where the magic lives.
 	 * @param html A String whose contents we want to scan.
@@ -92,9 +111,12 @@ public class AntiSamyDOMScanner {
 		int maxInputSize = policy.getMaxInputSize();
 		
 		if ( maxInputSize < html.length() ) {
-			throw new ScanException( ErrorMessageUtil.getMessage(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) }) );
+			addError(ErrorMessageUtil.ERROR_INPUT_SIZE,new Object[] { new Integer(html.length()), new Integer(maxInputSize) });
+			throw new ScanException( errorMessages.get(0).toString() ); 
 		}
 
+		initializeErrors();
+		
 		Date start = new Date();
 
 		try {
@@ -122,7 +144,6 @@ public class AntiSamyDOMScanner {
 				throw new ScanException(e);
 			}
 			
-
 			/*
 			 * Call the work horse.
 			 */
@@ -149,21 +170,33 @@ public class AntiSamyDOMScanner {
 			 */
 
 			OutputFormat format = new OutputFormat();
+			format.setEncoding(outputEncoding);
+
+			StringWriter sw = new StringWriter();
+
+			/*
+			 * Using the HTMLSerializer is the only way to notify the parser to fire
+			 * events for recognizing HTML-entities. The other ways should, but do not
+			 * work.
+			 * 
+			 * We're using HTMLSerializer even though it's deprecated.
+			 *  
+			 * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for why we 
+			 * know it's still ok to use.
+			 * 
+			 */
 
 			format.setEncoding(outputEncoding);
 			format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
 			format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
 			format.setPreserveEmptyAttributes(true);
-
+      
 			if ( "true".equals(policy.getDirective("formatOutput") ) ) {				
 				format.setLineWidth(80);
 				format.setIndenting(true);
 				format.setIndent(2);
-
 			}
-
-			StringWriter sw = new StringWriter();
-
+			
 			if ( "true".equals(policy.getDirective("useXHTML"))) {
 
 				XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
@@ -171,19 +204,8 @@ public class AntiSamyDOMScanner {
 
 			} else {
 
-				/*
-				 * Using the HTMLSerializer is the only way to notify the parser to fire
-				 * events for recognizing HTML-entities. The other ways should, but do not
-				 * work.
-				 * 
-				 * We're using HTMLSerializer even though it's deprecated.
-				 *  
-				 * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for why we 
-				 * know it's still ok to use.
-				 * 
-				 */
-
 				HTMLSerializer serializer = new HTMLSerializer(sw,format);
+
 				serializer.serialize(dom);
 
 			}
@@ -193,17 +215,6 @@ public class AntiSamyDOMScanner {
 			 * XML declaration if the Policy says we should.
 			 */
 			String finalCleanHTML = sw.getBuffer().toString();
-
-			if ( "true".equals(policy.getDirective("omitXmlDeclaration")) ) {
-
-				int bpos = finalCleanHTML.indexOf("<?xml");
-				int epos = finalCleanHTML.indexOf("?>");
-
-				if ( bpos != -1 && bpos != -1 && bpos < epos ) {
-					finalCleanHTML = finalCleanHTML.substring(epos+1);
-				}
-
-			}
 
 			/**
 			 * Return DOM object as well as string HTML.
@@ -252,7 +263,42 @@ public class AntiSamyDOMScanner {
 
 		Tag tag = policy.getTagByName(tagName.toLowerCase());
 
-		if ( tag == null || "filter".equals(tag.getAction() )) {
+		if ((tag == null && "encode".equals(policy.getDirective("onUnknownTag"))) ||
+			(tag != null && "encode".equals(tag.getAction())) ) {
+  
+			addError(ErrorMessageUtil.ERROR_TAG_ENCODED, new Object[] {HTMLEntityEncoder
+					.htmlEntityEncode(tagName)});
+  
+			/*
+			 * We have to filter out the tags only. This means the content should remain. First
+			 * step is to validate before promoting its children.
+			 */
+  
+			for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+  
+				tmp = node.getChildNodes().item(i);
+  
+				recursiveValidateTag(tmp);
+  
+				/*
+				 * This indicates the node was removed/failed validation.
+       				 */
+				if (tmp.getParentNode() == null) {
+					i--;
+				}
+			}
+  
+			/*
+			 * Transform the tag to text, HTML-encode it and promote the children. The tag will
+      			 * be kept in the fragment as one or two text Nodes located before and after the
+      			 * children; representing how the tag used to wrap them.
+			 */
+  
+			encodeAndPromoteChildren(ele);
+  
+			return;
+
+		} else if (tag == null || "filter".equals(tag.getAction())) {
 
 			if ( tag == null ) {
 				addError( ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );	
@@ -308,7 +354,7 @@ public class AntiSamyDOMScanner {
 				/*
 				 * Invoke the css parser on this element.
 				 */ 
-				CssScanner styleScanner = new CssScanner(policy);
+				CssScanner styleScanner = new CssScanner(policy, messages);
 
 				try {
 
@@ -338,7 +384,6 @@ public class AntiSamyDOMScanner {
 						}
 						
 					}
-					
 
 				} catch (DOMException e) {
 
@@ -395,7 +440,7 @@ public class AntiSamyDOMScanner {
 					/*
 					 * Invoke the CSS parser on this element.
 					 */
-					CssScanner styleScanner = new CssScanner(policy);
+					CssScanner styleScanner = new CssScanner(policy, messages);
 
 					try {
 
@@ -411,14 +456,14 @@ public class AntiSamyDOMScanner {
 
 						addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
 
-						ele.removeAttribute(name);
+						ele.removeAttribute(attribute.getNodeName());
 						currentAttributeIndex--;
 
 					} catch (ScanException e) {
 
 						addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] {tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())} );
 
-						ele.removeAttribute(name);
+						ele.removeAttribute(attribute.getNodeName());
 						currentAttributeIndex--;
 					}
 
@@ -492,7 +537,34 @@ public class AntiSamyDOMScanner {
 
 								promoteChildren(ele);
 
-								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_FILTERED, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
+								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
+								
+							} else if ("encodeTag".equals(onInvalidAction)) {
+
+								/*
+								 * Remove the attribute and keep the rest of the
+                						 * tag.
+								 */
+
+								for(int i=0;i<node.getChildNodes().getLength();i++) {
+
+									tmp = node.getChildNodes().item(i);
+
+									recursiveValidateTag(tmp);
+
+									/*
+									 * This indicates the node was removed/failed validation.
+									 */
+									if ( tmp.getParentNode() == null ) {
+										i--;
+									}
+								}
+
+								encodeAndPromoteChildren(ele);
+
+								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_ENCODE, new Object[] {
+									tagName, HTMLEntityEncoder.htmlEntityEncode(name),
+									HTMLEntityEncoder.htmlEntityEncode(value)});
 
 							} else { 
 
@@ -500,7 +572,7 @@ public class AntiSamyDOMScanner {
 								 * onInvalidAction = "removeAttribute"
 								 */ 
 
-								ele.removeAttribute(attr.getName());
+								ele.removeAttribute(attribute.getNodeName());
 
 								currentAttributeIndex--;
 
@@ -516,9 +588,9 @@ public class AntiSamyDOMScanner {
 						
 					} else { /* the attribute they specified isn't in our policy - remove it (whitelisting!) */		
 		
-						addError( ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name) } );
+						addError( ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)} );
 
-						ele.removeAttribute(name);
+						ele.removeAttribute(attribute.getNodeName());
 
 						currentAttributeIndex--;
 
@@ -600,11 +672,8 @@ public class AntiSamyDOMScanner {
 	}
 
 	private void addError(String errorKey, Object[] objs) {
-
-		errorMessages.add( ErrorMessageUtil.getMessage(errorKey, objs) );
-
+		errorMessages.add( ErrorMessageUtil.getMessage( messages, errorKey, objs) );
 	}
-
 
 	/**
 	 * This method replaces all entity codes with a normalized version of all entity references contained in order to reduce our encoding/parsing
@@ -712,26 +781,64 @@ public class AntiSamyDOMScanner {
 	 */
 	private String stripNonValidXMLCharacters(String in) {
 
-		StringBuffer out = new StringBuffer(); // Used to hold the output.
-
-		char current; // Used to reference the current character.
-
 		if (in == null || ("".equals(in))) return ""; // vacancy test.
-		for (int i = 0; i < in.length(); i++) {
-			current = in.charAt(i);
-			if ((current == 0x9) ||
-					(current == 0xA) ||
-					(current == 0xD) ||
-					((current >= 0x20) && (current <= 0xD7FF)) ||
-					((current >= 0xE000) && (current <= 0xFFFD)) ||
-					((current >= 0x10000) && (current <= 0x10FFFF)))
-				out.append(current);
-		}
-
-		return out.toString();
+		
+		return in.replaceAll("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]", "");
 
 	}
 
 	private void debug(String s) { System.out.println(s); }
+
+	/**
+  	 * Transform the element to text, HTML-encode it and promote the children. The element
+	 * will be kept in the fragment as one or two text Nodes located before and after the
+	 * children; representing how the tag used to wrap them. If the element didn't have any
+	 * children then only one text Node is created representing an empty element. *
+	 *
+	 * @param ele
+	 *          Element to be encoded
+	 */
+	private void encodeAndPromoteChildren(Element ele) {
+		Node parent = ele.getParentNode();
+		String tagName = ele.getTagName();
+		Node openingTag = parent.getOwnerDocument().createTextNode(toString(ele));
+		parent.insertBefore(openingTag, ele);
+		if (ele.hasChildNodes()) {
+			Node closingTag = parent.getOwnerDocument().createTextNode("</" + tagName + ">");
+			parent.insertBefore(closingTag, ele.getNextSibling());
+		}
+		promoteChildren(ele);
+	}
+
+	/**
+	 * Returns a text version of the passed element
+	 *
+	 * @param ele
+	 *          Element to be converted
+	 * @return String representation of the element
+	 */
+	private String toString(Element ele) {
+		StringBuffer eleAsString = new StringBuffer("<" + ele.getNodeName());
+		NamedNodeMap attributes = ele.getAttributes();
+		Node attribute = null;
+		for (int i = 0; i < attributes.getLength(); i++) {
+			attribute = attributes.item(i);
+
+			String name = attribute.getNodeName();
+			String value = attribute.getNodeValue();
+
+			eleAsString.append(" ");
+			eleAsString.append(HTMLEntityEncoder.htmlEntityEncode(name));
+			eleAsString.append("=\"");
+			eleAsString.append(HTMLEntityEncoder.htmlEntityEncode(value));
+			eleAsString.append("\"");
+		}
+		if (ele.hasChildNodes()) {
+			eleAsString.append(">");
+		} else {
+			eleAsString.append("/>");
+		}
+		return eleAsString.toString();
+	}
 
 }

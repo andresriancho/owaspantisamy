@@ -534,7 +534,7 @@ http://www.w3.org/TR/html401/struct/global.html
 			
 			<attribute name="face">
 				<regexp-list>
-					<regexp value="[\w;, ]+"/>
+					<regexp value="[\w;, \-]+"/>
 				</regexp-list>
 			</attribute>
 			

@@ -36,6 +36,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import org.apache.batik.css.parser.Parser;
 import org.apache.commons.httpclient.HttpClient;
@@ -75,13 +77,19 @@ public class CssScanner {
     private final Policy policy;
 
     /**
+     * The message bundled to pull error messages from.
+     */
+    private final ResourceBundle messages;
+    
+    /**
      * Constructs a scanner based on the given policy.
      * 
      * @param policy
      *                the policy to follow when scanning
      */
-    public CssScanner(Policy policy) {
-	this.policy = policy;
+    public CssScanner(Policy policy, ResourceBundle messages) {
+    	this.policy = policy;
+    	this.messages = messages;
     }
 
     /**
@@ -110,7 +118,7 @@ public class CssScanner {
 	// account for any sheets that may be imported by the current CSS
 	LinkedList stylesheets = new LinkedList();
 
-	CssHandler handler = new CssHandler(policy, stylesheets, errorMessages);
+	CssHandler handler = new CssHandler(policy, stylesheets, errorMessages, messages);
 
 	// parse the stylesheet
 	parser.setDocumentHandler(handler);
@@ -165,7 +173,7 @@ public class CssScanner {
 	LinkedList stylesheets = new LinkedList();
 
 	CssHandler handler = new CssHandler(policy, stylesheets, errorMessages,
-		tagName);
+		tagName, messages);
 
 	parser.setDocumentHandler(handler);
 
@@ -244,6 +252,7 @@ public class CssScanner {
 
 		if (++importedStylesheets > allowedImports) {
 		    errorMessages.add(ErrorMessageUtil.getMessage(
+		    	messages,
 			    ErrorMessageUtil.ERROR_CSS_IMPORT_EXCEEDED,
 			    new Object[] {
 				    HTMLEntityEncoder
@@ -265,6 +274,7 @@ public class CssScanner {
 		    errorMessages
 			    .add(ErrorMessageUtil
 				    .getMessage(
+				    	messages,
 					    ErrorMessageUtil.ERROR_CSS_IMPORT_INPUT_SIZE,
 					    new Object[] {
 						    HTMLEntityEncoder
@@ -275,6 +285,7 @@ public class CssScanner {
 		} catch (IOException ioe) {
 		    errorMessages.add(ErrorMessageUtil
 			    .getMessage(
+			    	messages,
 				    ErrorMessageUtil.ERROR_CSS_IMPORT_FAILURE,
 				    new Object[] { HTMLEntityEncoder
 					    .htmlEntityEncode(stylesheetUri
@@ -313,7 +324,7 @@ public class CssScanner {
      */
     public static void main(String[] args) throws Exception {
 	Policy policy = Policy.getInstance("resources/antisamy-1.2.xml");
-	CssScanner scanner = new CssScanner(policy);
+	CssScanner scanner = new CssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
 
 	CleanResults results = null;
 

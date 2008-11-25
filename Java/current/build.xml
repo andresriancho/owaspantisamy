@@ -34,7 +34,10 @@
         <javac
     		srcdir="${src.dir}"
         	destdir="${build.dir}"
-        	classpath="${lib.dir}/*.jar">
+        	classpath="${lib.dir}/*.jar"
+        	compiler="javac1.4"
+        	debug="true"
+        	debuglevel="lines,source,vars">
         	<classpath refid="compile.classpath"/>
         </javac>
     </target>

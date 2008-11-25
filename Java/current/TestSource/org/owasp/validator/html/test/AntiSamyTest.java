@@ -1,6 +1,7 @@
 package org.owasp.validator.html.test;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
@@ -76,18 +77,19 @@ public class AntiSamyTest extends TestCase {
 	 */
 	
 	public void testScriptAttacks() {
+
 		try {
-			
+
 			assertTrue ( as.scan("test<script>alert(document.cookie)</script>",policy).getCleanHTML().indexOf("script") ==  -1);
 			assertTrue ( as.scan("<<<><<script src=http://fake-evil.ru/test.js>",policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<script<script src=http://fake-evil.ru/test.js>>",policy).getCleanHTML().indexOf("<script") == -1 );
+			
 			assertTrue ( as.scan("<SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>",policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`=alert(\"XSS\")>",policy).getCleanHTML().indexOf("onload") == -1 );
 			assertTrue ( as.scan("<BODY ONLOAD=alert('XSS')>",policy).getCleanHTML().indexOf("alert") == -1 );
-			
+
 			assertTrue ( as.scan("<iframe src=http://ha.ckers.org/scriptlet.html <",policy).getCleanHTML().indexOf("<iframe") == -1 );
 			assertTrue ( as.scan("<INPUT TYPE=\"IMAGE\" SRC=\"javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("src") == -1 );
-			
 			
 		} catch (Exception e) {
 			fail("Caught exception in testScriptAttack(): "+e.getMessage());
@@ -202,30 +204,36 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			
 			assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );			
 	    } catch (Exception e) {
 	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());		
 	    }
 	}
         
-        public void testIllegalXML() {
+    public void testIllegalXML() {
+       
+    	try {
+    		as.scan("<a onblur=\"alert(secret)\" href=\"http://www.google.com\">Google</a>",policy);
+    	} catch (Throwable t) {
+    		t.printStackTrace();
+    		fail("Caught exception in testIllegalXML(): "+t.getMessage());
+    	}
+    	
+    	for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
             
-        	for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
+        	try {
                 
-            	try {
-                    
-                	String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
-                    as.scan(testStr, policy);
-                    
-                } catch (ScanException ex) {
-                    // still success
-                	
-                } catch (Throwable ex) {
-                	ex.printStackTrace();
-                    fail("Caught unexpected exception in testIllegalXML(): " + ex.getMessage());
-                }
+            	String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
+                as.scan(testStr, policy);
+                
+            } catch (ScanException ex) {
+                // still success
+            	
+            } catch (Throwable ex) {
+            	ex.printStackTrace();
+                fail("Caught unexpected exception in testIllegalXML(): " + ex.getMessage());
             }
         }
+    }
         
 }

@@ -77,17 +77,7 @@ public class AntiSamy {
 			throw new PolicyException("No policy loaded");
 		}
 		
-		/*
-		 * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-		 * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-		 */
-		AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-		
-		/*
-		 * Go get 'em!
-		 */
-
-		return antiSamy.scan(taintedHTML, inputEncoding, outputEncoding);
+		return this.scan(taintedHTML, this.policy);
 
 	}
 	
@@ -112,18 +102,7 @@ public class AntiSamy {
 		 */
 		policy = Policy.getInstance(filename);
 
-		/*
-		 * We use HTMLCleaner's HTML HTML-XHTML parser combined with our
-		 * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-		 */
-		AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-		
-		/*
-		 * Go get 'em!
-		 */
-
-		return antiSamy.scan(taintedHTML,inputEncoding,outputEncoding);
-
+		return this.scan(taintedHTML, policy);
 	}
 	
 	/**
@@ -139,18 +118,7 @@ public class AntiSamy {
 		 */
 		policy = Policy.getInstance(policyFile);
 
-		/*
-		 * We use NekoHTML's HTML HTML-XHTML parser combined with our
-		 * own Anti-Samy 3000 Fireball of Superior Fury Scanner.
-		 */
-		AntiSamyDOMScanner antiSamy = new AntiSamyDOMScanner(policy);
-		
-		/*
-		 * Go get 'em!
-		 */
-
-		return antiSamy.scan(taintedHTML,inputEncoding,outputEncoding);
-
+		return this.scan(taintedHTML, policy);
 	}
 	
 	

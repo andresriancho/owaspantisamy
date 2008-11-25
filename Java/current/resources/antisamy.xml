@@ -88,7 +88,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		
 		<!--  This is for comments within CSS (ex. /* comment */) -->
 		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:&quot;']+"/>
-		
+
 		<regexp name="integer" value="(-|\+)?[0-9]+"/>
 		<regexp name="number" value="(-|\+)?([0-9]+(.[0-9]+)?)"/>		
 		<regexp name="angle" value="(-|\+)?([0-9]+(.[0-9]+)?)(deg|grads|rad)"/>
@@ -719,7 +719,7 @@ http://www.w3.org/TR/html401/struct/global.html
 			
 			<attribute name="face">
 				<regexp-list>
-					<regexp value="[\w;, ]+"/>
+					<regexp value="[\w;, \-]+"/>
 				</regexp-list>
 			</attribute>
 			

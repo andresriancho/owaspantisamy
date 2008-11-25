@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.ResourceBundle;
 
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
@@ -84,7 +85,11 @@ public class CssHandler implements DocumentHandler {
 //	private final CleanResults results;
 	private final Collection errorMessages;
 	
-
+	/**
+	 * The error message bundled to pull from.
+	 */
+	private ResourceBundle messages;
+	
 	/**
 	 * A queue of imported stylesheets; used to track imported stylesheets
 	 */
@@ -118,8 +123,8 @@ public class CssHandler implements DocumentHandler {
 	 *            the queue of stylesheets imported
 	 */
 	public CssHandler(Policy policy, LinkedList embeddedStyleSheets,
-		ArrayList errorMessages) {
-		this(policy, embeddedStyleSheets, errorMessages, null);
+		ArrayList errorMessages, ResourceBundle messages) {
+		this(policy, embeddedStyleSheets, errorMessages, null, messages);
 	}
 
 	/**
@@ -134,9 +139,10 @@ public class CssHandler implements DocumentHandler {
 	 *            the associated tag name with this inline style
 	 */
 	public CssHandler(Policy policy, LinkedList embeddedStyleSheets,
-			ArrayList errorMessages, String tagName) {
+			ArrayList errorMessages, String tagName, ResourceBundle messages) {
 		this.policy = policy;
 		this.errorMessages = errorMessages;
+		this.messages = messages;
 		this.validator = new CssValidator(policy);
 		this.importedStyleSheets = embeddedStyleSheets;
 		this.tagName = tagName;
@@ -168,6 +174,7 @@ public class CssHandler implements DocumentHandler {
 	 */
 	public void comment(String text) throws CSSException {
 		errorMessages.add(ErrorMessageUtil.getMessage(
+				messages,
 				ErrorMessageUtil.ERROR_COMMENT_REMOVED,
 				new Object[] { HTMLEntityEncoder.htmlEntityEncode(text) }));
 	}
@@ -183,6 +190,7 @@ public class CssHandler implements DocumentHandler {
 		// CSS2+ stuff
 		if (tagName != null) {
 			errorMessages.add(ErrorMessageUtil.getMessage(
+					messages,
 				ErrorMessageUtil.ERROR_CSS_TAG_RULE_NOTFOUND,
 				new Object[] { 
 					HTMLEntityEncoder.htmlEntityEncode(tagName), 
@@ -190,6 +198,7 @@ public class CssHandler implements DocumentHandler {
 				}));
 		} else {
 			errorMessages.add(ErrorMessageUtil.getMessage(
+					messages,
 				ErrorMessageUtil.ERROR_STYLESHEET_RULE_NOTFOUND,
 				new Object[] {  
 					HTMLEntityEncoder.htmlEntityEncode(atRule)
@@ -210,6 +219,7 @@ public class CssHandler implements DocumentHandler {
 		if (!Boolean.valueOf(policy.getDirective("embedStyleSheets"))
 				.booleanValue()) {
 			errorMessages.add(ErrorMessageUtil.getMessage(
+					messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_DISABLED,
 					new Object[] {}));
 			return;
@@ -219,6 +229,7 @@ public class CssHandler implements DocumentHandler {
 			// check for non-nullness (validate after canonicalization)
 			if (uri == null) {
 			    errorMessages.add(ErrorMessageUtil.getMessage(
+						messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_URL_INVALID,
 					new Object[] { HTMLEntityEncoder.htmlEntityEncode(uri) }));
 			    return;			
@@ -235,6 +246,7 @@ public class CssHandler implements DocumentHandler {
 				&& !policy.getRegularExpression("onsiteURL").getPattern()
 						.matcher(importedStyleSheet.toString()).matches()) {
 			    errorMessages.add(ErrorMessageUtil.getMessage(
+						messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_URL_INVALID,
 					new Object[] { HTMLEntityEncoder.htmlEntityEncode(uri) }));
 			    return;			
@@ -247,12 +259,14 @@ public class CssHandler implements DocumentHandler {
 				// free form will end up
 			    	if (tagName != null) {
 			    	    errorMessages.add(ErrorMessageUtil.getMessage(
+			    				messages,
 					ErrorMessageUtil.ERROR_CSS_TAG_RELATIVE,
 					new Object[] { 
 						HTMLEntityEncoder.htmlEntityEncode(tagName),
 						HTMLEntityEncoder.htmlEntityEncode(uri) }));
 			    	} else {
 			    	    errorMessages.add(ErrorMessageUtil.getMessage(
+			    				messages,
 					ErrorMessageUtil.ERROR_STYLESHEET_RELATIVE,
 					new Object[] { HTMLEntityEncoder.htmlEntityEncode(uri) }));
 			    	}
@@ -263,6 +277,7 @@ public class CssHandler implements DocumentHandler {
 			importedStyleSheets.add(importedStyleSheet);
 		} catch (URISyntaxException use) {
 			errorMessages.add(ErrorMessageUtil.getMessage(
+					messages,
 				ErrorMessageUtil.ERROR_CSS_IMPORT_URL_INVALID,
 				new Object[] { HTMLEntityEncoder.htmlEntityEncode(uri) }));
 			return;
@@ -379,12 +394,14 @@ public class CssHandler implements DocumentHandler {
 				} catch (ScanException se) {
 				    if (tagName != null) {					
 					errorMessages.add(ErrorMessageUtil.getMessage(
+							messages,
 						ErrorMessageUtil.ERROR_CSS_TAG_SELECTOR_NOTFOUND,
 						new Object[] {
 							HTMLEntityEncoder.htmlEntityEncode(selector.toString())
 						}));
 				    } else {
 					errorMessages.add(ErrorMessageUtil.getMessage(
+							messages,
 						ErrorMessageUtil.ERROR_STYLESHEET_SELECTOR_NOTFOUND,
 						new Object[] {
 							HTMLEntityEncoder.htmlEntityEncode(tagName),
@@ -406,6 +423,7 @@ public class CssHandler implements DocumentHandler {
 				} else {
 					if (tagName != null) {
 						errorMessages.add(ErrorMessageUtil.getMessage(
+								messages,
 								ErrorMessageUtil.ERROR_CSS_TAG_SELECTOR_DISALLOWED,
 								new Object[] {
 									HTMLEntityEncoder.htmlEntityEncode(tagName),
@@ -414,6 +432,7 @@ public class CssHandler implements DocumentHandler {
 
 					} else {
 						errorMessages.add(ErrorMessageUtil.getMessage(
+								messages,
 								ErrorMessageUtil.ERROR_STYLESHEET_SELECTOR_DISALLOWED,
 								new Object[] {
 									HTMLEntityEncoder.htmlEntityEncode(selector.toString())
@@ -468,7 +487,7 @@ public class CssHandler implements DocumentHandler {
 		// validate the property
 		if (validator.isValidProperty(name, value)) {
 
-			styleSheet.append('\t');
+			if (!isInline) { styleSheet.append('\t'); }
 			styleSheet.append(name);
 			styleSheet.append(':');
 
@@ -479,12 +498,13 @@ public class CssHandler implements DocumentHandler {
 				value = value.getNextLexicalUnit();
 			}
 			styleSheet.append(';');
-			styleSheet.append('\n');
+			if (!isInline) { styleSheet.append('\n'); }
 
 		} else {
 
 			if (tagName != null) {
 				errorMessages.add(ErrorMessageUtil.getMessage(
+					messages,
 					ErrorMessageUtil.ERROR_CSS_TAG_PROPERTY_INVALID,
 					new Object[] {
 						HTMLEntityEncoder.htmlEntityEncode(tagName),
@@ -493,7 +513,8 @@ public class CssHandler implements DocumentHandler {
 							.lexicalValueToString(value)) }));			
 			} else {
 			    	errorMessages.add(ErrorMessageUtil.getMessage(
-					ErrorMessageUtil.ERROR_STYLESHEET_PROPERTY_INVALID,
+			    		messages,
+			    		ErrorMessageUtil.ERROR_STYLESHEET_PROPERTY_INVALID,
 					new Object[] {
 						HTMLEntityEncoder.htmlEntityEncode(name),
 						HTMLEntityEncoder.htmlEntityEncode(validator
