@@ -86,6 +86,8 @@ public class AntiSamyDOMScanner {
 	private ResourceBundle messages = null;
 	private Locale locale = Locale.getDefault();
 	
+	private String[] nonEmptyTags = { "i", "b", "u" };
+	
 	public void initializeErrors() {
 		
 		try {
@@ -107,15 +109,16 @@ public class AntiSamyDOMScanner {
 		if ( html == null ) {
 			throw new ScanException(new NullPointerException("Null input"));
 		}
+
+		initializeErrors();
 		
 		int maxInputSize = policy.getMaxInputSize();
 		
 		if ( maxInputSize < html.length() ) {
-			addError(ErrorMessageUtil.ERROR_INPUT_SIZE,new Object[] { new Integer(html.length()), new Integer(maxInputSize) });
+			addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) });
 			throw new ScanException( errorMessages.get(0).toString() ); 
 		}
 
-		initializeErrors();
 		
 		Date start = new Date();
 
@@ -137,7 +140,9 @@ public class AntiSamyDOMScanner {
 			DOMFragmentParser parser = new DOMFragmentParser();
 			parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
 			parser.setProperty("http://cyberneko.org/html/properties/default-encoding",inputEncoding);
-
+			parser.setFeature("http://cyberneko.org/html/features/scanner/style/strip-cdata-delims", false);
+			parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
+			
 			try {
 				parser.parse(new InputSource(new StringReader(html)),dom);	
 			} catch (Exception e) {
@@ -185,12 +190,12 @@ public class AntiSamyDOMScanner {
 			 * know it's still ok to use.
 			 * 
 			 */
-
+			
 			format.setEncoding(outputEncoding);
 			format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
 			format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
 			format.setPreserveEmptyAttributes(true);
-      
+			
 			if ( "true".equals(policy.getDirective("formatOutput") ) ) {				
 				format.setLineWidth(80);
 				format.setIndenting(true);
@@ -201,13 +206,12 @@ public class AntiSamyDOMScanner {
 
 				XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
 				serializer.serialize(dom);
-
+				
 			} else {
 
 				HTMLSerializer serializer = new HTMLSerializer(sw,format);
-
 				serializer.serialize(dom);
-
+				
 			}
 
 			/*
@@ -244,6 +248,18 @@ public class AntiSamyDOMScanner {
 
 		if ( node instanceof Comment ) {
 			node.getParentNode().removeChild(node);
+			return;
+		}
+		
+		if ( node instanceof Element && node.getChildNodes().getLength() == 0 ) {
+			
+			for(int i=0; i<nonEmptyTags.length; i++) {
+				if ( nonEmptyTags[i].equals(node.getNodeName()) ) {
+					node.getParentNode().removeChild(node);
+					return;
+				}
+			}
+			
 		}
 
 		if ( !(node instanceof Element) ) {
@@ -360,7 +376,23 @@ public class AntiSamyDOMScanner {
 
 					if ( node.getFirstChild() != null ) {
 
-						CleanResults cr = styleScanner.scanStyleSheet(node.getFirstChild().getNodeValue(), policy.getMaxInputSize());
+						boolean isCdata = false;
+						String toScan = node.getFirstChild().getNodeValue();
+						
+						/* Check to see if the text starts with (\s)*<![CDATA[
+						 * and end with ]]>(\s)*. 
+						 */
+						
+						Pattern p = Pattern.compile("^(\\s)*<!\\[CDATA\\[(.*)\\]\\]>(\\s)*$");
+						
+						if ( p.matcher(toScan).matches() ) {
+							isCdata = false;
+							int i = toScan.indexOf("[CDATA[") + 7;
+							int j = toScan.lastIndexOf("]]>");
+							toScan = toScan.substring(i,j);
+						}
+						
+						CleanResults cr = styleScanner.scanStyleSheet(toScan, policy.getMaxInputSize());
 
 						errorMessages.addAll(cr.getErrorMessages());
 
@@ -379,8 +411,15 @@ public class AntiSamyDOMScanner {
 
 						} else {
 
-							node.getFirstChild().setNodeValue(cr.getCleanHTML());
-
+							if ( isCdata ) {
+								node.getFirstChild().setNodeValue( 
+										"<![CDATA[" +
+										cr.getCleanHTML() +
+										"]]>");
+							} else {
+								node.getFirstChild().setNodeValue(cr.getCleanHTML());	
+							}
+							
 						}
 						
 					}
