@@ -1,6 +1,7 @@
 package org.owasp.validator.html.test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import org.owasp.validator.html.AntiSamy;
@@ -13,6 +14,7 @@ import junit.framework.TestSuite;
 
 import org.apache.commons.codec.binary.Base64;
 import org.owasp.validator.html.AntiSamy;
+import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 
@@ -199,7 +201,9 @@ public class AntiSamyTest extends TestCase {
 	 */
 	
 	public void testCssAttacks() {
-	    try {
+	    
+		try {
+	    	
 			assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
@@ -234,6 +238,40 @@ public class AntiSamyTest extends TestCase {
                 fail("Caught unexpected exception in testIllegalXML(): " + ex.getMessage());
             }
         }
+    }
+    
+    public void testPreviousBugs() {
+    	
+    	/* issue #20 */
+    	try {
+    		
+        	String s = as.scan("<b><i>Some Text</b></i>",policy).getCleanHTML();
+        	assertTrue ( s.indexOf("<i />") == -1 );
+        	
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	/* issue #28 */
+    	try {
+    		assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );
+    	} catch (Exception e) {
+    		fail(e.getMessage());
+    		e.printStackTrace();
+    	}
+    	
+    	/* issue #30 */
+    	try {
+    		String s = "<style type=\"text/css\"><![CDATA[P {  margin-bottom: 0.08in; } ]]></style>";
+    		CleanResults cr = as.scan(s,policy);
+    		for(int i=0;i<cr.getNumberOfErrors();i++) {
+    			System.out.println(cr.getErrorMessages().get(i).toString());
+    		}
+    		System.out.println(cr.getCleanHTML());
+    	} catch( Exception e ) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
     }
         
 }
