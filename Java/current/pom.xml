@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<name>OWASP AntiSamy</name>
+	<groupId>org.owasp</groupId>
+	<artifactId>antisamy</artifactId>
+	<version>1.3-SNAPSHOT</version>
+    <issueManagement>
+        <system>code.google.com</system>
+        <url>http://code.google.com/p/owaspantisamy/issues/list</url>
+    </issueManagement>
+	<dependencies>
+		<dependency>
+			<groupId>xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>batik</groupId>
+			<artifactId>batik-css</artifactId>
+			<version>1.6-1</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sourceforge.nekohtml</groupId>
+			<artifactId>nekohtml</artifactId>
+			<version>1.9.7</version>
+		</dependency>
+<!--
+		<dependency>
+			<groupId>nekohtml</groupId>
+			<artifactId>nekohtml</artifactId>
+			<version>1.9.6.2</version>
+		</dependency>
+-->
+		<dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<version>3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.4</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<sourceDirectory>${basedir}/JavaSource</sourceDirectory>
+		<testSourceDirectory>TestSource</testSourceDirectory>
+		<resources>
+			<resource>
+				<directory>JavaSource</directory>
+				<includes>
+					<include>**.properties</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>resources</directory>
+			</resource>
+		</resources>
+	</build>
+</project>
