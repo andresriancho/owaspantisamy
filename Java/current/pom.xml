@@ -9,6 +9,31 @@
         <system>code.google.com</system>
         <url>http://code.google.com/p/owaspantisamy/issues/list</url>
     </issueManagement>
+    <distributionManagement>
+        <downloadUrl>http://antisamy.happyfern.com/maven2/</downloadUrl>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>antisamy-happyfern</id>
+            <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
+        </repository>
+        <snapshotRepository>
+          <uniqueVersion>true</uniqueVersion>
+          <id>antisamy-happyfern-snapshot</id>
+          <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
+        </snapshotRepository>
+        <!--
+            
+            Switch this on if we ever want to use maven to publish a
+            website.
+            
+            <site>
+              <id>antisamy-happyfern-sites</id>
+              <name>AntiSamy Maven Project Website</name>
+              <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/sites/antisamy/</url>
+            </site>
+            
+        -->
+    </distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>xerces</groupId>
@@ -25,13 +50,13 @@
 			<artifactId>nekohtml</artifactId>
 			<version>1.9.7</version>
 		</dependency>
-<!--
+        <!--
 		<dependency>
 			<groupId>nekohtml</groupId>
 			<artifactId>nekohtml</artifactId>
 			<version>1.9.6.2</version>
 		</dependency>
--->
+        -->
 		<dependency>
 			<groupId>commons-httpclient</groupId>
 			<artifactId>commons-httpclient</artifactId>
@@ -45,6 +70,15 @@
 		</dependency>
 	</dependencies>
 	<build>
+	    <plugins>
+	      <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>        
 		<sourceDirectory>${basedir}/JavaSource</sourceDirectory>
 		<testSourceDirectory>TestSource</testSourceDirectory>
 		<resources>
