@@ -5,8 +5,11 @@
 	<groupId>org.owasp</groupId>
 	<artifactId>antisamy</artifactId>
 	<version>1.3-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML and CSS without exposing the site to XSS vulnerabilities.</description>
+	<url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
     <issueManagement>
-        <system>code.google.com</system>
+    	<system>Google Code</system>
         <url>http://code.google.com/p/owaspantisamy/issues/list</url>
     </issueManagement>
     <distributionManagement>
@@ -48,7 +51,7 @@
 		<dependency>
 			<groupId>net.sourceforge.nekohtml</groupId>
 			<artifactId>nekohtml</artifactId>
-			<version>1.9.7</version>
+			<version>1.9.11</version>
 		</dependency>
         <!--
 		<dependency>
@@ -69,8 +72,35 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<developers>
+	</developers>
+	<scm>
+		<connection>svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/current</connection>
+		<developerConnection>svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/current</developerConnection>
+		<tag>HEAD</tag>
+		<url>http://code.google.com/p/owaspantisamy/source/browse/</url>
+	</scm>
+	<organization>
+		<name>The Open Web Application Security Project (OWASP)</name>
+		<url>http://www.owasp.org/</url>
+	</organization>
 	<build>
 	    <plugins>
+	    	<plugin>
+	    		<groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.owasp.validator.html.AntiSamy</mainClass>
+                            <packageName>org.owasp.validator.html</packageName>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              				<classpathPrefix/>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+	    
 	      <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
