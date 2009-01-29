@@ -23,7 +23,6 @@ Slashdot allowed tags taken from "Reply" page:
 		<directive name="embedStyleSheets" value="false"/>
 	</directives>
 	
-	
 	<common-regexps>
 		
 		<!-- 
@@ -131,6 +130,7 @@ Slashdot allowed tags taken from "Reply" page:
 		<tag name="em" action="validate"/>
 		<tag name="blockquote" action="validate"/>
 		<tag name="tt" action="validate"/>
+		<tag name="strong" action="validate"/>
 		
 		<tag name="br" action="truncate"/>
 
