@@ -9,7 +9,7 @@
 	<property name="resources.dir"	value="resources"/>
     <property name="jar.dir"		value="${build.dir}/jar"/>
 	<property name="version.major"	value="1"/>
-	<property name="version.minor"	value="2"/>
+	<property name="version.minor"	value="3"/>
 
 	<property name="jarfile"		value="antisamy"/>
 	
