@@ -1,17 +1,18 @@
 <project name="AntiSamy" basedir="." default="main">
 
-	<property name="app.name"		value="AntiSamy"/>
-    <property name="src.dir"    	value="JavaSource"/>
-    <property name="build.dir"		value="build"/>
-	<property name="lib.dir"		value="lib"/>
-	<property name="dist.dir"		value="dist"/>
-	<property name="docs.dir"		value="doc"/>
+	<property name="app.name"			value="AntiSamy"/>
+   <property name="src.dir"    		value="JavaSource"/>
+   <property name="build.dir"			value="build"/>
+	<property name="lib.dir"			value="lib"/>
+	<property name="demo.dir"			value="demo"/>
+	<property name="dist.dir"			value="dist"/>	
+	<property name="docs.dir"			value="doc"/>
 	<property name="resources.dir"	value="resources"/>
-    <property name="jar.dir"		value="${build.dir}/jar"/>
+   <property name="jar.dir"			value="${build.dir}/jar"/>
 	<property name="version.major"	value="1"/>
 	<property name="version.minor"	value="3"/>
-
-	<property name="jarfile"		value="antisamy"/>
+	<property name="jarfile"			value="antisamy"/>
+	<property name="demowar.name"		value="AntiSamyDemoWebApp"/>
 	
 	<!-- <taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach"/> -->
 		
@@ -20,9 +21,52 @@
 			<include name="*.jar"/>
 		</fileset>
 	</path>
+
+	<filterchain id="demo-useXHTML">
+		<tokenfilter>
+			<filetokenizer/>
+			<replacestring 
+				from="&lt;directive name=&quot;useXHTML&quot; value=&quot;true&quot;/&gt;"
+				to="&lt;directive name=&quot;useXHTML&quot; value=&quot;false&quot;/&gt;"/>  		  								
+		</tokenfilter>			
+	</filterchain>
 	
+	<filterchain id="demo-positionProperty">	
+		<tokenfilter>
+			<filetokenizer/>
+			<replacestring 
+				from="&lt;!-- possible to perform phishing attacks with the following --&gt;"
+				to="&lt;!-- possible to perform phishing attacks with the following --&gt;
+					&lt;literal value=&quot;relative&quot;/&gt;
+					&lt;literal value=&quot;absolute&quot;/&gt;
+					&lt;literal value=&quot;fixed&quot;/&gt;"/>				
+		</tokenfilter>  				
+	</filterchain>
+	
+	<filterchain id="demo-cssIDExclusion">
+		<tokenfilter>
+			<filetokenizer/>
+			<replacestring 
+				from="&lt;regexp name=&quot;cssIDExclusion&quot; value=&quot;&quot;/&gt;"
+				to="&lt;regexp name=&quot;cssIDExclusion&quot; 
+					value=&quot;(#header|#menu|#profile|#footer)&quot;/&gt;"/>  		  								
+		</tokenfilter>			
+	</filterchain>
+	
+	<filterchain id="demo-baseTag">
+		<tokenfilter>
+			<filetokenizer/>
+			<replacestring 
+				from="&lt;!-- base tag removed per demo - this could be enabled with literal-list values you allow --&gt;"
+				to="&lt;!-- base tag removed per demo - this could be enabled with literal-list values you allow --&gt;
+						&lt;tag name=&quot;base&quot; action=&quot;validate&quot;&gt;
+						&lt;attribute name=&quot;href&quot;/&gt;
+						&lt;/tag&gt;"/>
+		</tokenfilter>  				
+	</filterchain>
+			
     <target name="clean">
-        <delete dir="${build.dir}"/>
+      <delete dir="${build.dir}"/>
     	<delete dir="${dist.dir}"/>
     	<delete dir="${docs.dir}/api"/>
     </target>
@@ -110,6 +154,75 @@
         	
 	</target>
 	
+	<target name="build-demo" depends="build-bin-dist">
+
+		<mkdir dir="${build.dir}/${demowar.name}"/>
+		<mkdir dir="${build.dir}/${demowar.name}/images"/>
+		<mkdir dir="${build.dir}/${demowar.name}/WEB-INF"/>			
+		<mkdir dir="${build.dir}/${demowar.name}/WEB-INF/lib"/>
+		
+		<copy todir="${build.dir}/${demowar.name}/images">
+			<fileset dir="${demo.dir}">
+				<include name="*.jpg"/>
+			</fileset>
+		</copy>
+		
+		<copy todir="${build.dir}/${demowar.name}/WEB-INF">
+			<fileset dir="${demo.dir}">
+				<include name="web.xml"/>
+			</fileset>
+		</copy>
+
+		<copy todir="${build.dir}/${demowar.name}/WEB-INF/resources">
+			<fileset dir="${resources.dir}">				
+				<include name="**"/>
+			</fileset>
+		</copy>
+
+  		<copy file="${resources.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo0.xml">
+			<filterchain refid="demo-useXHTML"/>
+			<filterchain refid="demo-positionProperty"/>
+			<filterchain refid="demo-baseTag"/>
+  		</copy>
+  		
+  		<copy file="${resources.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo1.xml">
+			<filterchain refid="demo-useXHTML"/>			
+			<filterchain refid="demo-baseTag"/>
+  		</copy>
+
+  		<copy file="${resources.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo2.xml">
+			<filterchain refid="demo-useXHTML"/>			
+			<filterchain refid="demo-baseTag"/>
+			<filterchain refid="demo-cssIDExclusion"/>
+  		</copy>
+
+  		<copy file="${resources.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo3.xml">
+			<filterchain refid="demo-useXHTML"/>
+			<filterchain refid="demo-cssIDExclusion"/>
+  		</copy>
+  				
+		<copy todir="${build.dir}/${demowar.name}/WEB-INF/lib">
+			<fileset dir="${dist.dir}"> 
+				<include name="${jarfile}-bin.${version.major}.${version.minor}.jar"/>
+			</fileset>
+			<fileset dir="${lib.dir}"/>
+		</copy>
+		
+		<copy todir="${build.dir}/${demowar.name}">
+			<fileset dir="${demo.dir}">
+				<include name="index.jsp"/>
+		
+				<include name="antisamy-demo*.xml"/>			 	
+			</fileset>			
+			<fileset dir="${build.dir}/${demowar.name}/WEB-INF/resources/"/>
+		</copy>
+
+		<war destfile="${dist.dir}/${demowar.name}.war" needxmlfile="false">
+			<fileset dir="${build.dir}/${demowar.name}/">
+				<include name="**"/>
+			</fileset>
+		</war>
+	</target>
 	<!--
 	<target name="_unzipToClassPool">
 		<unzip src="${fileName}" dest="${build.dir}"/>
