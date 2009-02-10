@@ -17,24 +17,24 @@
         <repository>
             <uniqueVersion>false</uniqueVersion>
             <id>antisamy-happyfern</id>
-            <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
+            <url>scp://antisamyrepo@antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
         </repository>
         <snapshotRepository>
           <uniqueVersion>true</uniqueVersion>
           <id>antisamy-happyfern-snapshot</id>
-          <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
+          <url>scp://antisamyrepo@antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
         </snapshotRepository>
         <!--
-            
+
             Switch this on if we ever want to use maven to publish a
             website.
-            
+
             <site>
               <id>antisamy-happyfern-sites</id>
               <name>AntiSamy Maven Project Website</name>
               <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/sites/antisamy/</url>
             </site>
-            
+
         -->
     </distributionManagement>
 	<dependencies>
@@ -100,7 +100,7 @@
                     </archive>
                 </configuration>
             </plugin>
-	    
+
 	      <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -108,7 +108,7 @@
               <skip>true</skip>
             </configuration>
           </plugin>
-        </plugins>        
+        </plugins>
 		<sourceDirectory>${basedir}/JavaSource</sourceDirectory>
 		<testSourceDirectory>TestSource</testSourceDirectory>
 		<resources>
