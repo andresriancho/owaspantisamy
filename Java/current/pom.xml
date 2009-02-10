@@ -108,6 +108,16 @@
               <skip>true</skip>
             </configuration>
           </plugin>
+
+          <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
+				<source>1.4</source>
+				<target>1.4</target>
+			</configuration>
+		  </plugin>
+
         </plugins>
 		<sourceDirectory>${basedir}/JavaSource</sourceDirectory>
 		<testSourceDirectory>TestSource</testSourceDirectory>
@@ -118,9 +128,10 @@
 					<include>**.properties</include>
 				</includes>
 			</resource>
-			<resource>
-				<directory>resources</directory>
-			</resource>
+			<!--
+			<resource><directory>resources</directory></resource>
+			-->
+
 		</resources>
 	</build>
 </project>
