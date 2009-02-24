@@ -125,17 +125,17 @@ namespace org.owasp.validator.html
         static void Main(string[] args)
         {
             string filename;
-            //filename = "c:\\AntiSamytest.java";
-            filename = args[0];
+            filename = "../../test.html";
+            //filename = args[0];
 
-
+            /*
             if (args.Length == 0)
             {
                 System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
                 System.Console.ReadLine();
                 return;
             }
-
+            */
             try
             {
 

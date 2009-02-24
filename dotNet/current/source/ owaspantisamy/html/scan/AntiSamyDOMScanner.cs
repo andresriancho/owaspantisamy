@@ -97,7 +97,8 @@ namespace org.owasp.validator.html.scan
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(html);
             doc.OptionAutoCloseOnEnd = true;
-            doc.OptionOutputAsXml = true;
+            //removed this as it was causing & problems (&nbsp; was being converted to &amp;nbsp;
+            //doc.OptionOutputAsXml = true;
 
             for (int i = 0; i < doc.DocumentNode.ChildNodes.Count; i++)
             {
@@ -142,6 +143,7 @@ namespace org.owasp.validator.html.scan
                     errBuff.Append("An unprocessable ");
                 else
                     errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName.ToLower()) + "</b> ");
+
                 errBuff.Append("tag has been filtered for security reasons. The contents of the tag will ");
                 errBuff.Append("remain in place.");
 
