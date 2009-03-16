@@ -77,12 +77,13 @@ namespace org.owasp.validator.html
         }
 
 
-        /// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
+        // <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
         /*		public CleanResults scan(string taintedHTML, Policy policy)
                 {
                     return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
                 }
         */
+
         /// <summary> This method wraps <code>scan()</code> using the Policy object passed in.</summary>
         public virtual CleanResults scan(string taintedHTML, string filename)
         {
@@ -124,18 +125,17 @@ namespace org.owasp.validator.html
         [STAThread]
         static void Main(string[] args)
         {
-            string filename;
-            filename = "../../test.html";
-            //filename = args[0];
 
-            /*
+            string filename;
+            filename = args[0];
+
             if (args.Length == 0)
             {
                 System.Console.Error.WriteLine("Please specify a URL or file name to filter - thanks!");
                 System.Console.ReadLine();
                 return;
             }
-            */
+            
             try
             {
 
@@ -196,6 +196,7 @@ namespace org.owasp.validator.html
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
             }
             Console.ReadLine();

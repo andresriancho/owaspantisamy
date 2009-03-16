@@ -43,7 +43,7 @@ namespace org.owasp.validator.html
     {
 
         private static Policy _instance = null;
-        private const string DEFAULT_POLICY_URI = @"../../antisamy-slashdot.xml";
+        private const string DEFAULT_POLICY_URI = @"../../resources/antisamy.xml";
         private const string DEFAULT_ONINVALID = "removeAttribute";
 
         public const int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -67,7 +67,7 @@ namespace org.owasp.validator.html
         /// </returns>
         public Tag getTagByName(string tagName)
         {
-                return (Tag)tagRules[tagName];
+            return (Tag)tagRules[tagName];
         }
 
         /// <summary> Retrieves a CSS Property from the Policy.</summary>
@@ -238,7 +238,7 @@ namespace org.owasp.validator.html
                     _value = node.Attributes[1].Value;
                     if (!commonRegularExpressions.ContainsKey(_name))
                         commonRegularExpressions.Add(_name, _value);
-                        //commonRegularExpressions.Add(_name, new AntiSamyPattern(_name, _value));
+                    //commonRegularExpressions.Add(_name, new AntiSamyPattern(_name, _value));
                 }
             }
             return commonRegularExpressions;
@@ -436,6 +436,9 @@ namespace org.owasp.validator.html
             Hashtable properties = new Hashtable();
             XmlNodeList propertyNodes = cssNodeList.SelectNodes("property");
 
+            /*
+		    * Loop through the list of attributes and add them to the collection.
+		    */
             foreach (XmlNode ele in propertyNodes)
             {
                 String name = (ele.Attributes["name"] == null ? null : ele.Attributes["name"].Value);
@@ -456,9 +459,17 @@ namespace org.owasp.validator.html
                 }
 
                 XmlNode regExpListNode = ele.SelectNodes("regexp-list")[0];
+
+
+
                 if (regExpListNode != null)
                 {
                     XmlNodeList regExpList = regExpListNode.SelectNodes("regexp");
+
+
+                    /*
+    				 * First go through the allowed regular expressions.
+	    			 */
                     foreach (XmlNode regExpNode in regExpList)
                     {
                         string regExpName = (regExpNode.Attributes["name"] == null ? null : regExpNode.Attributes["name"].Value);
@@ -480,7 +491,11 @@ namespace org.owasp.validator.html
                         }
                     }
                 }
+                
                 XmlNode literalListNode = ele.SelectNodes("literal-list")[0];
+                /*
+                 * Then go through the allowed constants.
+                 */
                 if (literalListNode != null)
                 {
                     XmlNodeList literalList = literalListNode.SelectNodes("literal");
@@ -521,7 +536,11 @@ namespace org.owasp.validator.html
         */
         public virtual string getRegularExpression(string name)
         {
-            return commonRegularExpressions[name].ToString();
+            if (name == null || commonRegularExpressions[name] == null) 
+                return null;
+            else
+                return commonRegularExpressions[name].ToString();
+            
         }
         /// <summary> A simple method for returning on of the <global-attribute> entries by
         /// name.

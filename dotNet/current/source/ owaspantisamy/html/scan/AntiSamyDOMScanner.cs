@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008, Jerry Hoff
+* Copyright (c) 2009, Jerry Hoff
 * 
 * All rights reserved.
 * 
@@ -29,10 +29,16 @@ using System.Xml;
 using System.Text;
 using System.Web;
 using System.Collections;
+
 using HtmlAgilityPack;
+
 using org.owasp.validator.html.model;
-using Attribute = org.owasp.validator.html.model.Attribute;
+using org.owasp.validator.css;
 using org.owasp.validator.html.util;
+
+using Attribute = org.owasp.validator.html.model.Attribute;
+
+
 
 namespace org.owasp.validator.html.scan
 {
@@ -53,14 +59,24 @@ namespace org.owasp.validator.html.scan
             set { this.results = value; }
         }
 
+        //policy holds the parsed attributes from the XML config file
         private Policy policy;
-        private CleanResults results = null;
-        private ArrayList errorMessages = new ArrayList();
-        private XmlDocument document = new XmlDocument();
-        private XmlDocumentFragment dom;
-        public const System.String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
 
-        /// <summary> This is where the magic lives.</summary>
+        //will hold the results of the scan
+        private CleanResults results = null;
+
+        //all error messages live in here
+        private ArrayList errorMessages = new ArrayList();
+
+        //needed to parse input
+        private XmlDocument document = new XmlDocument();
+
+        //needed to represent the parsed version of the input
+        private XmlDocumentFragment dom;
+
+        public const string DEFAULT_ENCODING_ALGORITHM = "UTF-8";
+
+        /// <summary> Main parsing engine </summary>
         /// <param name="html">A String whose contents we want to scan.</param>
         /// <returns> A <code>CleanResults</code> object with an <code>XMLDocumentFragment</code>
         ///  object and its String representation, as well as some scan statistics.
@@ -73,8 +89,20 @@ namespace org.owasp.validator.html.scan
                 throw new ScanException("No input (null)");
             }
 
+            //had problems with the &nbsp; getting double encoded, so this converts it to a literal space.  
+            //this may need to be changed.
+            html = html.Replace("&nbsp;", char.Parse("\u00a0").ToString());
+
+
+            //We have to replace any invalid XML characters
+            
+            html = stripNonValidXMLCharacters(html);
+
+
+            //holds the maximum input size for the incoming fragment
             int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
 
+            //grab the size specified in the config file
             try
             {
                 maxInputSize = int.Parse(policy.getDirective("maxInputSize"));
@@ -84,42 +112,64 @@ namespace org.owasp.validator.html.scan
                 Console.WriteLine("Format Exception: " + fe.ToString());
             }
 
+            //ensure our input is less than the max
             if (maxInputSize < html.Length)
             {
                 throw new ScanException("File size [" + html.Length + "] is larger than maximum [" + maxInputSize + "]");
             }
 
+            //grab start time (to be put in the result set along with end time)
             DateTime start = DateTime.Now;
+
+            //fixes some weirdness in HTML agility
             if (!HtmlNode.ElementsFlags.Contains("iframe"))
                 HtmlNode.ElementsFlags.Add("iframe", HtmlElementFlag.Empty);
             HtmlNode.ElementsFlags.Remove("form");
 
+            //Let's parse the incoming HTML
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(html);
-            doc.OptionAutoCloseOnEnd = true;
-            //removed this as it was causing & problems (&nbsp; was being converted to &amp;nbsp;
-            //doc.OptionOutputAsXml = true;
 
+            //add closing tags
+            doc.OptionAutoCloseOnEnd = true;
+
+            //enforces XML rules, encodes big 5
+            doc.OptionOutputAsXml = true;
+
+            //loop through every node now, and enforce the rules held in the policy object
             for (int i = 0; i < doc.DocumentNode.ChildNodes.Count; i++)
             {
+                //grab current node
                 HtmlNode tmp = doc.DocumentNode.ChildNodes[i];
+
+                //this node can hold other nodes, so recursively validate
                 recursiveValidateTag(tmp);
+
                 if (tmp.ParentNode == null)
                 {
                     i--;
                 }
             }
 
+            //all the cleaned HTML
             string finalCleanHTML = doc.DocumentNode.InnerHtml;
+
+            //grab end time (to be put in the result set along with start time)
             DateTime end = DateTime.Now;
+
             results = new CleanResults(start, end, finalCleanHTML, dom, errorMessages);
+
             return results;
         }
 
+
+
         int num = 0;
+
 
         private void recursiveValidateTag(HtmlNode node)
         {
+            int maxinputsize = int.Parse(policy.getDirective("maxInputSize"));
 
             num++;
 
@@ -129,7 +179,7 @@ namespace org.owasp.validator.html.scan
 
             //check this out
             //might not be robust enough
-            if (tagName.ToLower().Equals("#text"))// || tagName.ToLower().Equals("#comment"))
+            if (tagName.ToLower().Equals("#text"))  // || tagName.ToLower().Equals("#comment"))
             {
                 return;
             }
@@ -164,14 +214,63 @@ namespace org.owasp.validator.html.scan
             }
             else if ("validate".Equals(tag.Action))
             {
-                //no stylesheet support yet.  We'll add this in next release.
+                if ("style".Equals(tagName.ToLower()) && policy.getTagByName("style") != null)
+                {
+                    CssScanner styleScanner = new CssScanner(policy);
+                    try
+                    {
+
+                        CleanResults cr = styleScanner.scanStyleSheet(node.FirstChild.InnerHtml, maxinputsize);
+
+                        foreach (string msg in cr.getErrorMessages())
+                            errorMessages.Add(msg.ToString());
+
+                        /*
+                         * If IE gets an empty style tag, i.e. <style/>
+                         * it will break all CSS on the page. I wish I
+                         * was kidding. So, if after validation no CSS
+                         * properties are left, we would normally be left
+                         * with an empty style tag and break all CSS. To
+                         * prevent that, we have this check.
+                         */
+
+                        if (cr.getCleanHTML() == null || cr.getCleanHTML().Equals(""))
+                        {
+
+                            //node.getFirstChild().setNodeValue("/* */");
+                            node.FirstChild.InnerHtml = "/* */";
+
+
+                        }
+                        else
+                        {
+
+                            //node.getFirstChild().setNodeValue(cr.getCleanHTML());
+                            node.FirstChild.InnerHtml = cr.getCleanHTML();
+                        }
+
+                    }
+                    //    catch (DomException e)
+                    //    {
+                    //        addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
+                    //        parentNode.removeChild(node);
+                    //    }
+                    catch (ScanException e)
+                    {
+                        Console.WriteLine("Scan Exception: " + e.Message);
+                        
+                        //addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
+                        parentNode.RemoveChild(node);
+                    }
+                }
+
                 HtmlAttribute attribute = null;
                 for (int currentAttributeIndex = 0; currentAttributeIndex < node.Attributes.Count; currentAttributeIndex++)
                 {
                     attribute = node.Attributes[currentAttributeIndex];
 
                     string name = attribute.Name;
-                    string value_Renamed = attribute.Value;
+                    string _value = attribute.Value;
 
                     Attribute attr = tag.getAttributeByName(name);
 
@@ -184,31 +283,65 @@ namespace org.owasp.validator.html.scan
 
                     if ("style".Equals(name.ToLower()) && attr != null)
                     {
-                        //TODO: styles not supported yet
+
+                        CssScanner styleScanner = new CssScanner(policy);
+
+                        try
+                        {
+
+                            CleanResults cr = styleScanner.scanInlineStyle(_value, tagName, maxinputsize);
+
+                            //attribute.setNodeValue(cr.getCleanHTML());
+                            attribute.Value = cr.getCleanHTML();
+
+                            ArrayList cssScanErrorMessages = cr.getErrorMessages();
+
+                            foreach (string msg in cr.getErrorMessages())
+                                errorMessages.Add(msg.ToString());
+
+                        }
+                        /*
+                        catch (DOMException e)
+                        {
+
+                            addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue()) });
+
+                            ele.removeAttribute(name);
+                            currentAttributeIndex--;
+
+                        }
+                        */
+                        catch (ScanException ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            //addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue()) });
+                            //ele.removeAttribute(name);
+                            currentAttributeIndex--;
+                        }
+
                     }
                     else
                     {
                         if (attr != null)
                         {
-                            IEnumerator allowedValues = attr.AllowedValues.GetEnumerator();
-                            while (allowedValues.MoveNext() && !isAttributeValid)
-                            {
-                                string allowedValue = allowedValues.Current.ToString();
+                            //try to find out how robust this is - do I need to do this in a loop?
+                            _value = HtmlEntity.DeEntitize(_value);
 
-                                if (allowedValue != null && allowedValue.ToLower().Equals(value_Renamed.ToLower()))
+                            foreach (string allowedValue in attr.AllowedValues)
+                            {
+                                if (isAttributeValid) break;
+
+                                if (allowedValue != null && allowedValue.ToLower().Equals(_value.ToLower()))
                                 {
                                     isAttributeValid = true;
                                 }
                             }
 
-                            IEnumerator allowedRegexps = attr.AllowedRegExp.GetEnumerator();
-
-                            while (allowedRegexps.MoveNext() && !isAttributeValid)
+                            foreach (string ptn in attr.AllowedRegExp)
                             {
-                                string pattern = allowedRegexps.Current.ToString();
-                                //Console.WriteLine(attr.AllowedRegExp[i].ToString());
-
-                                Match m = Regex.Match(value_Renamed, pattern);
+                                if (isAttributeValid) break;
+                                string pattern = "^" + ptn + "$";
+                                Match m = Regex.Match(_value, pattern);
                                 if (m.Success)
                                 {
                                     isAttributeValid = true;
@@ -221,9 +354,9 @@ namespace org.owasp.validator.html.scan
                                 StringBuilder errBuff = new StringBuilder();
 
                                 errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag contained an attribute that we couldn't process. ");
-                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(value_Renamed) + "</u>. ");
+                                errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(name) + "</b> attribute had a value of <u>" + HTMLEntityEncoder.htmlEntityEncode(_value) + "</u>. ");
                                 errBuff.Append("This value could not be accepted for security reasons. We have chosen to ");
-                                
+
                                 //Console.WriteLine(policy);
 
                                 if ("removeTag".Equals(onInvalidAction))
@@ -299,7 +432,7 @@ namespace org.owasp.validator.html.scan
                 while (nnmap.Count > 0)
                 {
 
-                    StringBuilder errBuff = new System.Text.StringBuilder();
+                    StringBuilder errBuff = new StringBuilder();
 
                     errBuff.Append("The <b>" + HTMLEntityEncoder.htmlEntityEncode(nnmap[0].Name));
                     errBuff.Append("</b> attribute of the <b>" + HTMLEntityEncoder.htmlEntityEncode(tagName) + "</b> tag has been removed for security reasons. ");
@@ -349,6 +482,15 @@ namespace org.owasp.validator.html.scan
             this.policy = Policy.getInstance();
         }
 
+        private void addError(string errorKey, object[] objs)
+        {
+
+            errorMessages.Add(errorKey);
+            //errorMessages.add(ErrorMessageUtil.getMessage(errorKey, objs));
+
+        }
+
+
         private void promoteChildren(HtmlNode node)
         {
 
@@ -363,7 +505,7 @@ namespace org.owasp.validator.html.scan
 
             parent.RemoveChild(node);
         }
-        /*
+        
         private string stripNonValidXMLCharacters(string in_Renamed)
         {
 
@@ -382,6 +524,6 @@ namespace org.owasp.validator.html.scan
 
             return out_Renamed.ToString();
         }
-        */
+        
     }
 }

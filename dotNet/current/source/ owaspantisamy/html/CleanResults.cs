@@ -69,7 +69,8 @@ namespace org.owasp.validator.html
         {
             this.cleanHTML = cleanHTML;
         }
-        /**
+
+     /**
 	 * Return the filtered HTML as a String.
 	 * @return A String object which contains the serialized, safe HTML.
 	 */
