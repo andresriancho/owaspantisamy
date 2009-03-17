@@ -58,19 +58,19 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="singlePrintable" value="[a-zA-Z0-9]{1}"/> <!-- \w allows the '_' character -->
 
 		<!-- This is for elements (ex: elemName { ... }) -->
-		<regexp name="cssElementSelector" value="[a-zA-Z0-9-_]+|\*"/>
+		<regexp name="cssElementSelector" value="[a-zA-Z0-9\-_]+|\*"/>
 		
 		<!--  This is to list out any element names that are *not* valid -->
 		<regexp name="cssElementExclusion" value=""/>
 		
 		<!--  This if for classes (ex: .className { ... }) -->
-		<regexp name="cssClassSelector" value="\.[a-zA-Z0-9-_]+"/>
+		<regexp name="cssClassSelector" value="\.[a-zA-Z0-9\-_]+"/>
 
 		<!--  This is to list out any class names that are *not* valid -->
 		<regexp name="cssClassExclusion" value=""/>
 		
 		<!--  This is for ID selectors (ex: #myId { ... } -->
-		<regexp name="cssIDSelector" value="#[a-zA-Z0-9-_]+"/>
+		<regexp name="cssIDSelector" value="#[a-zA-Z0-9\-_]+"/>
 		
 		<!--  This is to list out any IDs that are *not* valid - FIXME: What should the default be to avoid div hijacking? *? -->
 		<regexp name="cssIDExclusion" value=""/>
@@ -196,12 +196,6 @@ http://www.w3.org/TR/html401/struct/global.html
 				<regexp name="onsiteURL"/>
 				<regexp name="offsiteURL"/>
 			</regexp-list>
-			<literal-list>
-				<literal value="javascript:history.go(0)"/>
-				<literal value="javascript:history.go(-1)"/>
-				<literal value="javascript:void(0)"/>
-				<literal value="javascript:location.reload()"/>
-			</literal-list>
 		</attribute>
 		
 		<attribute name="name">
@@ -804,14 +798,8 @@ http://www.w3.org/TR/html401/struct/global.html
 		<tag name="div" action="validate">
 			<attribute name="align"/>
 		</tag>
-		
-		<!-- <attribute name="id"/>  what could an attacker do if they could overwrite an existing div definition? prolly something bad -->
-		<!-- <attribute name="class"/> what could an attacker do if they could specify any class in the namespace? prolly something bad -->
 
-		
-		
-		
-		
+	
 		<!-- Image & image related tags -->
 		
 		<tag name="img" action="validate">

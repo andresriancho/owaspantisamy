@@ -22,6 +22,8 @@ http://www.w3.org/TR/html401/struct/global.html
 		know anything about the URL or your web structure
 		-->
 		<directive name="embedStyleSheets" value="false"/> 
+		<directive name="connectionTimeout" value="5000"/>
+		<directive name="maxStyleSheetImports" value="3"/>
 		
 	</directives>
 	
@@ -34,8 +36,13 @@ http://www.w3.org/TR/html401/struct/global.html
 		name or names. Multiple class names must be separated by white 
 		space characters.
 		-->
+
+		<!-- The 16 colors defined by the HTML Spec (also used by the CSS Spec) -->
+		<regexp name="colorName" value="(aqua|black|blue|fuchsia|gray|grey|green|lime|maroon|navy|olive|purple|red|silver|teal|white|yellow)"/>
 		
-		<regexp name="colorNameOrCode" value="(#[0-9a-fA-F]{6}|[a-zA-Z]{1,20})"/>
+		<!-- HTML/CSS Spec allows 3 or 6 digit hex to specify color -->
+		<regexp name="colorCode" value="(#([0-9a-fA-F]{6}|[0-9a-fA-F]{3}))"/>
+				
 		<regexp name="number" value="[0-9]+"/>
 		<regexp name="anything" value=".*"/>
 		<regexp name="numberOrPercent" value="(\d)+(%{0,1})"/>
@@ -84,19 +91,33 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="cssOnsiteUri" value="url\(([\p{L}\p{N}\\/\.\?=\#&amp;;\-_~]+|\#(\w)+)\)"/>
 		<regexp name="cssOffsiteUri" value="url\((\s)*((ht|f)tp(s?)://)[\p{L}\p{N}]+[~\p{L}\p{N}\p{Zs}\-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
 		
-		<!--  This is for comments within CSS (ex. /* comment */) -->
-		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:\[\]&quot;']+"/>
+		<!--  This if for CSS Identifiers -->
+		<regexp name="cssIdentifier" value="[a-zA-Z][a-zA-Z0-9-]+"/>
 		
+		<!--  This is for comments within CSS (ex. /* comment */) -->
+		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:&quot;']+"/>
+
 		<regexp name="integer" value="(-|\+)?[0-9]+"/>
-		<regexp name="number" value="(-|\+)?([0-9]+(.[0-9]+)?)"/>		
+		<regexp name="positiveInteger" value="(\+)?[0-9]+"/>
+		<regexp name="number" value="(-|\+)?([0-9]+(.[0-9]+)?)"/>
+		<regexp name="positiveNumber" value="(-|\+)?([0-9]+(.[0-9]+)?)"/>
 		<regexp name="angle" value="(-|\+)?([0-9]+(.[0-9]+)?)(deg|grads|rad)"/>
 		<regexp name="time" value="([0-9]+(.[0-9]+)?)(ms|s)"/>
 		<regexp name="frequency" value="([0-9]+(.[0-9]+)?)(hz|khz)"/>	
 		<regexp name="length" value="((-|\+)?0|(-|\+)?([0-9]+(.[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc))"/>
+		<regexp name="positiveLength" value="((\+)?0|(-|\+)?([0-9]+(.[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc))"/>
 		<regexp name="percentage" value="(-|\+)?([0-9]+(.[0-9]+)?)%"/>
-		<regexp name="cssColor" value="(aqua|black|blue|fuchsia|gray|grey|green|lime|maroon|navy|olive|purple|red|silver|teal|white|yellow)|rgb\(([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5]),([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5]),([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\)"/>		
+		<regexp name="positivePercentage" value="(\+)?([0-9]+(.[0-9]+)?)%"/>
+		
 		<regexp name="absolute-size" value="(xx-small|x-small|small|medium|large|x-large|xx-large)"/>
 		<regexp name="relative-size" value="(larger|smaller)"/>
+		
+		<!-- Used for CSS Color specifications (complex regexp expresses integer values of 0-255) -->
+		<regexp name="rgbCode" value="rgb\(([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5]),([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5]),([1]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\)"/>
+		
+		<!-- CSS2 Allowed System Color Values -->		
+		<regexp name="systemColor" value="(activeborder|activecaption|appworkspace|background|buttonface|buttonhighlight|buttonshadow|buttontext|captiontext|graytext|highlight|highlighttext|inactiveborder|inactivecaption|inactivecaptiontext|infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)"/>
+		
 	</common-regexps>
 	
 	<!-- 
@@ -175,12 +196,6 @@ http://www.w3.org/TR/html401/struct/global.html
 				<regexp name="onsiteURL"/>
 				<regexp name="offsiteURL"/>
 			</regexp-list>
-			<literal-list>
-				<literal value="javascript:history.go(0)"/>
-				<literal value="javascript:history.go(-1)"/>
-				<literal value="javascript:void(0)"/>
-				<literal value="javascript:location.reload()"/>
-			</literal-list>
 		</attribute>
 		
 		<attribute name="name">
@@ -250,7 +265,8 @@ http://www.w3.org/TR/html401/struct/global.html
 
 		<attribute name="bgcolor">		
 			<regexp-list>
-				<regexp name="colorNameOrCode"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
 			</regexp-list>
 		</attribute>
 		 
@@ -698,7 +714,8 @@ http://www.w3.org/TR/html401/struct/global.html
 		<tag name="font" action="validate">
 			<attribute name="color">
 				<regexp-list>
-					<regexp name="colorNameOrCode"/>
+					<regexp name="colorName"/>
+					<regexp name="colorCode"/>
 				</regexp-list>
 			</attribute>
 			
@@ -1015,7 +1032,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		
@@ -1076,7 +1096,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="border-top-color" description="">
@@ -1087,7 +1110,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="border-right-color" description="">
@@ -1098,7 +1124,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="border-bottom-color" description="">
@@ -1109,7 +1138,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="border-left-color" description="">
@@ -1120,7 +1152,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="bottom" default="auto" description="">
@@ -1168,7 +1203,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="cue-after" default="none" description="">
@@ -1544,7 +1582,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 		</property>
 		<property name="overflow" default="visible" description="">
@@ -2070,8 +2111,8 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="auto"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="length"/>
-				<regexp name="percentage"/>				
+				<regexp name="positiveLength"/>
+				<regexp name="positivePercentage"/>				
 			</regexp-list>
 		</property>
 		<property name="margin-top" default="0" description="">
@@ -2212,7 +2253,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 			<shorthand-list>
 				<shorthand name="border-width"/>
@@ -2227,7 +2271,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 			<shorthand-list>
 				<shorthand name="border-top-width"/>
@@ -2242,7 +2289,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 			<shorthand-list>
 				<shorthand name="border-top-width"/>
@@ -2257,7 +2307,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 			<shorthand-list>
 				<shorthand name="border-top-width"/>
@@ -2272,7 +2325,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 			</regexp-list>
 			<shorthand-list>
 				<shorthand name="border-top-width"/>
@@ -2389,7 +2445,7 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssId"/>
+				<regexp name="cssIdentifier"/>
 				<regexp name="integer"/>
 			</regexp-list>
 		</property>
@@ -2443,7 +2499,10 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssColor"/>
+				<regexp name="colorName"/>
+				<regexp name="colorCode"/>
+				<regexp name="rgbCode"/>
+				<regexp name="systemColor"/>
 				<regexp name="length"/>
 			</regexp-list>
 		</property>
@@ -2503,7 +2562,7 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="auto"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssId"/>
+				<regexp name="cssIdentifier"/>
 			</regexp-list>
 		</property>
 		<property name="play-during" default="auto" description="Similar to the 'cue-before' and 'cue-after' properties, this property specifies a sound to be played as a background while an element's content is spoken.">
