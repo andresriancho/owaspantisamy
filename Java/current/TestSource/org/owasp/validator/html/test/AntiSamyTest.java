@@ -1,5 +1,7 @@
 package org.owasp.validator.html.test;
 
+import java.util.regex.Pattern;
+
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
 
@@ -103,11 +105,18 @@ public class AntiSamyTest extends TestCase {
 
 		try {
 
-			assertTrue ( as.scan("<img src='http://www.myspace.com/img.gif'>",policy).getCleanHTML().indexOf("<img") != -1);
+			CleanResults cr = as.scan("<img src=\"http://www.myspace.com/img.gif\"/>",policy);
+
+			System.out.println("Errors: "+cr.getNumberOfErrors());
+			for(int i=0;i<cr.getNumberOfErrors();i++) {
+				System.out.println(cr.getErrorMessages().get(i));
+			}
+
+			assertTrue ( cr.getCleanHTML().indexOf("<img") != -1);
 			assertTrue ( as.scan("<img src=javascript:alert(document.cookie)>",policy).getCleanHTML().indexOf("<img") == -1);
 			assertTrue ( as.scan("<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>",policy).getCleanHTML().indexOf("<img") == -1 );
 
-			CleanResults cr = as.scan("<IMG SRC='&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041'>",policy);
+			cr = as.scan("<IMG SRC='&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041'>",policy);
 
 			System.out.println("Errors: "+cr.getNumberOfErrors());
 			for(int i=0;i<cr.getNumberOfErrors();i++) {
@@ -200,7 +209,7 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );
+
 	    } catch (Exception e) {
 	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());
 	    }
@@ -252,6 +261,31 @@ public class AntiSamyTest extends TestCase {
 
     public void testPreviousBugs() {
 
+    	/*
+    	 * issues 12 (and 36, which was similar). empty tags cause display problems/"formjacking"
+    	 */
+    	try {
+
+    		String s = as.scan("<br ><strong></strong><a>hello world</a><b /><i/><hr>",policy).getCleanHTML();
+    		System.out.println("OMG: " + s);
+
+    		Pattern p = Pattern.compile(".*<strong(\\s*)/>.*");
+    		assertFalse( p.matcher(s).matches() );
+
+    		p = Pattern.compile(".*<b(\\s*)/>.*");
+    		assertFalse( p.matcher(s).matches() );
+
+    		p = Pattern.compile(".*<i(\\s*)/>.*");
+    		assertFalse( p.matcher(s).matches() );
+
+    		p = Pattern.compile(".*<hr(\\s*)/>.*");
+    		assertFalse( p.matcher(s).matches() );
+
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
     	/* issue #20 */
     	try {
 
@@ -264,7 +298,12 @@ public class AntiSamyTest extends TestCase {
 
     	/* issue #28 */
     	try {
-    		assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );
+    		CleanResults cr = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy);
+    		String s = cr.getCleanHTML();
+    		for(int i=0;i<cr.getNumberOfErrors();i++) {
+    			System.out.println("Validation errors: " + cr.getErrorMessages().get(i));
+    		}
+    		assertTrue ( s.indexOf("font-family") > -1 );
     	} catch (Exception e) {
     		fail(e.getMessage());
     		e.printStackTrace();
@@ -283,16 +322,10 @@ public class AntiSamyTest extends TestCase {
     		fail(e.getMessage());
     	}
 
-    	/* issue #32 - nekos problem */
-    	try {
-    		String s = "<SCRIPT =\">\" SRC=\"\"></SCRIPT>";
-    		CleanResults cr = as.scan(s,policy);
-    	} catch( Exception e ) {
-    		e.printStackTrace();
-    		fail(e.getMessage());
-    	}
-
     	/* issue 31 */
+
+    	String toDoOnBoldTags = policy.getTagByName("b").getAction();
+
     	try {
     		String test = "<b><u><g>foo";
 
@@ -316,7 +349,64 @@ public class AntiSamyTest extends TestCase {
     	} catch (Exception e) {
     		e.printStackTrace();
     		fail(e.getMessage());
+    	} finally {
+    		policy.getTagByName("b").setAction(toDoOnBoldTags);
     	}
+
+    	/* issue #32 - nekos problem */
+    	try {
+    		String s = "<SCRIPT =\">\" SRC=\"\"></SCRIPT>";
+    		CleanResults cr = as.scan(s,policy);
+    	} catch( Exception e ) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
+
+    	/* issue #38 - color problem/color combinations */
+    	try {
+
+    		String s = "<font color=\"#fff\">Test</font>";
+    		String expected = "<font color=\"#fff\">Test</font>";
+
+        	s = "<div style=\"color: #fff\">Test</div>";
+        	expected = "<div style=\"color: #fff\">Test</div>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<div style=\"margin: -5em\">Test</div>";
+        	expected = "<div style=\"\">Test</div>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<font color=\"red\">Test</font>";
+        	expected = "<font color=\"red\">Test</font>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<font color=\"neonpink\">Test</font>";
+        	expected = "<font>Test</font>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<font color=\"#0000\">Test</font>";
+        	expected = "<font>Test</font>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<div style=\"color: #0000\">Test</div>";
+        	expected = "<div style=\"\">Test</div>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<font color=\"#000000\">Test</font>";
+        	expected = "<font color=\"#000000\">Test</font>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+        	s = "<div style=\"color: #000000\">Test</div>";
+        	expected = "<div style=\"color: #000000\">Test</div>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
     }
+
 
 }
