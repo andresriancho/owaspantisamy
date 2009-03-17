@@ -91,6 +91,9 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="cssOnsiteUri" value="url\(([\p{L}\p{N}\\/\.\?=\#&amp;;\-_~]+|\#(\w)+)\)"/>
 		<regexp name="cssOffsiteUri" value="url\((\s)*((ht|f)tp(s?)://)[\p{L}\p{N}]+[~\p{L}\p{N}\p{Zs}\-_\.@#$%&amp;;:,\?=/\+!]*(\s)*\)"/>
 		
+		<!--  This if for CSS Identifiers -->
+		<regexp name="cssIdentifier" value="[a-zA-Z][a-zA-Z0-9-]+"/>
+		
 		<!--  This is for comments within CSS (ex. /* comment */) -->
 		<regexp name="cssCommentText" value="[\p{L}\p{N}-_,\/\\\.\s\(\)!\?\=\$#%\^&amp;:&quot;']+"/>
 
@@ -2472,7 +2475,7 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="inherit"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssId"/>
+				<regexp name="cssIdentifier"/>
 				<regexp name="integer"/>
 			</regexp-list>
 		</property>
@@ -2589,7 +2592,7 @@ http://www.w3.org/TR/html401/struct/global.html
 				<literal value="auto"/>
 			</literal-list>
 			<regexp-list>
-				<regexp name="cssId"/>
+				<regexp name="cssIdentifier"/>
 			</regexp-list>
 		</property>
 		<property name="play-during" default="auto" description="Similar to the 'cue-before' and 'cue-after' properties, this property specifies a sound to be played as a background while an element's content is spoken.">
