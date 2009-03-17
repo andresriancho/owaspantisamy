@@ -17,12 +17,12 @@
         <repository>
             <uniqueVersion>false</uniqueVersion>
             <id>antisamy-happyfern</id>
-            <url>scp://antisamyrepo@antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
+            <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
         </repository>
         <snapshotRepository>
           <uniqueVersion>true</uniqueVersion>
           <id>antisamy-happyfern-snapshot</id>
-          <url>scp://antisamyrepo@antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
+          <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
         </snapshotRepository>
         <!--
 

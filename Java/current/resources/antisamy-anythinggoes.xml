@@ -465,7 +465,10 @@ http://www.w3.org/TR/html401/struct/global.html
 		<attribute name="lang"/>
 	</global-tag-attributes>
 	
-	
+	<tags-to-encode>
+		<tag>g</tag>
+		<tag>grin</tag>
+	</tags-to-encode>
 	
 	<tag-rules>
 	

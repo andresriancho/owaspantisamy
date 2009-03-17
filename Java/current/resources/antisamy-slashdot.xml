@@ -100,7 +100,11 @@ Slashdot allowed tags taken from "Reply" page:
 		<attribute name="lang"/>
 	</global-tag-attributes>
 
-
+	<tags-to-encode>
+		<tag>g</tag>
+		<tag>grin</tag>
+	</tags-to-encode>
+	
 	<tag-rules>
 
 		<!-- Tags related to JavaScript -->
