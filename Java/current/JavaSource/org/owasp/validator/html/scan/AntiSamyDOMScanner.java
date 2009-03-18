@@ -264,16 +264,22 @@ public class AntiSamyDOMScanner {
 
 		if ( node instanceof Element && node.getChildNodes().getLength() == 0 ) {
 
+			boolean isEmptyAllowed = false;
+
 			for(int i=0; i<allowedEmptyTags.length; i++) {
 				if ( allowedEmptyTags[i].equalsIgnoreCase(node.getNodeName()) ) {
-					return;
+					isEmptyAllowed = true;
+					i = allowedEmptyTags.length + 1;
 				}
 			}
 
-			/*
-			 * Wasn't in the list of allowed elements, so we'll nuke it.
-			 */
-			node.getParentNode().removeChild(node);
+			if ( ! isEmptyAllowed ) {
+				/*
+				 * Wasn't in the list of allowed elements, so we'll nuke it.
+				 */
+				node.getParentNode().removeChild(node);
+				return;
+			}
 		}
 
 		if ( !(node instanceof Element) ) {
