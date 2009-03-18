@@ -153,9 +153,7 @@ public class AntiSamyTest extends TestCase {
 
 			assertTrue ( as.scan("<STYLE>li {list-style-image: url(\"javascript:alert('XSS')\");}</STYLE><UL><LI>XSS",policy).getCleanHTML().indexOf("javascript") == -1 );
 
-
 			assertTrue ( as.scan("<IMG SRC='vbscript:msgbox(\"XSS\")'>",policy).getCleanHTML().indexOf("vbscript") == -1 );
-
 
 			assertTrue ( as.scan("<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http://;URL=javascript:alert('XSS');\">",policy).getCleanHTML().indexOf("<meta") == -1 );
 
@@ -267,7 +265,6 @@ public class AntiSamyTest extends TestCase {
     	try {
 
     		String s = as.scan("<br ><strong></strong><a>hello world</a><b /><i/><hr>",policy).getCleanHTML();
-    		System.out.println("OMG: " + s);
 
     		Pattern p = Pattern.compile(".*<strong(\\s*)/>.*");
     		assertFalse( p.matcher(s).matches() );
@@ -295,6 +292,22 @@ public class AntiSamyTest extends TestCase {
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
+
+    	/* issue #25 */
+    	try {
+
+    		String s = "<div style=\"margin: -5em\">Test</div>";
+        	String expected = "<div style=\"\">Test</div>";
+
+        	//System.err.println( "25: " + as.scan(s,policy).getCleanHTML() );
+
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
 
     	/* issue #28 */
     	try {
@@ -368,13 +381,11 @@ public class AntiSamyTest extends TestCase {
 
     		String s = "<font color=\"#fff\">Test</font>";
     		String expected = "<font color=\"#fff\">Test</font>";
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<div style=\"color: #fff\">Test</div>";
         	expected = "<div style=\"color: #fff\">Test</div>";
-        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
-
-        	s = "<div style=\"margin: -5em\">Test</div>";
-        	expected = "<div style=\"\">Test</div>";
+        	System.out.println ("38: " + as.scan(s,policy).getCleanHTML() );
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<font color=\"red\">Test</font>";
