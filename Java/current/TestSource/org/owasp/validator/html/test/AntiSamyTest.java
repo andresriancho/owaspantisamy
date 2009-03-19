@@ -301,7 +301,7 @@ public class AntiSamyTest extends TestCase {
 
         	//System.err.println( "25: " + as.scan(s,policy).getCleanHTML() );
 
-        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+        	assertEquals( as.scan(s,policy).getCleanHTML().trim(), expected.trim());
 
     	} catch (Exception e) {
     		e.printStackTrace();
@@ -311,7 +311,7 @@ public class AntiSamyTest extends TestCase {
 
     	/* issue #28 */
     	try {
-    		CleanResults cr = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">",policy);
+    		CleanResults cr = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">Test</div>",policy);
     		String s = cr.getCleanHTML();
     		for(int i=0;i<cr.getNumberOfErrors();i++) {
     			System.out.println("Validation errors: " + cr.getErrorMessages().get(i));
@@ -380,36 +380,36 @@ public class AntiSamyTest extends TestCase {
     	try {
 
     		String s = "<font color=\"#fff\">Test</font>";
-    		String expected = "<font color=\"#fff\">Test</font>";
+    		String expected = "<font color=\"#fff\">Test</font>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<div style=\"color: #fff\">Test</div>";
-        	expected = "<div style=\"color: #fff\">Test</div>";
+        	expected = "<div style=\"color: rgb(255,255,255);\">Test</div>\n";
         	System.out.println ("38: " + as.scan(s,policy).getCleanHTML() );
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<font color=\"red\">Test</font>";
-        	expected = "<font color=\"red\">Test</font>";
+        	expected = "<font color=\"red\">Test</font>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<font color=\"neonpink\">Test</font>";
-        	expected = "<font>Test</font>";
+        	expected = "<font>Test</font>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<font color=\"#0000\">Test</font>";
-        	expected = "<font>Test</font>";
+        	expected = "<font>Test</font>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<div style=\"color: #0000\">Test</div>";
-        	expected = "<div style=\"\">Test</div>";
+        	expected = "<div style=\"\">Test</div>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<font color=\"#000000\">Test</font>";
-        	expected = "<font color=\"#000000\">Test</font>";
+        	expected = "<font color=\"#000000\">Test</font>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
         	s = "<div style=\"color: #000000\">Test</div>";
-        	expected = "<div style=\"color: #000000\">Test</div>";
+        	expected = "<div style=\"color: rgb(0,0,0);\">Test</div>\n";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
     	} catch (Exception e) {
