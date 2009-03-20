@@ -231,6 +231,20 @@ public class AntiSamyDOMScanner {
 			 */
 			String finalCleanHTML = sw.getBuffer().toString();
 
+			/*
+			 * I thought you could just call String.trim(), but it doesn't work.
+			 */
+			if ( finalCleanHTML.endsWith ("\n") ) {
+				if ( ! html.endsWith("\n") ) {
+
+					if ( finalCleanHTML.endsWith("\r\n") ) {
+						finalCleanHTML = finalCleanHTML.substring(0,finalCleanHTML.length()-2);
+					} else if ( finalCleanHTML.endsWith("\n") ) {
+						finalCleanHTML = finalCleanHTML.substring(0,finalCleanHTML.length()-1);
+					}
+				}
+			}
+
 			/**
 			 * Return DOM object as well as string HTML.
 			 */
