@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<name>OWASP AntiSamy</name>
+	<groupId>org.owasp</groupId>
+	<artifactId>antisamy</artifactId>
+	<version>1.3-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML and CSS without exposing the site to XSS vulnerabilities.</description>
+	<url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
+    <issueManagement>
+    	<system>Google Code</system>
+        <url>http://code.google.com/p/owaspantisamy/issues/list</url>
+    </issueManagement>
+    <distributionManagement>
+        <downloadUrl>http://antisamy.happyfern.com/maven2/</downloadUrl>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>antisamy-happyfern</id>
+            <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
+        </repository>
+        <snapshotRepository>
+          <uniqueVersion>true</uniqueVersion>
+          <id>antisamy-happyfern-snapshot</id>
+          <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
+        </snapshotRepository>
+        <!--
+
+            Switch this on if we ever want to use maven to publish a
+            website.
+
+            <site>
+              <id>antisamy-happyfern-sites</id>
+              <name>AntiSamy Maven Project Website</name>
+              <url>sftp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/sites/antisamy/</url>
+            </site>
+
+        -->
+    </distributionManagement>
+	<dependencies>
+		<dependency>
+			<groupId>xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>batik</groupId>
+			<artifactId>batik-css</artifactId>
+			<version>1.6-1</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sourceforge.nekohtml</groupId>
+			<artifactId>nekohtml</artifactId>
+			<version>1.9.11</version>
+		</dependency>
+        <!--
+		<dependency>
+			<groupId>nekohtml</groupId>
+			<artifactId>nekohtml</artifactId>
+			<version>1.9.6.2</version>
+		</dependency>
+        -->
+		<dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<version>3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.4</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<developers>
+	</developers>
+	<scm>
+		<connection>svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/current</connection>
+		<developerConnection>svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/current</developerConnection>
+		<tag>HEAD</tag>
+		<url>http://code.google.com/p/owaspantisamy/source/browse/</url>
+	</scm>
+	<organization>
+		<name>The Open Web Application Security Project (OWASP)</name>
+		<url>http://www.owasp.org/</url>
+	</organization>
+	<build>
+	    <plugins>
+	    	<plugin>
+	    		<groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.owasp.validator.html.AntiSamy</mainClass>
+                            <packageName>org.owasp.validator.html</packageName>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              				<classpathPrefix/>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+	      <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+
+          <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
+				<source>1.4</source>
+				<target>1.4</target>
+			</configuration>
+		  </plugin>
+
+        </plugins>
+		<sourceDirectory>${basedir}/JavaSource</sourceDirectory>
+		<testSourceDirectory>TestSource</testSourceDirectory>
+		<resources>
+			<resource>
+				<directory>JavaSource</directory>
+				<includes>
+					<include>**.properties</include>
+				</includes>
+			</resource>
+			<!--
+			<resource><directory>resources</directory></resource>
+			-->
+
+		</resources>
+	</build>
+</project>
