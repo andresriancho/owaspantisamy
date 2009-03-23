@@ -301,7 +301,7 @@ public class AntiSamyTest extends TestCase {
 
         	//System.err.println( "25: " + as.scan(s,policy).getCleanHTML() );
 
-        	//assertEquals( as.scan(s,policy).getCleanHTML(), expected);
+        	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
     	} catch (Exception e) {
     		e.printStackTrace();
