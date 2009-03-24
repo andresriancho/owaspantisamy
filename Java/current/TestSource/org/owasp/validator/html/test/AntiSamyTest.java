@@ -420,6 +420,10 @@ public class AntiSamyTest extends TestCase {
         	expected = "<div style=\"color: rgb(0,0,0);\">Test</div>";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
+        	s = "<style><script>alert(1)</script></style>@import 'x';";
+        	as.scan(s,policy);
+
+
     	} catch (Exception e) {
     		e.printStackTrace();
     		fail(e.getMessage());
