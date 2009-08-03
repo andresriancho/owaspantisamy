@@ -65,7 +65,6 @@ import org.xml.sax.SAXException;
 
 public class Policy {
 
-	private static Policy _instance = null;
 	private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
 	private static final String DEFAULT_ONINVALID = "removeAttribute";
 
@@ -135,12 +134,10 @@ public class Policy {
 	public static Policy getInstance() throws PolicyException {
 
 		try {
-			_instance = new Policy(new FileInputStream(DEFAULT_POLICY_URI));
+			return new Policy(new FileInputStream(DEFAULT_POLICY_URI));
 		} catch (IOException e) {
 			throw new PolicyException(e);
 		}
-
-		return _instance;
 	}
 
 	/**
@@ -152,12 +149,10 @@ public class Policy {
 	public static Policy getInstance(String filename) throws PolicyException {
 
 		try {
-			_instance = new Policy(new FileInputStream(filename));
+			return new Policy(new FileInputStream(filename));
 		} catch (IOException e) {
 			throw new PolicyException(e);
 		}
-
-		return _instance;
 	}
 
 	/**
@@ -169,12 +164,11 @@ public class Policy {
 	public static Policy getInstance(File file) throws PolicyException {
 
 		try {
-			_instance = new Policy(new FileInputStream(file.getAbsoluteFile()));
+			return new Policy(new FileInputStream(file.getAbsoluteFile()));
 		} catch (IOException e) {
 			throw new PolicyException(e);
 		}
 
-		return _instance;
 	}
 
 
@@ -195,9 +189,8 @@ public class Policy {
 	 */
 	public static Policy getInstance(InputStream inputStream) throws PolicyException {
 
-		_instance = new Policy(inputStream);
+		return new Policy(inputStream);
 
-		return _instance;
 	}
 
 	/**
