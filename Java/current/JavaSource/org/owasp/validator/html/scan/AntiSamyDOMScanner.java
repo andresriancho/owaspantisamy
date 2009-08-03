@@ -27,7 +27,6 @@ package org.owasp.validator.html.scan;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -36,6 +35,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
+import org.apache.batik.css.parser.ParseException;
 import org.apache.xerces.dom.DocumentImpl;
 import org.apache.xml.serialize.HTMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
@@ -63,6 +63,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 
 
+
 /**
  * This is where the magic lives. All the scanning/filtration logic resides here, but it should not be called
  * directly. All scanning should be done through a <code>AntiSamy.scan()</code> method.
@@ -87,10 +88,16 @@ public class AntiSamyDOMScanner {
 	private ResourceBundle messages = null;
 	private Locale locale = Locale.getDefault();
 
+	private boolean isNofollowAnchors = false; 
+	
 	/*
 	 * Hardcoded list of tags that are strictly barred from having children.
 	 */
-	private String[] allowedEmptyTags = { "br", "hr", "col", "img", "basefont", "col" };
+	private String[] allowedEmptyTags = { 
+			"br", "hr", 
+			"img", "link", "iframe", "script", "object", "applet",
+			"frame", "base", "param", "meta", "textarea", "embed",
+			"basefont", "col"  };
 
 	public void initializeErrors() {
 
@@ -123,6 +130,7 @@ public class AntiSamyDOMScanner {
 			throw new ScanException( errorMessages.get(0).toString() );
 		}
 
+		isNofollowAnchors = "true".equals(policy.getDirective("nofollowAnchors"));
 
 		Date start = new Date();
 
@@ -283,7 +291,7 @@ public class AntiSamyDOMScanner {
 			for(int i=0; i<allowedEmptyTags.length; i++) {
 				if ( allowedEmptyTags[i].equalsIgnoreCase(node.getNodeName()) ) {
 					isEmptyAllowed = true;
-					i = allowedEmptyTags.length + 1;
+					i = allowedEmptyTags.length;
 				}
 			}
 
@@ -410,21 +418,7 @@ public class AntiSamyDOMScanner {
 
 					if ( node.getFirstChild() != null ) {
 
-						boolean isCdata = false;
 						String toScan = node.getFirstChild().getNodeValue();
-
-						/* Check to see if the text starts with (\s)*<![CDATA[
-						 * and end with ]]>(\s)*.
-						 */
-
-						Pattern p = Pattern.compile("^(\\s)*<!\\[CDATA\\[(.*)\\]\\]>(\\s)*$");
-
-						if ( p.matcher(toScan).matches() ) {
-							isCdata = false;
-							int i = toScan.indexOf("[CDATA[") + 7;
-							int j = toScan.lastIndexOf("]]>");
-							toScan = toScan.substring(i,j);
-						}
 
 						CleanResults cr = styleScanner.scanStyleSheet(toScan, policy.getMaxInputSize());
 
@@ -439,21 +433,16 @@ public class AntiSamyDOMScanner {
 						 * prevent that, we have this check.
 						 */
 
-						if ( cr.getCleanHTML() == null || cr.getCleanHTML().equals("") ) {
-
+						final String cleanHTML = cr.getCleanHTML();
+						
+						if ( cleanHTML == null || cleanHTML.equals("") ) {
+							
 							node.getFirstChild().setNodeValue("/* */");
 
 						} else {
 
-							if ( isCdata ) {
-								node.getFirstChild().setNodeValue(
-										"<![CDATA[" +
-										cr.getCleanHTML() +
-										"]]>");
-							} else {
-								node.getFirstChild().setNodeValue(cr.getCleanHTML());
-							}
-
+							node.getFirstChild().setNodeValue(cleanHTML);
+							
 						}
 
 					}
@@ -470,6 +459,27 @@ public class AntiSamyDOMScanner {
 					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
 					parentNode.removeChild(node);
 
+					return;
+				
+				/*
+				 * This shouldn't be reachable anymore, but we'll leave it here
+				 * because I'm hilariously dumb sometimes.
+				 */
+				} catch (ParseException e) {
+
+					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
+					parentNode.removeChild(node);
+
+					return;
+					
+				/*
+				 * Batik can throw NumberFormatExceptions (see bug #48).
+				 */
+				} catch (NumberFormatException e) {
+					
+					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) } );
+					parentNode.removeChild(node);
+				
 					return;
 				}
 			}
@@ -539,7 +549,6 @@ public class AntiSamyDOMScanner {
 						ele.removeAttribute(attribute.getNodeName());
 						currentAttributeIndex--;
 					}
-
 
 				} else {
 
@@ -673,6 +682,10 @@ public class AntiSamyDOMScanner {
 
 			} // loop through each attribute
 
+			if ( isNofollowAnchors && "a".equals(tagName.toLowerCase()) ) {
+				ele.setAttribute("rel", "nofollow");
+			}
+			
 			for(int i=0;i<node.getChildNodes().getLength();i++) {
 
 				tmp = node.getChildNodes().item(i);

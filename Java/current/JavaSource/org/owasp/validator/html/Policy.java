@@ -79,7 +79,8 @@ public class Policy {
 	public static final String FORMAT_OUTPUT = "formatOutput";
 	public static final String EMBED_STYLESHEETS = "embedStyleSheets";
 	public static final String CONNECTION_TIMEOUT = "connectionTimeout";
-
+	public static final String ANCHORS_NOFOLLOW = "nofollowAnchors";
+	
 	public static final String ENCODE_TAGS = "onUnknownTag";
 
 	private static char REGEXP_BEGIN = '^';

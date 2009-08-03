@@ -107,21 +107,11 @@ public class AntiSamyTest extends TestCase {
 
 			CleanResults cr = as.scan("<img src=\"http://www.myspace.com/img.gif\"/>",policy);
 
-			/*System.out.println("Errors: "+cr.getNumberOfErrors());
-			for(int i=0;i<cr.getNumberOfErrors();i++) {
-				System.out.println(cr.getErrorMessages().get(i));
-			}*/
-
 			assertTrue ( cr.getCleanHTML().indexOf("<img") != -1);
 			assertTrue ( as.scan("<img src=javascript:alert(document.cookie)>",policy).getCleanHTML().indexOf("<img") == -1);
 			assertTrue ( as.scan("<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>",policy).getCleanHTML().indexOf("<img") == -1 );
 
 			cr = as.scan("<IMG SRC='&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041'>",policy);
-
-			/*System.out.println("Errors: "+cr.getNumberOfErrors());
-			for(int i=0;i<cr.getNumberOfErrors();i++) {
-				System.out.println(cr.getErrorMessages().get(i));
-			}*/
 
 			assertTrue ( as.scan("<IMG SRC=\"jav&#x0D;ascript:alert('XSS');\">",policy).getCleanHTML().indexOf("alert") == -1 );
 
@@ -205,8 +195,8 @@ public class AntiSamyTest extends TestCase {
 
 			assertTrue ( as.scan("<div style=\"position:absolute\">",policy).getCleanHTML().indexOf("position") == -1 );
 			assertTrue ( as.scan("<style>b { position:absolute }</style>",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("position") == -1 );
-			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("position") == -1 );
+			assertTrue ( as.scan("<div style=\"z-index:25\">",policy).getCleanHTML().indexOf("z-index") == -1 );
+			assertTrue ( as.scan("<style>z-index:25</style>",policy).getCleanHTML().indexOf("z-index") == -1 );
 
 	    } catch (Exception e) {
 	    	fail("Caught exception in testCssAttacks(): "+e.getMessage());
@@ -228,7 +218,7 @@ public class AntiSamyTest extends TestCase {
                 as.scan(testStr, policy);
 
             } catch (ScanException ex) {
-                // still success
+                // still success!
 
             } catch (Throwable ex) {
             	ex.printStackTrace();
@@ -298,9 +288,6 @@ public class AntiSamyTest extends TestCase {
 
     		String s = "<div style=\"margin: -5em\">Test</div>";
         	String expected = "<div style=\"\">Test</div>";
-
-        	//System.err.println( "25: " + as.scan(s,policy).getCleanHTML() );
-
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
     	} catch (Exception e) {
@@ -313,13 +300,6 @@ public class AntiSamyTest extends TestCase {
     	try {
     		CleanResults cr = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">Test</div>",policy);
     		String s = cr.getCleanHTML();
-
-    		/*
-    		for(int i=0;i<cr.getNumberOfErrors();i++) {
-    			System.out.println("Validation errors: " + cr.getErrorMessages().get(i));
-    		}
-    		*/
-
     		assertTrue ( s.indexOf("font-family") > -1 );
 
     	} catch (Exception e) {
@@ -330,14 +310,26 @@ public class AntiSamyTest extends TestCase {
     	/* issue #30 */
     	try {
     		String s = "<style type=\"text/css\"><![CDATA[P { margin-bottom: 0.08in; } ]]></style>";
+    		
     		CleanResults cr = as.scan(s,policy);
 
-    		/*
-    		for(int i=0;i<cr.getNumberOfErrors();i++) {
-    			System.out.println(cr.getErrorMessages().get(i).toString());
-    		}
-    		System.out.println(cr.getCleanHTML());
-    		*/
+    		String oldValue = policy.getDirective(Policy.USE_XHTML);
+    		
+    		/* followup - does the patch fix multiline CSS? */
+    		String s2 = "<style type=\"text/css\"><![CDATA[\r\nP {\r\n margin-bottom: 0.08in;\r\n}\r\n]]></style>";
+    		cr = as.scan(s2, policy);
+    		assertEquals("<style type=\"text/css\"><![CDATA[P {\n\tmargin-bottom: 0.08in;\n}\n]]></style>", cr.getCleanHTML());
+    		
+    		/* next followup - does non-CDATA parsing still work? */
+    		
+    		policy.setDirective("useXHTML", "false");
+    		String s3 = "<style>P {\n\tmargin-bottom: 0.08in;\n}\n";
+    		cr = as.scan(s3, policy);
+    		assertEquals("<style>P {\n\tmargin-bottom: 0.08in;\n}\n</style>\n", cr.getCleanHTML());
+    		
+    		policy.setDirective(Policy.USE_XHTML, oldValue); //reset this value for other tests
+    		
+
 
     	} catch( Exception e ) {
     		e.printStackTrace();
@@ -378,13 +370,13 @@ public class AntiSamyTest extends TestCase {
     	/* issue #32 - nekos problem */
     	try {
     		String s = "<SCRIPT =\">\" SRC=\"\"></SCRIPT>";
-    		CleanResults cr = as.scan(s,policy);
+    		as.scan(s,policy);
     	} catch( Exception e ) {
     		e.printStackTrace();
     		fail(e.getMessage());
     	}
 
-
+    	
     	/* issue #38 - color problem/color combinations */
     	try {
 
@@ -420,16 +412,95 @@ public class AntiSamyTest extends TestCase {
         	expected = "<div style=\"color: rgb(0,0,0);\">Test</div>";
         	assertEquals( as.scan(s,policy).getCleanHTML(), expected);
 
-        	s = "<style><script>alert(1)</script></style>@import 'x';";
-        	as.scan(s,policy);
-
-
+        	/*
+        	 * This test case was failing because of the following code from the batik CSS
+        	 * library, which throws an exception if any character other than a '!'
+        	 * follows a beginning token of '<'. The ParseException is now caught in the node a
+        	 * CssScanner.java and the outside AntiSamyDOMScanner.java.
+        	 * 
+        	 	0398                 nextChar();
+				0399                 if (current != '!') {
+				0400                     throw new ParseException("character",
+				0401                                              reader.getLine(),
+				0402                                              reader.getColumn());
+        	 */
+        	s = "<b><u>foo<style><script>alert(1)</script></style>@import 'x';</u>bar";
+        	CleanResults cr = as.scan(s,policy);
+        	
     	} catch (Exception e) {
     		e.printStackTrace();
     		fail(e.getMessage());
     	}
+    	
+    	/* issue #44 - childless nodes of non-allowed elements won't cause an error */
+    	
+    	try {
+    		String s = "<iframe src='http://foo.com/'></iframe>" +
+    				 "<script src=''></script>" + 
+    				 "<link href='/foo.css'>";
+    		CleanResults cr = as.scan(s,policy);
+    		
+    		assertEquals(cr.getNumberOfErrors(),3);
+    		
+    	} catch (Exception e) {
+    		fail(e.getMessage());
+    	}
 
     }
+    
+    /*
+	 * Tests cases dealing with nofollowAnchors directive. Assumes anchor tags
+	 * have an action set to "validate" (may be implicit) in the policy file.
+	 */
+	public void testNofollowAnchors() {
+		
+		try {
+		
+			// if we have activated nofollowAnchors
+			String val = policy.getDirective(Policy.ANCHORS_NOFOLLOW);
+		
+			policy.setDirective(Policy.ANCHORS_NOFOLLOW, "true");
+	
+			// adds when not present
+			CleanResults cr = as.scan("<a href=\"blah\">link</a>",policy); 
+			assertTrue(cr.getCleanHTML().indexOf("<a href=\"blah\" rel=\"nofollow\">link</a>") > -1);
+
+			// adds properly even with bad attr
+			assertTrue(as.scan("<a href=\"blah\" bad=\"true\">link</a>",policy)
+					.getCleanHTML().indexOf(
+							"<a href=\"blah\" rel=\"nofollow\">link</a>") > -1);
+
+			// rel with bad value gets corrected
+			assertTrue(as.scan("<a href=\"blah\" rel=\"blh\">link</a>",policy)
+					.getCleanHTML().indexOf(
+							"<a href=\"blah\" rel=\"nofollow\">link</a>") > -1);
+
+			// correct attribute doesnt get messed with
+			assertTrue(as
+					.scan("<a href=\"blah\" rel=\"nofollow\">link</a>",policy)
+					.getCleanHTML().indexOf(
+							"<a href=\"blah\" rel=\"nofollow\">link</a>") > -1);
+
+			// if two correct attributes, only one remaining after scan
+			assertTrue(as
+					.scan(
+							"<a href=\"blah\" rel=\"nofollow\" rel=\"nofollow\">link</a>",policy)
+					.getCleanHTML().indexOf(
+							"<a href=\"blah\" rel=\"nofollow\">link</a>") > -1);
+
+			// test if value is off - does it add?
+			
+			assertTrue(as.scan("a href=\"blah\">link</a>", policy)
+					.getCleanHTML().indexOf(
+							"nofollow") == -1 );
+			
+			policy.setDirective(Policy.ANCHORS_NOFOLLOW, val);
+			
+		} catch (Exception e) {
+			fail("Caught exception in testNofollowAnchors(): " + e.getMessage());
+		}
+	}
+
 
 
 }

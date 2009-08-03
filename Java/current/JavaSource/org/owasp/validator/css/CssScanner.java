@@ -38,7 +38,10 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.batik.css.parser.ParseException;
 import org.apache.batik.css.parser.Parser;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpContentTooLargeException;
@@ -66,6 +69,8 @@ public class CssScanner {
 
     private static final int DEFAULT_TIMEOUT = 1000;
 
+    private static final String CDATA = "^\\s*<!\\[CDATA\\[(.*)\\]\\]>\\s*$";
+    
     /**
      * The parser to be used in any scanning
      */
@@ -114,6 +119,19 @@ public class CssScanner {
 	Date startOfScan = new Date();
 	ArrayList errorMessages = new ArrayList();
 
+	/* Check to see if the text starts with (\s)*<![CDATA[
+	 * and end with ]]>(\s)*.
+	 */
+
+	Pattern p = Pattern.compile(CDATA, Pattern.DOTALL);
+	Matcher m = p.matcher(taintedCss);
+	
+	boolean isCdata = m.matches();
+	
+	if ( isCdata ) {
+		taintedCss = m.group(1);
+	}
+	
 	// Create a queue of all style sheets that need to be validated to
 	// account for any sheets that may be imported by the current CSS
 	LinkedList stylesheets = new LinkedList();
@@ -133,12 +151,25 @@ public class CssScanner {
 			    taintedCss)));
 	} catch (IOException ioe) {
 	    throw new ScanException(ioe);
+	    
+	/*
+	 * ParseExceptions, from batik, is unfortunately a RuntimeException.
+	 */
+	} catch (ParseException pe) {
+		throw new ScanException(pe);
 	}
 
 	parseImportedStylesheets(stylesheets, handler, errorMessages, sizeLimit);
 
-	return new CleanResults(startOfScan, new Date(), handler
-		.getCleanStylesheet(), null, errorMessages);
+	String cleaned = handler.getCleanStylesheet();
+	
+	if ( isCdata && ! "true".equals(policy.getDirective(Policy.USE_XHTML)) ) {
+		cleaned = "<![CDATA[[" + cleaned + "]]>";
+	}
+	
+	return new CleanResults(startOfScan, new Date(), 
+			cleaned, 
+			null, errorMessages);
     }
 
     /**
