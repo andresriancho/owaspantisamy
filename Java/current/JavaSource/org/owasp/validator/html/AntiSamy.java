@@ -173,11 +173,10 @@ public class AntiSamy {
 
 			AntiSamy as = new AntiSamy();
 			
-			CleanResults test = as.scan(buff.toString(), Policy.getInstance("/antisamy.xml"));
+			CleanResults test = as.scan(buff.toString(), Policy.getInstance("C:/Users/adabirsiaghi/workspace/AntiSamy Current Branch/resources/antisamy.xml"));
 			
-			System.out.println("[1] Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds");
-			
-	        System.out.println("\n[2] Clean HTML fragment:\n" +  test.getCleanHTML());
+			System.out.println("[1] Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds\n");
+	        System.out.println("[2] Clean HTML fragment:\n" +  test.getCleanHTML());
 	        System.out.println("[3] Error Messages ("+test.getNumberOfErrors() +"):");
 	        
 			for(int i=0;i<test.getErrorMessages().size();i++) {

@@ -47,7 +47,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		<regexp name="number" value="[0-9]+"/>
 		<regexp name="anything" value=".*"/>
 		<regexp name="numberOrPercent" value="(\d)+(%{0,1})"/>
-		<regexp name="paragraph" value="([\p{L}\p{N},'\.\s\-_\(\)]|&amp;[0-9]{2};)*"/>	
+		<regexp name="paragraph" value="([\p{L}\p{N},'\.\s\-_\(\)\?]|&amp;[0-9]{2};)*"/>	
 		<regexp name="htmlId" value="[a-zA-Z0-9-_]+"/>
 		<regexp name="htmlTitle" value="[\p{L}\p{N}\s-_',:\[\]!\./\\\(\)]*"/> <!-- force non-empty with a '+' at the end instead of '*' -->
 		<regexp name="htmlClass" value="[a-zA-Z0-9\s,-_]+"/>
@@ -175,6 +175,10 @@ http://www.w3.org/TR/html401/struct/global.html
 		 <attribute name="style" description="The 'style' attribute provides the ability for users to change many attributes of the tag's contents using a strict syntax"/>
 		 
 		 <attribute name="media">
+		 	<regexp-list>
+		 		<regexp value="[a-zA-Z0-9,\-\s]+"/>
+		 	</regexp-list>
+		 	
 		 	<literal-list>
 		 		<literal value="screen"/>
 		 		<literal value="tty"/>
@@ -186,6 +190,7 @@ http://www.w3.org/TR/html401/struct/global.html
 		 		<literal value="aural"/>
 		 		<literal value="all"/>
 		 	</literal-list>
+		 	
 		 </attribute>
 		 
 		 

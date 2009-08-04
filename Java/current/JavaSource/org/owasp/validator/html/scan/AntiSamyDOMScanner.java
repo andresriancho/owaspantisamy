@@ -211,8 +211,9 @@ public class AntiSamyDOMScanner {
 			 */
 
 			format.setEncoding(outputEncoding);
-			format.setOmitXMLDeclaration( "true".equals(policy.getDirective("omitXmlDeclaration")) );
-			format.setOmitDocumentType( "true".equals(policy.getDirective("omitDoctypeDeclaration")) );
+			format.setOmitXMLDeclaration( "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION)) );
+			format.setOmitDocumentType( "true".equals(policy.getDirective(Policy.OMIT_DOCTYPE_DECLARATION)) );
+			
 			format.setPreserveEmptyAttributes(true);
 
 			if ( "true".equals(policy.getDirective("formatOutput") ) ) {
@@ -220,8 +221,12 @@ public class AntiSamyDOMScanner {
 				format.setIndenting(true);
 				format.setIndent(2);
 			}
+			
+			boolean preserveSpace = policy.getDirective(Policy.PRESERVE_SPACE) != null ? "true".equals(policy.getDirective(Policy.PRESERVE_SPACE)) : true;
 
-			if ( "true".equals(policy.getDirective("useXHTML"))) {
+			format.setPreserveSpace( preserveSpace );
+
+			if ( "true".equals(policy.getDirective(Policy.USE_XHTML))) {
 
 				XHTMLSerializer serializer = new XHTMLSerializer(sw,format);
 				serializer.serialize(dom);
@@ -280,7 +285,19 @@ public class AntiSamyDOMScanner {
 	private void recursiveValidateTag(Node node) {
 
 		if ( node instanceof Comment ) {
-			node.getParentNode().removeChild(node);
+			
+			String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
+			
+			if ( preserveComments == null || ! "true".equals(preserveComments) ) {
+				node.getParentNode().removeChild(node);
+			} else {
+				String value = ((Comment)node).getData();
+				// Strip conditional directives regardless of the PRESERVE_COMMENTS setting.
+				if ( value != null ) {
+					((Comment)node).setData(value.replaceAll("<?!?\\[\\s*(?:end)?if[^]]*\\]>?", ""));
+				}		
+			}
+			
 			return;
 		}
 

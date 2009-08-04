@@ -1,9 +1,11 @@
 package org.owasp.validator.html.test;
 
+import java.io.InputStream;
 import java.util.regex.Pattern;
 
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
+import org.owasp.validator.html.PolicyException;
 
 
 import junit.framework.Test;
@@ -138,9 +140,6 @@ public class AntiSamyTest extends TestCase {
 			assertTrue ( as.scan("<LINK REL=\"stylesheet\" HREF=\"http://ha.ckers.org/xss.css\">",policy).getCleanHTML().indexOf("href") == -1 );
 			assertTrue ( as.scan("<STYLE>@import'http://ha.ckers.org/xss.css';</STYLE>",policy).getCleanHTML().indexOf("ha.ckers.org") == -1 );
 			assertTrue ( as.scan("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>",policy).getCleanHTML().indexOf("ha.ckers.org") == -1 );
-
-			assertTrue ( as.scan("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>",policy).getCleanHTML().indexOf("xss.htc") == -1 );
-
 			assertTrue ( as.scan("<STYLE>li {list-style-image: url(\"javascript:alert('XSS')\");}</STYLE><UL><LI>XSS",policy).getCleanHTML().indexOf("javascript") == -1 );
 
 			assertTrue ( as.scan("<IMG SRC='vbscript:msgbox(\"XSS\")'>",policy).getCleanHTML().indexOf("vbscript") == -1 );
@@ -322,7 +321,7 @@ public class AntiSamyTest extends TestCase {
     		
     		/* next followup - does non-CDATA parsing still work? */
     		
-    		policy.setDirective("useXHTML", "false");
+    		policy.setDirective(Policy.USE_XHTML, "false");
     		String s3 = "<style>P {\n\tmargin-bottom: 0.08in;\n}\n";
     		cr = as.scan(s3, policy);
     		assertEquals("<style>P {\n\tmargin-bottom: 0.08in;\n}\n</style>\n", cr.getCleanHTML());
@@ -430,6 +429,97 @@ public class AntiSamyTest extends TestCase {
     	} catch (Exception e) {
     		e.printStackTrace();
     		fail(e.getMessage());
+    	}
+    	
+    	/* issue #40 - handling <style> media attributes right */
+
+    	try {
+    		
+    		String s = "<style media=\"print, projection, screen\"> P { margin: 1em; }</style>";
+    		policy.setDirective(Policy.PRESERVE_SPACE, "true");
+    		CleanResults cr = as.scan(s,policy);
+    		String oldSpaceValue = policy.getDirective(Policy.PRESERVE_SPACE);
+    		//System.out.println("here: " + cr.getCleanHTML());
+    		assertTrue(cr.getCleanHTML().indexOf("print, projection, screen") != -1);
+    		policy.setDirective(Policy.PRESERVE_SPACE, oldSpaceValue);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+
+    	
+    	/* issue #41 - comment handling */
+    	
+    	try {
+    		
+    		String oldCommentsValue = policy.getDirective(Policy.PRESERVE_COMMENTS);
+    		String oldSpaceValue = policy.getDirective(Policy.PRESERVE_SPACE);
+    		
+    		policy.setDirective(Policy.PRESERVE_COMMENTS, "true");
+
+    		assertEquals( "text ", as.scan("text <!-- comment -->",policy).getCleanHTML());
+    		
+	        policy.setDirective(Policy.PRESERVE_COMMENTS, "true");
+	        policy.setDirective(Policy.PRESERVE_SPACE, "true");
+	        policy.setDirective(Policy.FORMAT_OUTPUT, "false");
+    		
+	        /*
+	         * These make sure the regular comments are kept alive and that 
+	         * conditional comments are ripped out.
+	         */
+	        assertEquals( "<div>text <!-- comment --></div>", 
+	        		as.scan("<div>text <!-- comment --></div>",policy).getCleanHTML());
+	        assertEquals( "<div>text <!-- comment --></div>", 
+	        		as.scan("<div>text <!--[if IE]> comment <[endif]--></div>",policy).getCleanHTML());
+
+	        /*
+	         * Check to see how nested conditional comments are handled. This is not very clean but
+	         * the main goal is to avoid any tags. Not sure on encodings allowed in comments. 
+	         */
+	        assertEquals( "<div>text <!-- <!-- comment -->&lt;[endif]--&gt;</div>", 
+	        		as.scan("<div>text <!--[if IE]> <!--[if gte 6]> comment <[endif]--><[endif]--></div>",policy).getCleanHTML());
+	        
+    		/*
+    		 * Regular comment nested inside conditional comment. Test makes sure  
+    		 */
+    		assertEquals( "<div>text <!-- <!-- IE specific --> comment &lt;[endif]--&gt;</div>", 
+    				as.scan("<div>text <!--[if IE]> <!-- IE specific --> comment <[endif]--></div>",policy).getCleanHTML());
+    		
+    		/*
+    		 * These play with whitespace and have invalid comment syntax.
+    		 */
+    		assertEquals( "<div>text <!-- \ncomment --></div>", 
+    				as.scan("<div>text <!-- [ if lte 6 ]>\ncomment <[ endif\n]--></div>",policy).getCleanHTML());
+    		assertEquals( "<div>text  comment </div>", 
+    				as.scan("<div>text <![if !IE]> comment <![endif]></div>",policy).getCleanHTML());
+    		assertEquals( "<div>text  comment </div>", 
+    				as.scan("<div>text <![ if !IE]> comment <![endif]></div>",policy).getCleanHTML());
+    		
+    		String attack = "[if lte 8]<script>";
+    		String spacer = "<![if IE]>";
+    		
+    		StringBuffer sb = new StringBuffer();
+    		
+    		sb.append("<div>text<!");
+    		
+    		for(int i=0;i<attack.length();i++) {
+    			sb.append(attack.charAt(i));
+    			sb.append(spacer);
+    		}
+    		
+    		sb.append("<![endif]>");
+    		
+    		String s = sb.toString();
+    		
+    		CleanResults cr = as.scan(s,policy);
+    		
+    		assertTrue( cr.getCleanHTML().indexOf("<script") == -1 );
+    		
+    		policy.setDirective(Policy.PRESERVE_COMMENTS, oldCommentsValue);
+    		policy.setDirective(Policy.PRESERVE_SPACE, oldSpaceValue);
+    		
+    	} catch (Exception e) {
+    		
     	}
     	
     	/* issue #44 - childless nodes of non-allowed elements won't cause an error */
