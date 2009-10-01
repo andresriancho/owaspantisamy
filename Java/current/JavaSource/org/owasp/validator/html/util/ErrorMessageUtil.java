@@ -24,8 +24,6 @@
 package org.owasp.validator.html.util;
 
 import java.text.MessageFormat;
-import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 public final class ErrorMessageUtil {
