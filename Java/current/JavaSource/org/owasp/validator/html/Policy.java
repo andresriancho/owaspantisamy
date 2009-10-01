@@ -65,6 +65,8 @@ import org.xml.sax.SAXException;
 
 public class Policy {
 
+	public static final Pattern ANYTHING_REGEXP = Pattern.compile(".*");
+
 	private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
 	private static final String DEFAULT_ONINVALID = "removeAttribute";
 
@@ -84,6 +86,9 @@ public class Policy {
 	
 	public static final String ENCODE_TAGS = "onUnknownTag";
 	
+	public static final String ACTION_VALIDATE	= "validate";
+	public static final String ACTION_FILTER	= "filter";
+	public static final String ACTION_TRUNCATE	= "truncate";
 
 	private static char REGEXP_BEGIN = '^';
 	private static char REGEXP_END = '$';

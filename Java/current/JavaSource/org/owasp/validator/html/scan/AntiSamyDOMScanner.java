@@ -84,11 +84,24 @@ public class AntiSamyDOMScanner {
 
 	private static final String DEFAULT_LOCALE_LANG = "en";
 	private static final String DEFAULT_LOCALE_LOC = "US";
+	
+	private static final Tag BASIC_PARAM_TAG_RULE;
+	static {
+		Attribute paramNameAttr = new Attribute("name");
+		Attribute paramValueAttr = new Attribute("value");
+		paramNameAttr.addAllowedRegExp(Policy.ANYTHING_REGEXP);
+		paramValueAttr.addAllowedRegExp(Policy.ANYTHING_REGEXP);
+		BASIC_PARAM_TAG_RULE = new Tag("param");
+		BASIC_PARAM_TAG_RULE.addAttribute(paramNameAttr);
+		BASIC_PARAM_TAG_RULE.addAttribute(paramValueAttr);
+		BASIC_PARAM_TAG_RULE.setAction(Policy.ACTION_VALIDATE);
+	}
 
 	private ResourceBundle messages = null;
 	private Locale locale = Locale.getDefault();
 
-	private boolean isNofollowAnchors = false; 
+	private boolean isNofollowAnchors = false;
+	private boolean isValidateParamAsEmbed = false;
 	
 	/*
 	 * Hardcoded list of tags that are strictly barred from having children.
@@ -131,6 +144,7 @@ public class AntiSamyDOMScanner {
 		}
 
 		isNofollowAnchors = "true".equals(policy.getDirective("nofollowAnchors"));
+		isValidateParamAsEmbed = "true".equals(policy.getDirective("validateParamAsEmbed"));
 
 		Date start = new Date();
 
@@ -337,7 +351,20 @@ public class AntiSamyDOMScanner {
 		String tagName = ele.getNodeName();
 
 		Tag tag = policy.getTagByName(tagName.toLowerCase());
-
+		
+		/*
+		 * If <param> and no policy and isValidateParamAsEmbed and policy in place for <embed> and
+		 * <embed> policy is to validate, use custom policy to get the tag through to the validator.
+		 */
+		boolean masqueradingParam = false;
+		if (tag == null && isValidateParamAsEmbed && "param".equals(tagName.toLowerCase())) {
+			Tag embedPolicy = policy.getTagByName("embed");
+			if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
+				tag = BASIC_PARAM_TAG_RULE;
+				masqueradingParam = true;
+			}
+		}
+		
 		if ((tag == null && "encode".equals(policy.getDirective("onUnknownTag"))) ||
 			(tag != null && "encode".equals(tag.getAction())) ) {
 
@@ -373,7 +400,7 @@ public class AntiSamyDOMScanner {
 
 			return;
 
-		} else if (tag == null || "filter".equals(tag.getAction())) {
+		} else if (tag == null || Policy.ACTION_FILTER.equals(tag.getAction())) {
 
 			if ( tag == null ) {
 				addError( ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(tagName)} );
@@ -416,8 +443,23 @@ public class AntiSamyDOMScanner {
 			return;
 
 
-		} else if ( "validate".equals(tag.getAction()) ) {
-
+		} else if ( Policy.ACTION_VALIDATE.equals(tag.getAction()) ) {
+			
+			/*
+			 * If doing <param> as <embed>, now is the time to convert it.
+			 */
+			String nameValue = null;
+			if (masqueradingParam) {
+				nameValue = ele.getAttribute("name");
+				if (nameValue != null && !nameValue.isEmpty()) {
+					String valueValue = ele.getAttribute("value");
+					ele.setAttribute(nameValue, valueValue);
+					ele.removeAttribute("name");
+					ele.removeAttribute("value");
+					tag = policy.getTagByName("embed");
+				}
+			}
+			
 			/*
 			 * Check to see if it's a <style> tag. We have to special case this
 			 * tag so we can hand it off to the custom style sheet validating
@@ -518,7 +560,7 @@ public class AntiSamyDOMScanner {
 				String name = attribute.getNodeName();
 				String value = attribute.getNodeValue();
 
-				Attribute attr = tag.getAttributeByName(name);
+				Attribute attr = tag.getAttributeByName(name.toLowerCase());
 
 				/**
 				 * If we there isn't an attribute by that name in our policy
@@ -717,9 +759,20 @@ public class AntiSamyDOMScanner {
 				}
 			}
 
+			/*
+			 * If we have been dealing with a <param> that has been converted
+			 * to an <embed>, convert it back
+			 */
+			if (masqueradingParam && nameValue != null && !nameValue.isEmpty()) {
+				String valueValue = ele.getAttribute(nameValue);
+				ele.setAttribute("name", nameValue);
+				ele.setAttribute("value", valueValue);
+				ele.removeAttribute(nameValue);
+			}
+			
 			return;
 
-		} else if ( "truncate".equals(tag.getAction()) ) {
+		} else if ( Policy.ACTION_TRUNCATE.equals(tag.getAction()) ) {
 
 			/*
 			 * Remove all attributes. This is for tags like
@@ -890,7 +943,7 @@ public class AntiSamyDOMScanner {
 
 	}
 
-	private void debug(String s) { System.out.println(s); }
+//	private void debug(String s) { System.out.println(s); }
 
 	/**
   	 * Transform the element to text, HTML-encode it and promote the children. The element
