@@ -451,7 +451,7 @@ public class AntiSamyDOMScanner {
 			String nameValue = null;
 			if (masqueradingParam) {
 				nameValue = ele.getAttribute("name");
-				if (nameValue != null && !nameValue.isEmpty()) {
+				if (nameValue != null && ! "".equals(nameValue) ) {
 					String valueValue = ele.getAttribute("value");
 					ele.setAttribute(nameValue, valueValue);
 					ele.removeAttribute("name");
