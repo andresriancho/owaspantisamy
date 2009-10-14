@@ -763,7 +763,7 @@ public class AntiSamyDOMScanner {
 			 * If we have been dealing with a <param> that has been converted
 			 * to an <embed>, convert it back
 			 */
-			if (masqueradingParam && nameValue != null && !nameValue.isEmpty()) {
+			if (masqueradingParam && nameValue != null && ! "".equals(nameValue) ) {
 				String valueValue = ele.getAttribute(nameValue);
 				ele.setAttribute("name", nameValue);
 				ele.setAttribute("value", valueValue);
