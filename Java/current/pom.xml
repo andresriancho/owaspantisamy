@@ -13,16 +13,13 @@
         <url>http://code.google.com/p/owaspantisamy/issues/list</url>
     </issueManagement>
     <distributionManagement>
-        <downloadUrl>http://antisamy.happyfern.com/maven2/</downloadUrl>
         <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>antisamy-happyfern</id>
-            <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2/</url>
+            <id>googlecode-releases.oss.sonatype.com</id>
+            <url>http://oss.sonatype.org/content/repositories/googlecode-releases</url>
         </repository>
         <snapshotRepository>
-          <uniqueVersion>true</uniqueVersion>
-          <id>antisamy-happyfern-snapshot</id>
-          <url>scp://antisamy.happyfern.com/home/antisamyrepo/antisamy.happyfern.com/maven2-snapshot/</url>
+            <id>googlecode-snapshots.oss.sonatype.com</id>
+            <url>http://oss.sonatype.org/content/repositories/googlecode-snapshots</url>
         </snapshotRepository>
         <!--
 
