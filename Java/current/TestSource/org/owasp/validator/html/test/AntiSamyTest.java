@@ -536,6 +536,19 @@ public class AntiSamyTest extends TestCase {
     		fail(e.getMessage());
     	}
 
+    	/* issue #51 - offsite urls with () are found to be invalid */
+    	try {
+    		String s = "<a href='http://subdomain.domain/(S(ke0lpq54bw0fvp53a10e1a45))/MyPage.aspx'>test</a>";
+    		CleanResults cr = as.scan(s,policy);
+    	
+    		System.out.println(cr.getCleanHTML());
+    		assertEquals(cr.getNumberOfErrors(),0);
+    		
+    	} catch (Exception e) {
+    		fail(e.getMessage());
+    	}
+    	
+    	
     }
     
     /*
