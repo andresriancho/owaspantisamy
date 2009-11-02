@@ -143,7 +143,7 @@ public class AntiSamyDOMScanner {
 			throw new ScanException( errorMessages.get(0).toString() );
 		}
 
-		isNofollowAnchors = "true".equals(policy.getDirective("nofollowAnchors"));
+		isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
 		isValidateParamAsEmbed = "true".equals(policy.getDirective("validateParamAsEmbed"));
 
 		Date start = new Date();
@@ -230,7 +230,7 @@ public class AntiSamyDOMScanner {
 			
 			format.setPreserveEmptyAttributes(true);
 
-			if ( "true".equals(policy.getDirective("formatOutput") ) ) {
+			if ( "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT) ) ) {
 				format.setLineWidth(80);
 				format.setIndenting(true);
 				format.setIndent(2);
