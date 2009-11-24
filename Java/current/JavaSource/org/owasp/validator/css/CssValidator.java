@@ -375,7 +375,10 @@ public class CssValidator {
 		case LexicalUnit.SAC_STRING_VALUE:
 		case LexicalUnit.SAC_IDENT:
 			// just a string/identifier
-			return lu.getStringValue();
+			String stringValue = lu.getStringValue();
+			if(stringValue.contains(" "))
+				stringValue = "\""+stringValue+"\"";
+			return stringValue;
 		case LexicalUnit.SAC_URI:
 			// this is a URL
 			return "url(" + lu.getStringValue() + ")";

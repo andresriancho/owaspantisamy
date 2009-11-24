@@ -306,6 +306,19 @@ public class AntiSamyTest extends TestCase {
     		e.printStackTrace();
     	}
 
+    	/* issue #29 - missing quotes around properties with spaces */
+    	
+    	try {
+
+    		String s = "<style type=\"text/css\"><![CDATA[P {\n	font-family: \"Arial Unicode MS\";\n}\n]]></style>";
+    		CleanResults cr = as.scan(s,policy);
+    		assertEquals(s, cr.getCleanHTML());
+    		
+    	} catch( Exception e ) {
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+    	
     	/* issue #30 */
     	try {
     		String s = "<style type=\"text/css\"><![CDATA[P { margin-bottom: 0.08in; } ]]></style>";
@@ -375,6 +388,39 @@ public class AntiSamyTest extends TestCase {
     		fail(e.getMessage());
     	}
 
+    	/* issue #37 - OOM */
+    	
+    	try {
+	    	String dirty = "<a onblur=\"try {parent.deselectBloggerImageGracefully();}" +
+	    		"catch(e) {}\"" +
+	    		"href=\"http://www.charityadvantage.com/ChildrensmuseumEaston/images/BookswithBill.jpg\"><img" +
+	    		"style=\"FLOAT: right; MARGIN: 0px 0px 10px 10px; WIDTH: 150px; CURSOR:" + 
+	    		"hand; HEIGHT: 100px\" alt=\"\"" +
+	    		"src=\"http://www.charityadvantage.com/ChildrensmuseumEaston/images/BookswithBill.jpg\"" +
+	    		"border=\"0\" /></a><br />Poor Bill, couldn't make it to the Museum's <span" +
+	    		"class=\"blsp-spelling-corrected\" id=\"SPELLING_ERROR_0\">story time</span>" +
+	    		"today, he was so busy shoveling! Well, we sure missed you Bill! So since" +
+	    		"ou were busy moving snow we read books about snow. We found a clue in one" +
+	    		"book which revealed a snowplow at the end of the story - we wish it had" +
+	    		"driven to your driveway Bill. We also read a story which shared fourteen" +
+	    		"<em>Names For Snow. </em>We'll catch up with you next week....wonder which" +
+	    		"hat Bill will wear?<br />Jane" ;		
+		
+			Policy mySpacePolicy = Policy.getInstance("resources/antisamy-myspace.xml");
+			CleanResults cr = as.scan(dirty, mySpacePolicy);
+			assertNotNull( cr.getCleanHTML() ) ;
+				
+			Policy ebayPolicy = Policy.getInstance("resources/antisamy-ebay.xml");
+			cr = as.scan(dirty, ebayPolicy);
+			assertNotNull( cr.getCleanHTML() ) ;
+			
+			Policy slashdotPolicy = Policy.getInstance("resources/antisamy-slashdot.xml");
+			cr = as.scan(dirty, slashdotPolicy);
+			assertNotNull( cr.getCleanHTML() ) ;
+			
+    	} catch (Exception e) {
+    		fail(e.getMessage());
+    	}
     	
     	/* issue #38 - color problem/color combinations */
     	try {
@@ -548,7 +594,22 @@ public class AntiSamyTest extends TestCase {
     		fail(e.getMessage());
     	}
     	
+    	/* issue #56 - unnecessary spaces */
     	
+    	try {
+    		String s = "<SPAN style='font-weight: bold;'>Hello World!</SPAN>";
+    		String expected = "<span style=\"font-weight: bold;\">Hello World!</span>";
+    		
+    		CleanResults cr = as.scan(s,policy);
+    		String s2 = cr.getCleanHTML();
+    		
+    		System.out.println("Cleaned string = " + s2);
+    		
+    		assertEquals(expected,s2);
+    		
+    	} catch (Exception e) {
+    		fail(e.getMessage());
+    	}
     }
     
     /*
