@@ -38,7 +38,7 @@
 
 		<!--  ([\p{L}/ 0-9&amp;\#-.?=])*
 		-->
-		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@#$%&amp;;:,\?=/\+!\(\)]*(\s)*" />
+		<regexp name="offsiteURL" value="(\s)*((ht|f)tp(s?)://|mailto:)[A-Za-z0-9]+[~a-zA-Z0-9-_\.@\#\$%&amp;;:,\?=/\+!\(\)]*(\s)*" />
 	</common-regexps>
 
 	<!--
