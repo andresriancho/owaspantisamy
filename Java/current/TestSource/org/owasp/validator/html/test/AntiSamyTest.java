@@ -1,21 +1,16 @@
 package org.owasp.validator.html.test;
 
-import java.io.InputStream;
 import java.util.regex.Pattern;
-
-import org.owasp.validator.html.AntiSamy;
-import org.owasp.validator.html.Policy;
-import org.owasp.validator.html.PolicyException;
-
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.commons.codec.binary.Base64;
+import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.CleanResults;
+import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
-import org.owasp.validator.html.model.Tag;
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which should be immune to XSS and
@@ -674,6 +669,40 @@ public class AntiSamyTest extends TestCase {
 		}
 	}
 
+	public void testValidateParamAsEmbed() {
+		try {
+			//activate policy setting for this test
+			String isValidateParamAsEmbed = policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED);
+			String isFormatOutput = policy.getDirective(Policy.FORMAT_OUTPUT);
+			policy.setDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true");
+			policy.setDirective(Policy.FORMAT_OUTPUT, "false");
+
+			//let's start with a YouTube embed
+			String input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+			String expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
+			CleanResults cr = as.scan(input, policy);
+			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
+			
+			//now what if someone sticks malicious URL in the value of the value attribute in the param tag? remove that param tag
+			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://supermaliciouscode.com/badstuff.swf\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
+			cr = as.scan(input, policy);
+			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
+			
+			//now what if someone sticks malicious URL in the value of the src attribute in the embed tag? remove that embed tag
+			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://hereswhereikeepbadcode.com/ohnoscary.swf\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
+			cr = as.scan(input, policy);
+			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
+			
+			//revert policy settings
+			policy.setDirective(Policy.VALIDATE_PARAM_AS_EMBED, isValidateParamAsEmbed);
+			policy.setDirective(Policy.FORMAT_OUTPUT, isFormatOutput);
+			
+		} catch (Exception e) {
+			fail("Caught exception in testValidateParamAsEmbed(): " + e.getMessage());
+		}
+	}
 
 
 }

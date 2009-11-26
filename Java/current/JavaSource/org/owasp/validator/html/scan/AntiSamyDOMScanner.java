@@ -144,7 +144,7 @@ public class AntiSamyDOMScanner {
 		}
 
 		isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
-		isValidateParamAsEmbed = "true".equals(policy.getDirective("validateParamAsEmbed"));
+		isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
 
 		Date start = new Date();
 
