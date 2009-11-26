@@ -32,6 +32,7 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_TAG_DISALLOWED = "error.tag.removed";
 	public static final String ERROR_TAG_FILTERED = "error.tag.filtered";
 	public static final String ERROR_TAG_ENCODED = "error.tag.encoded";
+	public static final String ERROR_TAG_EMPTY = "error.tag.empty";
 	
 	public static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filtered";
 	public static final String ERROR_ATTRIBUTE_CAUSE_ENCODE = "error.attribute.invalid.encoded";

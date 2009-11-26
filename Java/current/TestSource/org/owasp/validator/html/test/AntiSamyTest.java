@@ -15,6 +15,7 @@ import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.model.Tag;
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which should be immune to XSS and
@@ -587,7 +588,7 @@ public class AntiSamyTest extends TestCase {
     		String s = "<a href='http://subdomain.domain/(S(ke0lpq54bw0fvp53a10e1a45))/MyPage.aspx'>test</a>";
     		CleanResults cr = as.scan(s,policy);
     	
-    		System.out.println(cr.getCleanHTML());
+    		//System.out.println(cr.getCleanHTML());
     		assertEquals(cr.getNumberOfErrors(),0);
     		
     	} catch (Exception e) {
@@ -603,11 +604,19 @@ public class AntiSamyTest extends TestCase {
     		CleanResults cr = as.scan(s,policy);
     		String s2 = cr.getCleanHTML();
     		
-    		System.out.println("Cleaned string = " + s2);
-    		
     		assertEquals(expected,s2);
     		
     	} catch (Exception e) {
+    		fail(e.getMessage());
+    	}
+    	
+    	/* issue #58 - input not in list of allowed-to-be-empty tags */
+    	try {
+    		String s = "tgdan <input/> g  h";
+    		CleanResults cr = as.scan(s,policy);
+    		assertTrue ( cr.getErrorMessages().size() == 0 ) ;
+    		
+    	} catch(Exception e) {
     		fail(e.getMessage());
     	}
     }

@@ -109,7 +109,7 @@ public class AntiSamyDOMScanner {
 	private String[] allowedEmptyTags = { 
 			"br", "hr", 
 			"img", "link", "iframe", "script", "object", "applet",
-			"frame", "base", "param", "meta", "textarea", "embed",
+			"frame", "base", "param", "meta", "input", "textarea", "embed",
 			"basefont", "col"  };
 
 	public void initializeErrors() {
@@ -330,6 +330,7 @@ public class AntiSamyDOMScanner {
 				/*
 				 * Wasn't in the list of allowed elements, so we'll nuke it.
 				 */
+				addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[]{node.getNodeName()});
 				node.getParentNode().removeChild(node);
 				return;
 			}
