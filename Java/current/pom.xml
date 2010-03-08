@@ -41,14 +41,14 @@
 			<version>2.8.1</version>
 		</dependency>
 		<dependency>
-			<groupId>batik</groupId>
+			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-css</artifactId>
-			<version>1.6-1</version>
+			<version>1.7</version>
 		</dependency>
 		<dependency>
 			<groupId>net.sourceforge.nekohtml</groupId>
 			<artifactId>nekohtml</artifactId>
-			<version>1.9.11</version>
+			<version>1.9.12</version>
 		</dependency>
         <!--
 		<dependency>
