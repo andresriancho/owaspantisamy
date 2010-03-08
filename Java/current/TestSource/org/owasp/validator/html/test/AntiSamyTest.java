@@ -623,7 +623,34 @@ public class AntiSamyTest extends TestCase {
     	} catch(Exception e) {
     		fail(e.getMessage());
     	}
-    	     
+ 
+    	/* issue #69 - char attribute should allow single char or entity ref */
+    	
+    	try {
+    		String s = "<td char='.'>test</td>";
+    		CleanResults cr = as.scan(s, policy);
+    		assertTrue(cr.getCleanHTML().indexOf("char") > -1 );
+    		
+    		s = "<td char='..'>test</td>";
+    		cr = as.scan(s, policy);
+    		assertTrue(cr.getCleanHTML().indexOf("char") == -1 );
+    		
+    		s = "<td char='&quot;'>test</td>";
+    		cr = as.scan(s, policy);
+    		assertTrue(cr.getCleanHTML().indexOf("char") > -1 );
+    		
+    		s = "<td char='&quot;a'>test</td>";
+    		cr = as.scan(s, policy);
+    		assertTrue(cr.getCleanHTML().indexOf("char") == -1 );
+    		
+    		s = "<td char='&quot;&amp;'>test</td>";
+    		cr = as.scan(s, policy);
+    		assertTrue(cr.getCleanHTML().indexOf("char") == -1 );
+    		
+    	} catch(Exception e) {
+    		fail(e.getMessage());
+    	}
+    	
     }
     
     /*

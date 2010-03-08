@@ -25,13 +25,11 @@
 			name or names. Multiple class names must be separated by white
 			space characters.
 		-->
-		<regexp name="htmlTitle"
-			value="[a-zA-Z0-9\s-_',:\[\]!\./\\\(\)&amp;]*" />
+		<regexp name="htmlTitle" value="[a-zA-Z0-9\s\-_',:\[\]!\./\\\(\)&amp;]*" />
 
 		<!--  force non-empty with a '+' at the end instead of '*'
 		-->
-		<regexp name="onsiteURL"
-			value="([\p{L}\p{N}\p{Zs}/\.\?=&amp;\-~])+" />
+		<regexp name="onsiteURL" value="([\p{L}\p{N}\p{Zs}/\.\?=&amp;\-~])+" />
 
 		<!--  ([\w\\/\.\?=&amp;;\#-~]+|\#(\w)+)
 		-->
