@@ -614,6 +614,16 @@ public class AntiSamyTest extends TestCase {
     	} catch(Exception e) {
     		fail(e.getMessage());
     	}
+    	
+    	/* issue #61 - input has newline appended if ends with an accepted tag */
+    	try {
+    		String dirtyInput = "blah <b>blah</b>.";
+    		CleanResults cr = as.scan(dirtyInput, policy);
+    		assertEquals(dirtyInput,cr.getCleanHTML());
+    	} catch(Exception e) {
+    		fail(e.getMessage());
+    	}
+    	     
     }
     
     /*

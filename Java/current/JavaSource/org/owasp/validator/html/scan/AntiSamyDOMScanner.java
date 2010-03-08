@@ -107,7 +107,7 @@ public class AntiSamyDOMScanner {
 	 * Hardcoded list of tags that are strictly barred from having children.
 	 */
 	private String[] allowedEmptyTags = { 
-			"br", "hr", 
+			"br", "hr", "a",
 			"img", "link", "iframe", "script", "object", "applet",
 			"frame", "base", "param", "meta", "input", "textarea", "embed",
 			"basefont", "col"  };
