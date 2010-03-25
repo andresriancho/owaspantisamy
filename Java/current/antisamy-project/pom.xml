@@ -1,14 +1,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <name>OWASP AntiSamy Project</name>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.owasp</groupId>
-  <artifactId>antisamy-project</artifactId>
-  <packaging>pom</packaging>
-  <version>1.4-SNAPSHOT</version>
-  <modules>
-      <module>antisamy</module>
-      <module>antisamy-demo</module>
-      <module>antisamy-sample-configs</module>
-  </modules>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <name>OWASP AntiSamy Project</name>
+    <description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML and CSS without exposing the site to XSS vulnerabilities.</description>
+    <url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.owasp</groupId>
+    <artifactId>antisamy-project</artifactId>
+    <packaging>pom</packaging>
+    <version>1.4-SNAPSHOT</version>
+    <issueManagement>
+        <system>Google Code</system>
+        <url>http://code.google.com/p/owaspantisamy/issues/list</url>
+    </issueManagement>
+    <distributionManagement>
+        <repository>
+            <id>googlecode-releases.oss.sonatype.com</id>
+            <url>http://oss.sonatype.org/content/repositories/googlecode-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>googlecode-snapshots.oss.sonatype.com</id>
+            <url>http://oss.sonatype.org/content/repositories/googlecode-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+    <modules>
+        <module>antisamy</module>
+        <module>antisamy-demo</module>
+        <module>antisamy-sample-configs</module>
+    </modules>
 </project>
