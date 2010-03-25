@@ -656,6 +656,8 @@ public class AntiSamyDOMScanner {
 
 								addError( ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED, new Object[] {tagName,HTMLEntityEncoder.htmlEntityEncode(name),HTMLEntityEncoder.htmlEntityEncode(value)} );
 
+								return;
+								
 							} else if ("filterTag".equals(onInvalidAction)) {
 
 								/*
