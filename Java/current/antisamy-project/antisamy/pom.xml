@@ -43,7 +43,7 @@
         <dependency>
             <groupId>org.owasp</groupId>
             <artifactId>antisamy-sample-configs</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.4-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
