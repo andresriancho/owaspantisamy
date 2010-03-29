@@ -6,7 +6,7 @@
     <groupId>org.owasp</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4</version>
     <developers>
     </developers>
     <organization>
@@ -14,9 +14,9 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</url>
-        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</connection>
-        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</developerConnection>
+        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</url>
+        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</connection>
+        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</developerConnection>
     </scm>
     <licenses>
         <license>
@@ -66,6 +66,7 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
                     <tagBase>https://owaspantisamy.googlecode.com/svn/trunk/Java/</tagBase>
@@ -87,7 +88,7 @@
     </reporting>
     <profiles>
         <profile>
-            <id>sign-release-artifacts</id>
+            <id>release-sign-artifacts</id>
             <activation>
                 <property>
                     <name>performRelease</name>
