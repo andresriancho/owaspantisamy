@@ -8,6 +8,32 @@
     <packaging>pom</packaging>
     <version>1.4-SNAPSHOT</version>
     <developers>
+        <developer>
+            <name>Arshan Dabirsiaghi</name>
+            <email>arshan.dabirsiaghi@gmail.com</email>
+            <organization>OWASP</organization>
+            <organizationUrl>http://www.owasp.org</organizationUrl>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Jason Li</name>
+            <email>li.jason.c@gmail.com</email>
+            <organization>OWASP</organization>
+            <organizationUrl>http://www.owasp.org</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>J Irving</name>
+            <email>j@lollyshouse.net</email>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </developer>
     </developers>
     <organization>
         <name>The Open Web Application Security Project (OWASP)</name>
