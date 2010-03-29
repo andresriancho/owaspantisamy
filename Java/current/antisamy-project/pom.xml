@@ -6,7 +6,7 @@
     <groupId>org.owasp</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <developers>
     </developers>
     <organization>
@@ -14,9 +14,9 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</url>
-        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</connection>
-        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4</developerConnection>
+        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</url>
+        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</connection>
+        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/current/antisamy-project/</developerConnection>
     </scm>
     <licenses>
         <license>
