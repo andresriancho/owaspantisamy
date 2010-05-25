@@ -2001,18 +2001,6 @@ http://www.w3.org/TR/html401/struct/global.html
 				<regexp name="length"/>
 			</regexp-list>
 		</property>
-		<property name="z-index" default="auto" description="">
-			<category-list>
-				<category value="visual"/>
-			</category-list>
-			<literal-list>
-				<literal value="auto"/>
-				<literal value="inherit"/>
-			</literal-list>
-			<regexp-list>
-				<regexp name="integer"/>
-			</regexp-list>
-		</property>
 
 		<!-- end simple properties -->
 
