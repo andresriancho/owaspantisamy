@@ -26,17 +26,18 @@ package org.owasp.validator.html;
 
 import java.util.ArrayList;
 import java.util.Date;
+
 import org.w3c.dom.DocumentFragment;
 
 /**
  * This class contains the results of a scan.
  * 
- * The list of error messages (<code>errorMessages</code>) will let the user know
- * what, if any HTML errors existed, and what, if any, security or
+ * The list of error messages (<code>errorMessages</code>) will let the user
+ * know what, if any HTML errors existed, and what, if any, security or
  * validation-related errors existed, and what was done about them.
  * 
  * @author Arshan Dabirsiaghi
- *
+ * 
  */
 
 public class CleanResults {
@@ -45,17 +46,18 @@ public class CleanResults {
 	private String cleanHTML;
 	private Date startOfScan;
 	private Date endOfScan;
-	
+
 	private DocumentFragment cleanXMLDocumentFragment;
-	
+
 	/*
 	 * For extension.
 	 */
 	public CleanResults() {
-		
+
 	}
-	
-	public CleanResults(Date startOfScan, Date endOfScan, String cleanHTML, DocumentFragment XMLDocumentFragment, ArrayList errorMessages) {
+
+	public CleanResults(Date startOfScan, Date endOfScan, String cleanHTML,
+			DocumentFragment XMLDocumentFragment, ArrayList errorMessages) {
 		this.startOfScan = startOfScan;
 		this.endOfScan = endOfScan;
 		this.cleanXMLDocumentFragment = XMLDocumentFragment;
@@ -64,8 +66,11 @@ public class CleanResults {
 	}
 
 	/**
-	 * This is called at the beginning of the scan to initialize the start time and create a new CleanResults object.
-	 * @param date The begin time of the scan.
+	 * This is called at the beginning of the scan to initialize the start time
+	 * and create a new CleanResults object.
+	 * 
+	 * @param date
+	 *            The begin time of the scan.
 	 */
 	public CleanResults(Date date) {
 		this.startOfScan = date;
@@ -78,10 +83,10 @@ public class CleanResults {
 	public void setCleanHTML(String cleanHTML) {
 		this.cleanHTML = cleanHTML;
 	}
-	
-	
+
 	/**
 	 * Return the filtered HTML as a String.
+	 * 
 	 * @return A String object which contains the serialized, safe HTML.
 	 */
 	public String getCleanHTML() {
@@ -90,7 +95,9 @@ public class CleanResults {
 
 	/**
 	 * Return a list of error messages.
-	 * @return An ArrayList object which contain the error messages after a scan.
+	 * 
+	 * @return An ArrayList object which contain the error messages after a
+	 *         scan.
 	 */
 	public ArrayList getErrorMessages() {
 		return errorMessages;
@@ -98,15 +105,17 @@ public class CleanResults {
 
 	/**
 	 * Return the time when scan finished.
+	 * 
 	 * @return A Date object indicating the moment the scan finished.
 	 */
 	public Date getEndOfScan() {
-		
+
 		return endOfScan;
 	}
 
 	/**
 	 * Return the time when scan started.
+	 * 
 	 * @return A Date object indicating the moment the scan started.
 	 */
 	public Date getStartOfScan() {
@@ -115,20 +124,26 @@ public class CleanResults {
 
 	/**
 	 * Return the time elapsed during the scan.
-	 * @return A double primitive indicating the amount of time elapsed between the beginning and end of the scan in seconds.
+	 * 
+	 * @return A double primitive indicating the amount of time elapsed between
+	 *         the beginning and end of the scan in seconds.
 	 */
 	public double getScanTime() {
 		return (endOfScan.getTime() - startOfScan.getTime()) / 1000D;
 	}
-	
+
 	/**
-	 * Add an error message to the aggregate list of error messages during filtering.
-	 * @param msg An error message to append to the list of aggregate error messages during filtering.
+	 * Add an error message to the aggregate list of error messages during
+	 * filtering.
+	 * 
+	 * @param msg
+	 *            An error message to append to the list of aggregate error
+	 *            messages during filtering.
 	 */
 	public void addErrorMessage(String msg) {
 		errorMessages.add(msg);
 	}
-	
+
 	/**
 	 * Return the number of errors encountered during filtering.
 	 */
