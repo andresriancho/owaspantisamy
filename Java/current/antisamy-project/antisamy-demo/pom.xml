@@ -3,19 +3,19 @@
     <parent>
         <groupId>org.owasp.antisamy</groupId>
         <artifactId>antisamy-project</artifactId>
-        <version>1.4.1</version>
+        <version>1.5-SNAPSHOT</version>
     </parent>
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-demo</artifactId>
     <packaging>war</packaging>
-    <version>1.4.1</version>
+    <version>1.5-SNAPSHOT</version>
     <name>OWASP AntiSamy Demo App</name>
     <url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
     <dependencies>
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy</artifactId>
-            <version>1.4.1</version>
+            <version>1.5-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
