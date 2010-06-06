@@ -3,10 +3,10 @@
     <description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML and CSS without exposing the site to XSS vulnerabilities.</description>
     <url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.owasp</groupId>
+    <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
     <developers>
         <developer>
             <name>Arshan Dabirsiaghi</name>

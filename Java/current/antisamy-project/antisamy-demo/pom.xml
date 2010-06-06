@@ -1,21 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.owasp</groupId>
+        <groupId>org.owasp.antisamy</groupId>
         <artifactId>antisamy-project</artifactId>
-        <version>1.5-SNAPSHOT</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
-    <groupId>org.owasp</groupId>
+    <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-demo</artifactId>
     <packaging>war</packaging>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
     <name>OWASP AntiSamy Demo App</name>
     <url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
     <dependencies>
         <dependency>
-            <groupId>org.owasp</groupId>
+            <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy</artifactId>
-            <version>1.5-SNAPSHOT</version>
+            <version>1.4.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
@@ -28,9 +28,9 @@
                 <configuration>
                     <artifactItems>
                         <artifactItem>
-                            <groupId>org.owasp</groupId>
+                            <groupId>org.owasp.antisamy</groupId>
                             <artifactId>antisamy-sample-configs</artifactId>
-                            <version>1.4-SNAPSHOT</version>
+                            <version>1.4.1-SNAPSHOT</version>
                         </artifactItem>
                     </artifactItems>
                     <includes>**\/antisamy*.xml</includes>
