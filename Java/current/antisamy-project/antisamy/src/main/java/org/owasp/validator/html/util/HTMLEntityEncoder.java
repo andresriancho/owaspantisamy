@@ -53,7 +53,7 @@ public class HTMLEntityEncoder {
 				buff.append(ch);
 			} else if ( Character.isLetterOrDigit(ch) ) {
 				buff.append(ch);
-			} else if ( (int)ch >= 20 && (int)ch <= 126 ) {
+			} else if ( (int)ch >= 32 && (int)ch <= 126 ) {
 				buff.append( "&#" + (int)ch + ";" );			
 			}
 			
