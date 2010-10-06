@@ -1,8 +1,10 @@
 package org.owasp.validator.html.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -61,8 +63,11 @@ public class AntiSamyTest extends TestCase {
 		 * file for your environment.
 		 */
 
+		//get Policy instance from a stream to make sure includes fail nicely
 		policy = Policy.getInstance(getClass().getResourceAsStream("/antisamy.xml"));
 
+		//get Policy instance from a URL.
+		policy = Policy.getInstance(getClass().getResource("/antisamy.xml"));
 	}
 
 	protected void tearDown() throws Exception {

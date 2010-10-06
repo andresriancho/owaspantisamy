@@ -25,11 +25,15 @@
 package org.owasp.validator.html;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.xml.XMLConstants;
@@ -47,7 +51,9 @@ import org.owasp.validator.html.model.AntiSamyPattern;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Property;
 import org.owasp.validator.html.model.Tag;
+import org.owasp.validator.html.util.URIUtils;
 import org.owasp.validator.html.util.XMLUtil;
+import org.xml.sax.InputSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -94,23 +100,21 @@ public class Policy {
 	private static char REGEXP_BEGIN = '^';
 	private static char REGEXP_END = '$';
 
-	private HashMap commonRegularExpressions;
-	private HashMap commonAttributes;
-	private HashMap tagRules;
-	private HashMap cssRules;
-	private HashMap directives;
-	private HashMap globalAttributes;
-	private ArrayList encodeTags;
+	private HashMap commonRegularExpressions	= new HashMap();
+	private HashMap commonAttributes			= new HashMap();
+	private HashMap tagRules					= new HashMap();
+	private HashMap cssRules					= new HashMap();
+	private HashMap directives					= new HashMap();
+	private HashMap globalAttributes			= new HashMap();
+	private Set		encodeTags					= new HashSet();
 
 	private ArrayList tagNames;
 
+	/** The path to the base policy file, used to resolve relative paths when reading included files */
+	private static URL baseUrl					= null;
+
 	public boolean isTagInListToEncode(String s) {
-		for(int i=0;i<encodeTags.size();i++) {
-			if ( s.equals((String)encodeTags.get(i)) ) {
-				return true;
-			}
-		}
-		return false;
+		return encodeTags.contains(s);
 	}
 
 	/**
@@ -141,12 +145,7 @@ public class Policy {
 	 * @throws PolicyException If the file is not found or there is a problem parsing the file.
 	 */
 	public static Policy getInstance() throws PolicyException {
-
-		try {
-			return new Policy(new FileInputStream(DEFAULT_POLICY_URI));
-		} catch (IOException e) {
-			throw new PolicyException(e);
-		}
+		return getInstance(DEFAULT_POLICY_URI);
 	}
 
 	/**
@@ -156,12 +155,8 @@ public class Policy {
 	 * @throws PolicyException If the file is not found or there is a problem parsing the file.
 	 */
 	public static Policy getInstance(String filename) throws PolicyException {
-
-		try {
-			return new Policy(new FileInputStream(filename));
-		} catch (IOException e) {
-			throw new PolicyException(e);
-		}
+		File file = new File(filename);
+		return getInstance(file);
 	}
 
 	/**
@@ -171,23 +166,29 @@ public class Policy {
 	 * @throws PolicyException If the file is not found or there is a problem parsing the file.
 	 */
 	public static Policy getInstance(File file) throws PolicyException {
-
 		try {
-			return new Policy(new FileInputStream(file.getAbsoluteFile()));
+			URI uri = file.toURI();
+			return getInstance(uri.toURL());
 		} catch (IOException e) {
 			throw new PolicyException(e);
 		}
-
 	}
 
 
 	/**
-	 * Load the policy from an XML file.
-	 * @param file Load a policy from the File object.
-	 * @throws PolicyException
+	 * This retrieves a Policy based on the URL object passed in.
+	 *
+	 * NOTE: This is the only factory method that will work with <include> tags
+	 * in AntiSamy policy files.
+	 * 
+	 * @param url A URL object which contains the XML policy information.
+	 * @return A populated Policy object based on the XML policy file pointed to by the File parameter.
+	 * @throws PolicyException If the file is not found or there is a problem parsing the file.
 	 */
-	private Policy (File file) throws PolicyException, IOException {
-		this(new FileInputStream(file));
+	public static Policy getInstance(URL url) throws PolicyException {
+
+		if (baseUrl == null) setBaseURL(url);
+		return new Policy(url);			
 	}
 
 	/**
@@ -195,6 +196,7 @@ public class Policy {
 	 * @param inputStream An InputStream which contains thhe XML policy information.
 	 * @return A populated Policy object based on the XML policy file pointed to by the inputStream parameter.
 	 * @throws PolicyException If there is a problem parsing the input stream.
+	 * @deprecated This method does not properly load included policy files. Use getInstance(URL) instead.
 	 */
 	public static Policy getInstance(InputStream inputStream) throws PolicyException {
 
@@ -203,9 +205,78 @@ public class Policy {
 	}
 
 	/**
+	 * Load the policy from a URL.
+	 *
+	 * @param filename Load a policy from the filename specified.
+	 * @throws PolicyException
+	 */
+	private Policy(URL url) throws PolicyException {
+
+
+		try {
+
+			InputSource source = resolveEntity(null, url.toExternalForm());
+			if (source == null) {
+				source = new InputSource(url.toExternalForm());
+				source.setByteStream(url.openStream());
+			} else {
+				source.setSystemId(url.toExternalForm());
+			}
+
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document dom = null;
+
+			/**
+			 * Load and parse the file.
+			 */
+			dom = db.parse(source);
+
+
+			/**
+			 * Get the policy information out of it!
+			 */
+			Element topLevelElement = dom.getDocumentElement();
+
+
+			/**
+			 * Are there any included policies? These are parsed here first so that
+			 * rules in _this_ policy file will override included rules.
+			 *
+			 * NOTE that by this being here we only support one level of includes.
+			 * To support recursion, move this into the parsePolicy method.
+			 */
+			NodeList includes = topLevelElement.getElementsByTagName("include");
+			for (int i = 0; i < includes.getLength(); i++) {
+				Element include = (Element) includes.item(i);
+
+				String href = XMLUtil.getAttributeValue(include, "href");
+
+				Element includedPolicy = getPolicy(href);
+
+				parsePolicy(includedPolicy);
+			}
+
+			/**
+			 * Parse the top level element itself
+			 */
+			parsePolicy(topLevelElement);
+
+
+		} catch (SAXException e) {
+			throw new PolicyException(e);
+		} catch (ParserConfigurationException e) {
+			throw new PolicyException(e);
+		} catch (IOException e) {
+			throw new PolicyException(e);
+		}
+	}
+
+	/**
 	 * Load the policy from an XML file.
 	 * @param filename Load a policy from the filename specified.
 	 * @throws PolicyException
+	 * @deprecated This constructor does not properly load included policy files. Use Policy(URL) instead.
 	 */
 	private Policy (InputStream is) throws PolicyException {
 
@@ -228,62 +299,9 @@ public class Policy {
 			Element topLevelElement = dom.getDocumentElement();
 
 			/**
-			 * First thing to read is the <common-regexps> section.
+			 * Parse the top level element itself
 			 */
-
-			Element commonRegularExpressionListNode = (Element)topLevelElement.getElementsByTagName("common-regexps").item(0);
-
-			this.commonRegularExpressions = parseCommonRegExps(commonRegularExpressionListNode);
-
-
-			/**
-			 * Next we read in the directives.
-			 */
-
-			Element directiveListNode = (Element)topLevelElement.getElementsByTagName("directives").item(0);
-			this.directives = parseDirectives(directiveListNode);
-
-
-			/**
-			 * Next we read in the common attributes.
-			 */
-			Element commonAttributeListNode = (Element)topLevelElement.getElementsByTagName("common-attributes").item(0);
-
-			this.commonAttributes = parseCommonAttributes(commonAttributeListNode);
-
-			/**
-			 * Next we need the global tag attributes (id, style, etc.)
-			 */
-
-			Element globalAttributeListNode = (Element)topLevelElement.getElementsByTagName("global-tag-attributes").item(0);
-
-			this.globalAttributes = parseGlobalAttributes(globalAttributeListNode);
-
-			/**
-			 * Next we read in the tags that should be encoded when they're encountered like <g>.
-			 */
-
-			NodeList tagsToEncodeList = topLevelElement.getElementsByTagName("tags-to-encode");
-			if ( tagsToEncodeList != null && tagsToEncodeList.getLength() != 0 ) {
-				this.encodeTags = parseTagsToEncode((Element)tagsToEncodeList.item(0));
-			} else {
-				this.encodeTags = new ArrayList();
-			}
-
-			/**
-			 * Next, we read in the tag restrictions.
-			 */
-			Element tagListNode = (Element)topLevelElement.getElementsByTagName("tag-rules").item(0);
-
-			this.tagRules = parseTagRules(tagListNode);
-
-			/**
-			 * Finally, we read in the CSS rules.
-			 */
-			Element cssListNode = (Element)topLevelElement.getElementsByTagName("css-rules").item(0);
-
-			this.cssRules = parseCSSRules(cssListNode);
-
+			parsePolicy(topLevelElement);
 
 		} catch (SAXException e) {
 			throw new PolicyException(e);
@@ -294,6 +312,123 @@ public class Policy {
 		}
 	}
 
+	private void parsePolicy(Element topLevelElement)
+			throws PolicyException {
+
+		if (topLevelElement == null) return;
+
+		/**
+		 * First thing to read is the <common-regexps> section.
+		 */
+		Element commonRegularExpressionListNode = (Element) topLevelElement.getElementsByTagName("common-regexps").item(0);
+		parseCommonRegExps(commonRegularExpressionListNode);
+
+		/**
+		 * Next we read in the directives.
+		 */
+		Element directiveListNode = (Element)topLevelElement.getElementsByTagName("directives").item(0);
+		parseDirectives(directiveListNode);
+
+
+		/**
+		 * Next we read in the common attributes.
+		 */
+		Element commonAttributeListNode = (Element)topLevelElement.getElementsByTagName("common-attributes").item(0);
+		parseCommonAttributes(commonAttributeListNode);
+
+		/**
+		 * Next we need the global tag attributes (id, style, etc.)
+		 */
+		Element globalAttributeListNode = (Element)topLevelElement.getElementsByTagName("global-tag-attributes").item(0);
+		parseGlobalAttributes(globalAttributeListNode);
+
+		/**
+		 * Next we read in the tags that should be encoded when they're encountered like <g>.
+		 */
+		NodeList tagsToEncodeList = topLevelElement.getElementsByTagName("tags-to-encode");
+		if (tagsToEncodeList != null && tagsToEncodeList.getLength() != 0) {
+			parseTagsToEncode((Element) tagsToEncodeList.item(0));
+		}
+		
+		/**
+		 * Next, we read in the tag restrictions.
+		 */
+		Element tagListNode = (Element)topLevelElement.getElementsByTagName("tag-rules").item(0);
+		parseTagRules(tagListNode);
+
+		/**
+		 * Finally, we read in the CSS rules.
+		 */
+		Element cssListNode = (Element)topLevelElement.getElementsByTagName("css-rules").item(0);
+
+		parseCSSRules(cssListNode);
+
+	}
+
+
+	/**
+	 * Returns the top level element of a loaded policy Document
+	 */
+	private Element getPolicy(String href)
+			throws IOException, SAXException, ParserConfigurationException {
+		
+		InputSource source = null;
+
+		 // Can't resolve public id, but might be able to resolve relative
+        // system id, since we have a base URI.
+        if (href != null && baseUrl != null) {
+            URL url;
+
+            try {
+                url = new URL(baseUrl, href);
+                source = new InputSource(url.openStream());
+                source.setSystemId(href);
+
+			} catch (MalformedURLException except) {
+                try {
+                    String absURL = URIUtils.resolveAsString(href, baseUrl.toString());
+                    url = new URL(absURL);
+                    source = new InputSource(url.openStream());
+                    source.setSystemId(href);
+
+				} catch (MalformedURLException ex2) {
+                    // nothing to do
+                }
+
+            } catch (java.io.FileNotFoundException fnfe) {
+                try {
+                    String absURL = URIUtils.resolveAsString(href, baseUrl.toString());
+                    url = new URL(absURL);
+                    source = new InputSource(url.openStream());
+                    source.setSystemId(href);
+
+				} catch (MalformedURLException ex2) {
+                    // nothing to do
+                }
+            }
+        }
+
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		DocumentBuilder db = dbf.newDocumentBuilder();
+		Document dom = null;
+
+		/**
+		 * Load and parse the file.
+		 */
+		if (source != null) {
+			dom = db.parse(source);
+
+
+			/**
+			 * Get the policy information out of it!
+			 */
+			Element topLevelElement = dom.getDocumentElement();
+
+			return topLevelElement;
+		}
+
+		return null;
+	}
 
 
 	/**
@@ -301,9 +436,9 @@ public class Policy {
 	 * @param directiveListNode Top level of <directives>
 	 * @return A HashMap of directives for validation behavior.
 	 */
-	private HashMap parseDirectives(Element root) {
+	private void parseDirectives(Element root) {
 
-		HashMap directives = new HashMap();
+		if (root == null) return;
 
 		NodeList directiveNodes = root.getElementsByTagName("directive");
 
@@ -317,8 +452,6 @@ public class Policy {
 			directives.put(name,value);
 
 		}
-
-		return directives;
 	}
 
 	/**
@@ -327,9 +460,9 @@ public class Policy {
 	 * @return A HashMap of String tags that are to be encoded when they're encountered.
 	 * @throws PolicyException
 	 */
-	private ArrayList parseTagsToEncode(Element root) throws PolicyException {
+	private void parseTagsToEncode(Element root) throws PolicyException {
 
-		ArrayList tagsToEncode = new ArrayList();
+		if (root == null) return;
 
 		NodeList tagsToEncodeNodes = root.getElementsByTagName("tag");
 
@@ -339,13 +472,11 @@ public class Policy {
 
 				Element ele = (Element)tagsToEncodeNodes.item(i);
 				if ( ele.getFirstChild() != null && ele.getFirstChild().getNodeType() == Node.TEXT_NODE ) {
-					tagsToEncode.add(ele.getFirstChild().getNodeValue());
+					encodeTags.add(ele.getFirstChild().getNodeValue());
 				}
 
 			}
 		}
-
-		return tagsToEncode;
 	}
 
 	/**
@@ -354,9 +485,9 @@ public class Policy {
 	 * @return A HashMap of global Attributes that need validation for every tag.
 	 * @throws PolicyException
 	 */
-	private HashMap parseGlobalAttributes(Element root) throws PolicyException {
+	private void parseGlobalAttributes(Element root) throws PolicyException {
 
-		HashMap globalAttributes = new HashMap();
+		if (root == null) return;
 
 		NodeList globalAttributeNodes = root.getElementsByTagName("attribute");
 
@@ -376,8 +507,6 @@ public class Policy {
 				throw new PolicyException("Global attribute '"+name+"' was not defined in <common-attributes>");
 			}
 		}
-
-		return globalAttributes;
 	}
 
 	/**
@@ -385,9 +514,9 @@ public class Policy {
 	 * @param root Top level of <common-regexps>
 	 * @return An ArrayList of AntiSamyPattern objects.
 	 */
-	private HashMap parseCommonRegExps(Element root) {
+	private void parseCommonRegExps(Element root) {
 
-		HashMap commonRegularExpressions = new HashMap();
+		if (root == null) return;
 
 		NodeList commonRegExpPatternNodes = root.getElementsByTagName("regexp");
 
@@ -403,8 +532,6 @@ public class Policy {
 			commonRegularExpressions.put(name,new AntiSamyPattern(name,pattern));
 
 		}
-
-		return commonRegularExpressions;
 	}
 
 
@@ -413,9 +540,9 @@ public class Policy {
 	 * @param root Top level of <common-attributes>
 	 * @return An ArrayList of Attribute objects.
 	 */
-	private HashMap parseCommonAttributes(Element root) {
+	private void parseCommonAttributes(Element root) {
 
-		HashMap commonAttributes = new HashMap();
+		if (root == null) return;
 
 		NodeList commonAttributesNodes = root.getElementsByTagName("attribute");
 
@@ -490,8 +617,6 @@ public class Policy {
 			commonAttributes.put(name.toLowerCase(),attribute);
 
 		}
-
-		return commonAttributes;
 	}
 
 
@@ -501,9 +626,9 @@ public class Policy {
 	 * @return A List<Tag> containing the rules.
 	 * @throws PolicyException
 	 */
-	private HashMap parseTagRules(Element root) throws PolicyException {
+	private void parseTagRules(Element root) throws PolicyException {
 
-		HashMap tags = new HashMap();
+		if (root == null) return;
 
 		NodeList tagList = root.getElementsByTagName("tag");
 
@@ -652,10 +777,8 @@ public class Policy {
 
 			}
 
-			tags.put(name.toLowerCase(),tag);
+			tagRules.put(name.toLowerCase(),tag);
 		}
-
-		return tags;
 	}
 
 	/**
@@ -664,9 +787,9 @@ public class Policy {
 	 * @return An ArrayList of Property objects.
 	 * @throws PolicyException
 	 */
-	private HashMap parseCSSRules(Element root) throws PolicyException {
+	private void parseCSSRules(Element root) throws PolicyException {
 
-		HashMap properties = new HashMap();
+		if (root == null) return;
 
 		NodeList propertyNodes = root.getElementsByTagName("property");
 
@@ -750,11 +873,9 @@ public class Policy {
 
 			}
 
-			properties.put(name.toLowerCase(),property);
+			cssRules.put(name.toLowerCase(),property);
 
 		}
-
-		return properties;
 	}
 
 
@@ -835,6 +956,61 @@ public class Policy {
 		} catch (NumberFormatException nfe) {}
 
 		return maxInputSize;
+	}
+
+	/**
+	 * Set the base directory to use to resolve relative file paths when including other policy files.
+	 *
+	 * @param newValue
+	 */
+	public static void setBaseURL(URL newValue) {
+		baseUrl = newValue;
+	}
+
+	/**
+	 * Resolves public & system ids to files stored within the JAR.
+	 */
+	public InputSource resolveEntity(final String publicId,
+			final String systemId) throws IOException, SAXException {
+		int i;
+		InputSource source = null;
+
+		// Can't resolve public id, but might be able to resolve relative
+		// system id, since we have a base URI.
+		if (systemId != null && baseUrl != null) {
+			URL url;
+
+			try {
+				url = new URL(baseUrl, systemId);
+				source = new InputSource(url.openStream());
+				source.setSystemId(systemId);
+				return source;
+			} catch (MalformedURLException except) {
+				try {
+					String absURL = URIUtils.resolveAsString(systemId, baseUrl.toString());
+					url = new URL(absURL);
+					source = new InputSource(url.openStream());
+					source.setSystemId(systemId);
+					return source;
+				} catch (MalformedURLException ex2) {
+					// nothing to do
+				}
+			} catch (java.io.FileNotFoundException fnfe) {
+				try {
+					String absURL = URIUtils.resolveAsString(systemId, baseUrl.toString());
+					url = new URL(absURL);
+					source = new InputSource(url.openStream());
+					source.setSystemId(systemId);
+					return source;
+				} catch (MalformedURLException ex2) {
+					// nothing to do
+				}
+			}
+			return null;
+		}
+
+		// No resolving.
+		return null;
 	}
 
 	/**
