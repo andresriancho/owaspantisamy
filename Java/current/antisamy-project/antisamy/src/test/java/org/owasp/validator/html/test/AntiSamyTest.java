@@ -109,6 +109,12 @@ public class AntiSamyTest extends TestCase {
 
 			String html = out.toString();
 
+			System.out.println("About to scan: " + url + " size: " + html.length());
+			if (html.length() > policy.getMaxInputSize()) {
+				System.out.println("   -Maximum input size exceeded. SKIPPING.");
+				continue;
+			}
+
 			double domTime = 0;
 			double saxTime = 0;
 
