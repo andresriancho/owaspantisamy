@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2007-2010, Arshan Dabirsiaghi, Jason Li
+ * 
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of OWASP nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.owasp.validator.html.scan;
 
 import java.util.ArrayList;
@@ -43,11 +67,12 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	private boolean isNofollowAnchors;
 	private boolean isValidateParamAsEmbed;
-
+	private boolean inCdata = false;
+	
 	public MagicSAXFilter(Policy instance, ResourceBundle messages) {
 		this.policy = instance;
 		this.messages = messages;
-
+		
 		isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
 		isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
 	}
@@ -61,7 +86,12 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			cssContent.append(text.ch, text.offset, text.length);
 		} else {
 			// pass through all character content.
-			super.characters(text, augs);
+			if ( inCdata ) {
+				String encoded = HTMLEntityEncoder.htmlEntityEncode(text.toString());
+				super.characters(new XMLStringBuffer(encoded), augs);
+			} else {
+				super.characters(text, augs);
+			}
 		}
 	}
 
@@ -152,6 +182,16 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	public void processingInstruction(String target, XMLString data, Augmentations augs) throws XNIException {
 		// processing instructions are being removed
+	}
+	
+	public void startCDATA(Augmentations augs) throws XNIException {
+		inCdata = true;
+		super.startCDATA(augs);
+	}
+	
+	public void endCDATA(Augmentations augs) throws XNIException {
+		inCdata = false;
+		super.endCDATA(augs);
 	}
 
 	public void startElement(QName element, XMLAttributes attributes, Augmentations augs) throws XNIException {
@@ -256,18 +296,32 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 								break;
 							}
 						}
+						
 						// if value or regexp matched, attribute is already
 						// copied, but what happens if not
 						if (!isValid && "removeTag".equals(attribute.getOnInvalid())) {
+							
+							addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
+								new Object[] { tag.getName(), HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value) });
+							
 							removeTag = true;
-						}
-						if (!isValid && ("filterTag".equals(attribute.getOnInvalid()) || masqueradingParam)) {
+							
+						} else if (!isValid && ("filterTag".equals(attribute.getOnInvalid()) || masqueradingParam)) {
+							
+							addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, 
+								new Object[] { tag.getName(), HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value) });
+							
 							filterTag = true;
+							
+						} else if (!isValid) {
+							addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[] { tag.getName(), HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value) });
 						}
+						
 					} else { // attribute == null
 						addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[] {
 								element.localpart, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)
 						});
+						
 						if (masqueradingParam) {
 							filterTag = true;
 						}

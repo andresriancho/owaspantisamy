@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2010, Arshan Dabirsiaghi, Jason Li
  *
  * All rights reserved.
  *
@@ -36,16 +36,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import javax.xml.XMLConstants;
+//import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
+//import javax.xml.validation.Schema;
+//import javax.xml.validation.SchemaFactory;
+//import javax.xml.validation.Validator;
 
 import org.owasp.validator.html.model.AntiSamyPattern;
 import org.owasp.validator.html.model.Attribute;
@@ -1017,6 +1017,7 @@ public class Policy {
 	 * Main test unit.
 	 * @param args
 	 */
+	/*
 	public static void main(String[] args) throws Exception {
 	    // parse an XML document into a DOM tree
 	    DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -1042,4 +1043,5 @@ public class Policy {
 	    }
 
 	}
+	*/
 }

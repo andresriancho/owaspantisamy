@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2007-2010, Arshan Dabirsiaghi, Jason Li
+ * 
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of OWASP nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.owasp.validator.html.test;
 
 import java.io.File;
@@ -451,6 +475,7 @@ public class AntiSamyTest extends TestCase {
 		 * issues 12 (and 36, which was similar). empty tags cause display
 		 * problems/"formjacking"
 		 */
+
 		try {
 
 			Pattern p = Pattern.compile(".*<strong(\\s*)/>.*");
@@ -905,7 +930,58 @@ public class AntiSamyTest extends TestCase {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
+		
+		/* privately disclosed issue - cdata bypass */
+		try {
+			
+			String malInput = "<![CDATA[]><script>alert(1)</script>]]>";
+			
+			String crDom = as.scan(malInput, policy, AntiSamy.DOM).getCleanHTML();
+			String crSax = as.scan(malInput, policy, AntiSamy.SAX).getCleanHTML();
 
+			//System.out.println("DOM result: " + crDom);
+			//System.out.println("SAX result: " + crSax);
+
+			assertTrue(crSax.indexOf("&lt;script") != -1 && crDom.indexOf("<script") == -1);
+			assertTrue(crDom.indexOf("&lt;script") != -1 && crDom.indexOf("<script") == -1);
+			
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+
+		/* this test is for confirming literal-lists work as
+		 * advertised. it turned out to be an invalid / non-
+		 * reproducible bug report but the test seemed useful
+		 * enough to keep. 
+		 */
+		try {
+			
+			String malInput = "hello<p align='invalid'>world</p>";
+			
+			CleanResults crd = as.scan(malInput, policy, AntiSamy.DOM); 
+			String crDom = crd.getCleanHTML();
+			CleanResults crs = as.scan(malInput, policy, AntiSamy.SAX); 
+			String crSax = crs.getCleanHTML();
+
+			//System.out.println("DOM result: " + crDom);
+			//System.out.println("SAX result: " + crSax);
+
+			assertTrue(crSax.indexOf("invalid") == -1);
+			assertTrue(crDom.indexOf("invalid") == -1);
+
+			assertTrue(crd.getErrorMessages().size() == 1);
+			assertTrue(crs.getErrorMessages().size() == 1);
+			
+			String goodInput = "hello<p align='left'>world</p>";
+			crDom = as.scan(goodInput, policy, AntiSamy.DOM).getCleanHTML();
+			crSax = as.scan(goodInput, policy, AntiSamy.SAX).getCleanHTML();
+
+			assertTrue(crSax.indexOf("left") != -1);
+			assertTrue(crDom.indexOf("left") != -1);
+
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
 	}
 
 	/*

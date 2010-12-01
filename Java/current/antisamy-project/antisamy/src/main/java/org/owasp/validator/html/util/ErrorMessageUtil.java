@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2010, Arshan Dabirsiaghi, Jason Li
  * 
  * All rights reserved.
  * 
@@ -33,6 +33,9 @@ public final class ErrorMessageUtil {
 	public static final String ERROR_TAG_FILTERED = "error.tag.filtered";
 	public static final String ERROR_TAG_ENCODED = "error.tag.encoded";
 	public static final String ERROR_TAG_EMPTY = "error.tag.empty";
+	
+	public static final String ERROR_CDATA_FOUND = "error.cdata.found";
+	public static final String ERROR_PI_FOUND = "error.pi.found";
 	
 	public static final String ERROR_ATTRIBUTE_CAUSE_FILTER = "error.attribute.invalid.filtered";
 	public static final String ERROR_ATTRIBUTE_CAUSE_ENCODE = "error.attribute.invalid.encoded";

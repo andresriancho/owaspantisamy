@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2010, Arshan Dabirsiaghi, Jason Li
  *
  * All rights reserved.
  *
@@ -25,6 +25,7 @@
 package org.owasp.validator.html.scan;
 
 import java.io.IOException;
+
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -55,6 +56,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
+import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -255,8 +258,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
 	private void recursiveValidateTag(Node node) {
 
-		if (node instanceof Comment) {
-
+		if (node instanceof Comment ) {
+			
 			String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
 
 			if (preserveComments == null || !"true".equals(preserveComments)) {
@@ -294,6 +297,24 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 			}
 		}
 
+		if ( node instanceof Text && Node.CDATA_SECTION_NODE == node.getNodeType() ) {
+			
+			addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[] {node.getTextContent()} );
+			
+			//String encoded = HTMLEntityEncoder.htmlEntityEncode(node.getTextContent());
+			
+			Node text = document.createTextNode(node.getTextContent());
+			node.getParentNode().insertBefore(text, node);
+			node.getParentNode().removeChild(node);
+			
+			return;
+		}
+		
+		if ( node instanceof ProcessingInstruction) {
+			addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[] {node.getTextContent()} );
+			node.getParentNode().removeChild(node);
+		}
+		
 		if (!(node instanceof Element)) {
 			return;
 		}
