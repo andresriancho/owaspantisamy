@@ -8,7 +8,7 @@
 
     <artifactId>antisamy-distribution</artifactId>
     <packaging>pom</packaging>
-    <version>${parent.version}</version>
+    <version>1.4.2-SNAPSHOT</version>
     <name>OWASP AntiSamy Distribution</name>
 
     <dependencies>
