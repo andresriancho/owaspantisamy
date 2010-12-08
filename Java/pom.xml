@@ -6,7 +6,7 @@
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.2</version>
+    <version>1.4.3-SNAPSHOT</version>
     <developers>
         <developer>
             <name>Arshan Dabirsiaghi</name>
@@ -47,9 +47,9 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.2</url>
-        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.2</connection>
-        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.2</developerConnection>
+        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java</url>
+        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java</connection>
+        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java</developerConnection>
     </scm>
     <licenses>
         <license>
@@ -123,17 +123,21 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
-<!--
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2</version>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/assemble/bin.xml</descriptor>
-                    </descriptors>
-                </configuration>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>1.2</version>
+                <executions>
+                    <execution>
+                        <id>check-for-updates</id>
+                        <goals>
+                            <goal>display-dependency-updates</goal>
+                            <goal>display-plugin-updates</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
             </plugin>
--->
         </plugins>
     </build>
     <reporting>
