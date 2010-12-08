@@ -8,13 +8,13 @@
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy</artifactId>
     <packaging>jar</packaging>
-    <version>1.4.2</version>
+    <version>1.4.2-SNAPSHOT</version>
     <name>OWASP AntiSamy</name>
     <dependencies>
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy-sample-configs</artifactId>
-            <version>1.4.2</version>
+            <version>1.4.2-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -70,10 +70,4 @@
             </plugin>
         </plugins>
     </build>
-
-  <scm>
-    <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-1.4.2</connection>
-    <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-1.4.2</developerConnection>
-    <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-1.4.2</url>
-  </scm>
 </project>
