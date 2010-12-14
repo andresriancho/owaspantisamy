@@ -291,7 +291,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 				/*
 				 * Wasn't in the list of allowed elements, so we'll nuke it.
 				 */
-				addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[] { node.getNodeName() });
+				addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getNodeName()) });
 				node.getParentNode().removeChild(node);
 				return;
 			}
@@ -299,7 +299,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
 		if ( node instanceof Text && Node.CDATA_SECTION_NODE == node.getNodeType() ) {
 			
-			addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[] {node.getTextContent()} );
+			addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[] {HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())} );
 			
 			//String encoded = HTMLEntityEncoder.htmlEntityEncode(node.getTextContent());
 			
@@ -311,7 +311,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 		}
 		
 		if ( node instanceof ProcessingInstruction) {
-			addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[] {node.getTextContent()} );
+			addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[] {HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())} );
 			node.getParentNode().removeChild(node);
 		}
 		
