@@ -2,19 +2,19 @@
     <parent>
         <groupId>org.owasp.antisamy</groupId>
         <artifactId>antisamy-project</artifactId>
-        <version>1.4.3-SNAPSHOT</version>
+        <version>1.4.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy</artifactId>
     <packaging>jar</packaging>
-    <version>1.4.3-SNAPSHOT</version>
+    <version>1.4.3</version>
     <name>OWASP AntiSamy</name>
     <dependencies>
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy-sample-configs</artifactId>
-            <version>1.4.3-SNAPSHOT</version>
+            <version>1.4.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

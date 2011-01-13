@@ -6,7 +6,7 @@
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.3-SNAPSHOT</version>
+    <version>1.4.3</version>
     <developers>
         <developer>
             <name>Arshan Dabirsiaghi</name>
@@ -47,9 +47,9 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java</url>
-        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java</connection>
-        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java</developerConnection>
+        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.3</url>
+        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.3</connection>
+        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java/antisamy-project-1.4.3</developerConnection>
     </scm>
     <licenses>
         <license>
