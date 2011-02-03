@@ -1033,11 +1033,25 @@ public class AntiSamyTest extends TestCase {
 	public void testDomRecursionMax() {
 		
 		StringBuilder input = new StringBuilder();
-		int x = 251;
+		int x = 249;
 		for (int i = 0; i < x; i++) {
 			input.append("<div>");
 		}
 		String is = input.toString();
+		try {
+			CleanResults cr = as.scan(is, policy);
+		} catch(ScanException e) { 
+			fail("prematurely threw stack exhaustion error");
+		} catch (PolicyException e) {
+			fail("unrelated error: " + e.getMessage());
+		}
+		
+		input = new StringBuilder();
+		x = 251;
+		for (int i = 0; i < x; i++) {
+			input.append("<div>");
+		}
+		is = input.toString();
 		try {
 			CleanResults cr = as.scan(is, policy);
 			fail("Allowed too deeply nested DOM");
