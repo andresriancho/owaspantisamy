@@ -1029,6 +1029,24 @@ public class AntiSamyTest extends TestCase {
 			fail("Caught exception in testNofollowAnchors(): " + e.getMessage());
 		}
 	}
+	
+	public void testDomRecursionMax() {
+		
+		StringBuilder input = new StringBuilder();
+		int x = 251;
+		for (int i = 0; i < x; i++) {
+			input.append("<div>");
+		}
+		String is = input.toString();
+		try {
+			CleanResults cr = as.scan(is, policy);
+			fail("Allowed too deeply nested DOM");
+		} catch(ScanException e) { 
+			assertTrue(e.getMessage().contains("Too many")); 
+		} catch (PolicyException e) {
+			fail("unrelated error: " + e.getMessage());
+		}
+	}
 
 	public void testValidateParamAsEmbed() {
 		try {

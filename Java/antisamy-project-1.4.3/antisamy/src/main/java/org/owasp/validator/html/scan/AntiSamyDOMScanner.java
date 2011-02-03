@@ -76,7 +76,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 	private Document document = new DocumentImpl();
 	private DocumentFragment dom = document.createDocumentFragment();
 	private CleanResults results = null;
-
+	private int recursionCounter;
+	
+	private final static int globalRecursionLimit = 250;
+	
 	/**
 	 * This is where the magic lives.
 	 * 
@@ -145,7 +148,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 			/*
 			 * Call the work horse.
 			 */
-
+			
+			recursionCounter = 0;
+			
 			for (int i = 0; i < dom.getChildNodes().getLength(); i++) {
 
 				Node tmp = dom.getChildNodes().item(i);
@@ -256,8 +261,12 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 	 *            The node to validate.
 	 */
 
-	private void recursiveValidateTag(Node node) {
+	private void recursiveValidateTag(Node node) throws ScanException {
 
+		recursionCounter++;
+		if ( recursionCounter > globalRecursionLimit )
+			throw new ScanException("Too many nested tags");
+		
 		if (node instanceof Comment ) {
 			
 			String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
@@ -272,7 +281,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 					((Comment) node).setData(value.replaceAll("<?!?\\[\\s*(?:end)?if[^]]*\\]>?", ""));
 				}
 			}
-
+			
+			recursionCounter--;
 			return;
 		}
 
@@ -293,6 +303,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 				 */
 				addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getNodeName()) });
 				node.getParentNode().removeChild(node);
+				recursionCounter--;
 				return;
 			}
 		}
@@ -306,7 +317,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 			Node text = document.createTextNode(node.getTextContent());
 			node.getParentNode().insertBefore(text, node);
 			node.getParentNode().removeChild(node);
-			
+			recursionCounter--;
 			return;
 		}
 		
@@ -316,6 +327,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 		}
 		
 		if (!(node instanceof Element)) {
+			recursionCounter--;
 			return;
 		}
 
@@ -379,6 +391,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
 			encodeAndPromoteChildren(ele);
 
+			recursionCounter--;
 			return;
 
 		} else if (tag == null || Policy.ACTION_FILTER.equals(tag.getAction())) {
@@ -420,6 +433,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
 			promoteChildren(ele);
 
+			recursionCounter--;
 			return;
 
 		} else if (Policy.ACTION_VALIDATE.equals(tag.getAction())) {
@@ -489,6 +503,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
 					parentNode.removeChild(node);
 
+					recursionCounter--;
 					return;
 
 				} catch (ScanException e) {
@@ -496,6 +511,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
 					parentNode.removeChild(node);
 
+					recursionCounter--;
 					return;
 
 					/*
@@ -507,6 +523,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
 					parentNode.removeChild(node);
 
+					recursionCounter--;
 					return;
 
 					/*
@@ -517,6 +534,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 					addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[] { HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue()) });
 					parentNode.removeChild(node);
 
+					recursionCounter--;
 					return;
 				}
 			}
@@ -635,6 +653,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
 										new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value) });
 
+								recursionCounter--;
 								return;
 
 							} else if ("filterTag".equals(onInvalidAction)) {
@@ -702,6 +721,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 								addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[] { tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value) });
 
 								if ("removeTag".equals(onInvalidAction) || "filterTag".equals(onInvalidAction)) {
+									recursionCounter--;
 									return; // can't process any more if we
 									// remove/filter the tag
 								}
@@ -756,6 +776,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 				ele.removeAttribute(nameValue);
 			}
 
+			recursionCounter--;
 			return;
 
 		} else if (Policy.ACTION_TRUNCATE.equals(tag.getAction())) {
@@ -807,6 +828,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 			parentNode.removeChild(ele);
 
 		}
+		
+		recursionCounter--;
+		return;
 
 	}
 
