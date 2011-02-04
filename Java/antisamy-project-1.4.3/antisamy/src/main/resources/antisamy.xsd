@@ -64,7 +64,13 @@
 		<xsd:attribute name="action" use="required"/>
 		
 	</xsd:complexType>
-	
+
+    <xsd:complexType name="AllowedEmptyTags">
+        <xsd:sequence>
+            <xsd:element name="literal-list" type="LiteralList" minOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
 	<xsd:complexType name="Attribute">
 		<xsd:sequence>
 			<xsd:element name="regexp-list" type="RegexpList" minOccurs="0"/>

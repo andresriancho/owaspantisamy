@@ -24,11 +24,9 @@
 
 package org.owasp.validator.html.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -36,7 +34,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.apache.commons.codec.binary.Base64;
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
@@ -102,60 +99,6 @@ public class AntiSamyTest extends TestCase {
 		TestSuite suite = new TestSuite(AntiSamyTest.class);
 		return suite;
 
-	}
-
-	public void testCompareSpeeds() throws IOException, ScanException, PolicyException {
-
-		String urls[] = {
-				"http://slashdot.org/", "http://www.fark.com/", "http://www.cnn.com/", "http://google.com/", "http://www.microsoft.com/en/us/default.aspx", "http://deadspin.com/"
-		};
-
-		double totalDomTime = 0;
-		double totalSaxTime = 0;
-
-		int testReps = 15;
-
-		for (int i = 0; i < urls.length; i++) {
-			URL url = new URL(urls[i]);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			InputStreamReader in = new InputStreamReader(conn.getInputStream());
-			StringBuilder out = new StringBuilder();
-			char[] buffer = new char[5000];
-			int read = 0;
-			do {
-				read = in.read(buffer, 0, buffer.length);
-				if (read > 0) {
-					out.append(buffer, 0, read);
-				}
-			} while (read >= 0);
-
-			in.close();
-
-			String html = out.toString();
-
-			System.out.println("About to scan: " + url + " size: " + html.length());
-			if (html.length() > policy.getMaxInputSize()) {
-				System.out.println("   -Maximum input size exceeded. SKIPPING.");
-				continue;
-			}
-
-			double domTime = 0;
-			double saxTime = 0;
-
-			for (int j = 0; j < testReps; j++) {
-				domTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
-				saxTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
-			}
-
-			domTime = domTime / testReps;
-			saxTime = saxTime / testReps;
-
-			totalDomTime += domTime;
-			totalSaxTime += saxTime;
-		}
-
-		System.out.println("Total DOM time: " + totalDomTime);
-		System.out.println("Total SAX time: " + totalSaxTime);
 	}
 
 	public void testSAX() {
@@ -428,7 +371,7 @@ public class AntiSamyTest extends TestCase {
 
 			try {
 
-				String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
+				String testStr = new String(Base64.decode(BASE64_BAD_XML_STRINGS[i].getBytes()));
 				as.scan(testStr, policy);
 				as.scan(testStr, policy, AntiSamy.SAX);
 
@@ -944,6 +887,7 @@ public class AntiSamyTest extends TestCase {
 
 			assertTrue(crSax.indexOf("&lt;script") != -1 && crDom.indexOf("<script") == -1);
 			assertTrue(crDom.indexOf("&lt;script") != -1 && crDom.indexOf("<script") == -1);
+	
 			
 		} catch (Exception e) {
 			fail(e.getMessage());
@@ -980,6 +924,36 @@ public class AntiSamyTest extends TestCase {
 			assertTrue(crDom.indexOf("left") != -1);
 
 		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+		
+		/* issue #80 - the allowed empty tags now driven from policy file */
+		
+		try {
+			
+			String selfClosedInput = "<br/><i/><b /><table><tr><td></td><td>hi mom</td></tr></table>";
+			
+			String useXhtml = policy.getDirective(Policy.USE_XHTML);
+			
+			policy.setDirective(Policy.USE_XHTML, "false");
+			
+			CleanResults crd = as.scan(selfClosedInput, policy, AntiSamy.DOM); 
+			String crDom = crd.getCleanHTML();
+			System.out.println("CRDOM = " + crDom);
+			CleanResults crs = as.scan(selfClosedInput, policy, AntiSamy.SAX);
+			String crSax = crs.getCleanHTML();
+			System.out.println("CRSAX = " + crSax);
+			
+			policy.setDirective(Policy.USE_XHTML, useXhtml);
+			
+			assertTrue(crDom.indexOf("<br>") != -1);
+			assertTrue(crDom.indexOf("<i/>") == -1);
+			assertTrue(crDom.indexOf("<b/>") == -1);
+			assertTrue(crSax.indexOf("<br>") != -1);
+			assertTrue(crSax.indexOf("<i/>") == -1);
+			assertTrue(crSax.indexOf("<b/>") == -1);
+			
+		} catch(Exception e) {
 			fail(e.getMessage());
 		}
 	}
@@ -1116,6 +1090,60 @@ public class AntiSamyTest extends TestCase {
 		} catch (Exception e) {
 			fail("Caught exception in testValidateParamAsEmbed(): " + e.getMessage());
 		}
+	}
+
+	public void testCompareSpeeds() throws IOException, ScanException, PolicyException {
+
+		String urls[] = {
+				"http://slashdot.org/", "http://www.fark.com/", "http://www.cnn.com/", "http://google.com/", "http://www.microsoft.com/en/us/default.aspx", "http://deadspin.com/"
+		};
+
+		double totalDomTime = 0;
+		double totalSaxTime = 0;
+
+		int testReps = 15;
+
+		for (int i = 0; i < urls.length; i++) {
+			URL url = new URL(urls[i]);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			InputStreamReader in = new InputStreamReader(conn.getInputStream());
+			StringBuilder out = new StringBuilder();
+			char[] buffer = new char[5000];
+			int read = 0;
+			do {
+				read = in.read(buffer, 0, buffer.length);
+				if (read > 0) {
+					out.append(buffer, 0, read);
+				}
+			} while (read >= 0);
+
+			in.close();
+
+			String html = out.toString();
+
+			System.out.println("About to scan: " + url + " size: " + html.length());
+			if (html.length() > policy.getMaxInputSize()) {
+				System.out.println("   -Maximum input size exceeded. SKIPPING.");
+				continue;
+			}
+
+			double domTime = 0;
+			double saxTime = 0;
+
+			for (int j = 0; j < testReps; j++) {
+				domTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
+				saxTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
+			}
+
+			domTime = domTime / testReps;
+			saxTime = saxTime / testReps;
+
+			totalDomTime += domTime;
+			totalSaxTime += saxTime;
+		}
+
+		System.out.println("Total DOM time: " + totalDomTime);
+		System.out.println("Total SAX time: " + totalSaxTime);
 	}
 
 }

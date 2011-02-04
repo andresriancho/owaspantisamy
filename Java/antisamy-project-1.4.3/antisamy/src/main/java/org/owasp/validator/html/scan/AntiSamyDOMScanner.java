@@ -289,11 +289,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 		if (node instanceof Element && node.getChildNodes().getLength() == 0) {
 
 			boolean isEmptyAllowed = false;
-
-			for (int i = 0; i < Constants.allowedEmptyTags.length; i++) {
-				if (Constants.allowedEmptyTags[i].equalsIgnoreCase(node.getNodeName())) {
+            String[] allowedEmptyTags = policy.getAllowedEmptyTags();
+			for (int i = 0; i < allowedEmptyTags.length; i++) {
+				if (allowedEmptyTags[i].equalsIgnoreCase(node.getNodeName())) {
 					isEmptyAllowed = true;
-					i = Constants.allowedEmptyTags.length;
+					i = allowedEmptyTags.length;
 				}
 			}
 
@@ -935,8 +935,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 		return in.replaceAll("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]", "");
 
 	}
-
-	// private void debug(String s) { System.out.println(s); }
 
 	/**
 	 * Transform the element to text, HTML-encode it and promote the children.

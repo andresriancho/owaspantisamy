@@ -28,10 +28,7 @@ import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
 
-public class Constants {
-	public static String[] allowedEmptyTags = {
-			"br", "hr", "a", "img", "link", "iframe", "script", "object", "applet", "frame", "base", "param", "meta", "input", "textarea", "embed", "basefont", "col"
-	};
+public class Constants{
 
 	public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
 
@@ -51,4 +48,10 @@ public class Constants {
 	public static final String DEFAULT_LOCALE_LANG = "en";
 	public static final String DEFAULT_LOCALE_LOC = "US";
 
+	public static String[] defaultAllowedEmptyTags = {
+		"br", "hr", "a", "img", "link", "iframe", "script", "object", "applet", 
+		"frame", "base", "param", "meta", "input", "textarea", "embed", "basefont",
+		"col", "td", "th"
+	};
+	
 }

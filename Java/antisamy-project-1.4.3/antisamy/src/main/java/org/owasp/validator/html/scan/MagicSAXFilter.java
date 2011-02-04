@@ -25,6 +25,7 @@
 package org.owasp.validator.html.scan;
 
 import java.util.ArrayList;
+
 import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.Stack;
@@ -68,6 +69,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	private boolean isNofollowAnchors;
 	private boolean isValidateParamAsEmbed;
 	private boolean inCdata = false;
+	private boolean empty = false;
 	
 	public MagicSAXFilter(Policy instance, ResourceBundle messages) {
 		this.policy = instance;
@@ -84,6 +86,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// we record the style element's text content
 			// to filter it later
 			cssContent.append(text.ch, text.offset, text.length);
+			empty = false;
 		} else {
 			// pass through all character content.
 			if ( inCdata ) {
@@ -92,6 +95,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			} else {
 				super.characters(text, augs);
 			}
+			empty = false;
 		}
 	}
 
@@ -106,6 +110,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 				value = value.replaceAll("<?!?\\[\\s*(?:end)?if[^]]*\\]>?", "");
 				super.comment(new XMLString(value.toCharArray(), 0, value.length()), augs);
 			}
+			empty = false;
 		}
 	}
 
@@ -114,11 +119,27 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	}
 
 	public void emptyElement(QName element, XMLAttributes attributes, Augmentations augs) throws XNIException {
+		
+		boolean found = false;
+		String[] allowedEmptyTags = policy.getAllowedEmptyTags();
+		for(int i=0;i<allowedEmptyTags.length;i++) {
+			if (element.localpart.equals(allowedEmptyTags[i])) {
+				found = true;
+				i = policy.getAllowedEmptyTags().length;
+			}
+		}
+		if(!found) {
+			addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[] { HTMLEntityEncoder.htmlEntityEncode(element.localpart) });
+			return;
+		}
+	
 		this.startElement(element, attributes, augs);
 		this.endElement(element, augs);
+		
 	}
 
 	public void endElement(QName element, Augmentations augs) throws XNIException {
+		
 		if (!operations.empty() && "remove".equals(operations.peek())) {
 			// content is removed altogether
 			operations.pop();
@@ -186,11 +207,13 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	
 	public void startCDATA(Augmentations augs) throws XNIException {
 		inCdata = true;
+		empty = false;
 		super.startCDATA(augs);
 	}
 	
 	public void endCDATA(Augmentations augs) throws XNIException {
 		inCdata = false;
+		empty = false;
 		super.endCDATA(augs);
 	}
 
@@ -364,6 +387,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// copy the element, but only copy accepted attributes
 			super.startElement(element, validattributes, augs);
 		}
+		empty = true;
 	}
 
 	private QName makeSimpleQname(String name) {
