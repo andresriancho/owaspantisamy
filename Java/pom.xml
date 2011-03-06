@@ -106,7 +106,7 @@
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
-                    <tagBase>https://owaspantisamy.googlecode.com/svn/trunk/Java/</tagBase>
+                    <tagBase>https://owaspantisamy.googlecode.com/svn/tags/Java/</tagBase>
                 </configuration>
             </plugin>
             <plugin>
