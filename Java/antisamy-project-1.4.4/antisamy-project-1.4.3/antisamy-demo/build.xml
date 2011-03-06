@@ -1,0 +1,75 @@
+<project name="antisamy-demo" basedir="." default="build-configs">
+	<property name="build.dir" value="target" />
+	<property name="dependency.dir" value="dependency" />
+	<property name="demowar.name" value="antisamy-demo" />
+
+	<filterchain id="demo-useXHTML">
+		<tokenfilter>
+			<filetokenizer />
+			<replacestring from="&lt;directive name=&quot;useXHTML&quot; value=&quot;true&quot;/&gt;" to="&lt;directive name=&quot;useXHTML&quot; value=&quot;false&quot;/&gt;" />
+		</tokenfilter>
+	</filterchain>
+
+	<filterchain id="demo-positionProperty">
+		<tokenfilter>
+			<filetokenizer />
+			<replacestring from="&lt;!-- possible to perform phishing attacks with the following --&gt;" to="&lt;!-- possible to perform phishing attacks with the following --&gt;
+					&lt;literal value=&quot;relative&quot;/&gt;
+					&lt;literal value=&quot;absolute&quot;/&gt;
+					&lt;literal value=&quot;fixed&quot;/&gt;" />
+		</tokenfilter>
+	</filterchain>
+
+	<filterchain id="demo-cssIDExclusion">
+		<tokenfilter>
+			<filetokenizer />
+			<replacestring from="&lt;regexp name=&quot;cssIDExclusion&quot; value=&quot;&quot;/&gt;" to="&lt;regexp name=&quot;cssIDExclusion&quot; 
+					value=&quot;(#header|#menu|#profile|#footer)&quot;/&gt;" />
+		</tokenfilter>
+	</filterchain>
+
+	<filterchain id="demo-baseTag">
+		<tokenfilter>
+			<filetokenizer />
+			<replacestring from="&lt;!-- base tag removed per demo - this could be enabled with literal-list values you allow --&gt;" to="&lt;!-- base tag removed per demo - this could be enabled with literal-list values you allow --&gt;
+						&lt;tag name=&quot;base&quot; action=&quot;validate&quot;&gt;
+						&lt;attribute name=&quot;href&quot;/&gt;
+						&lt;/tag&gt;" />
+		</tokenfilter>
+	</filterchain>
+
+
+	<target name="build-configs">
+		<copy todir="${build.dir}/${demowar.name}/WEB-INF/resources">
+			<fileset dir="${build.dir}/${dependency.dir}">
+				<include name="**" />
+			</fileset>
+		</copy>
+
+		<copy file="${build.dir}/${dependency.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo0.xml">
+			<filterchain refid="demo-useXHTML" />
+			<filterchain refid="demo-positionProperty" />
+			<filterchain refid="demo-baseTag" />
+		</copy>
+
+		<copy file="${build.dir}/${dependency.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo1.xml">
+			<filterchain refid="demo-useXHTML" />
+			<filterchain refid="demo-baseTag" />
+		</copy>
+
+		<copy file="${build.dir}/${dependency.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo2.xml">
+			<filterchain refid="demo-useXHTML" />
+			<filterchain refid="demo-baseTag" />
+			<filterchain refid="demo-cssIDExclusion" />
+		</copy>
+
+		<copy file="${build.dir}/${dependency.dir}/antisamy.xml" tofile="${build.dir}/${demowar.name}/WEB-INF/resources/antisamy-demo3.xml">
+			<filterchain refid="demo-useXHTML" />
+			<filterchain refid="demo-cssIDExclusion" />
+		</copy>
+
+		<copy todir="${build.dir}/${demowar.name}">
+			<fileset dir="${build.dir}/${demowar.name}/WEB-INF/resources/" />
+		</copy>
+	</target>
+</project>
