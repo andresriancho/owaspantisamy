@@ -47,7 +47,7 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/trunk/Java</url>
+        <url>http://owaspantisamy.googlecode.com/svn/tags/Java</url>
         <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java</connection>
         <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java</developerConnection>
     </scm>
