@@ -2,13 +2,13 @@
     <parent>
         <groupId>org.owasp.antisamy</groupId>
         <artifactId>antisamy-project</artifactId>
-        <version>1.4.4</version>
+        <version>1.4.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>antisamy-distribution</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.4</version>
+    <version>1.4.4-SNAPSHOT</version>
     <name>OWASP AntiSamy Distribution</name>
 
     <dependencies>
