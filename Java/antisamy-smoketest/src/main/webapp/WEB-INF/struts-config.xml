@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://struts.apache.org/dtds/struts-config_1_2.dtd">
+
+<struts-config>
+ 
+	<data-sources>
+	</data-sources>
+  
+ 	<form-beans>
+ 		<form-bean name="attackForm" type="org.owasp.antisamy.smoketest.AttackForm"/>
+ 	</form-beans>
+
+	<global-exceptions>
+	</global-exceptions>
+  
+ 	<global-forwards
+        type="org.apache.struts.action.ActionForward">
+        <forward
+            name="inputPage"
+            path="/WEB-INF/jsp/form.jsp"
+            redirect="false" />
+    </global-forwards>
+     
+	<action-mappings>
+ 
+		<action
+			path="/attack"
+			name="attackForm"
+			type="org.owasp.antisamy.smoketest.ProcessAttackAction"/>
+ 
+	</action-mappings>
+	
+	<message-resources parameter="ApplicationResources" null="false"/>
+ 
+</struts-config>

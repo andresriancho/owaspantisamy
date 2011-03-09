@@ -1,0 +1,76 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+  	<artifactId>antisamy-project</artifactId>
+  	<groupId>org.owasp.antisamy</groupId>
+  	<version>1.4.4</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.owasp.antisamy</groupId>
+  <artifactId>antisamy-smoketest</artifactId>
+  <packaging>war</packaging>
+  <name>OWASP AntiSamy Smoketest</name>
+  <version>1.0-SNAPSHOT</version>
+  <description>An application for easy testing of AntiSamy's filters.</description>
+  <build>
+  	<plugins>
+  		<plugin>
+  			<artifactId>maven-compiler-plugin</artifactId>
+  			<configuration>
+	               <source>1.5</source>
+	               <target>1.5</target>
+	       </configuration>
+  		</plugin>
+  		<plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.0</version>
+            </plugin>
+           <plugin>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>maven-jetty-plugin</artifactId>
+        <configuration>
+          <scanIntervalSeconds>10</scanIntervalSeconds>
+          <contextPath>/</contextPath>
+          <connectors>
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+              <port>8080</port>
+              <maxIdleTime>60000</maxIdleTime>
+              
+            </connector>
+          </connectors>
+        </configuration>
+      </plugin>
+  	</plugins>
+  </build>
+  <repositories>
+  </repositories>
+  <pluginRepositories>
+  	<!-- 
+	<pluginRepository>
+      <id>mortbay.repo</id>
+      <url>http://www.mortbay.org/maven2/snapshot</url>
+    </pluginRepository>
+     -->
+    </pluginRepositories>
+  <dependencies>
+    <dependency>
+    	<groupId>org.apache.struts</groupId>
+    	<artifactId>struts-core</artifactId>
+    	<version>1.3.10</version>
+    </dependency>
+    <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+        </dependency>
+		<dependency>
+            <groupId>org.owasp.antisamy</groupId>
+            <artifactId>antisamy</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+		<dependency>
+			<groupId>org.apache.struts</groupId>
+			<artifactId>struts-taglib</artifactId>
+			<version>1.3.10</version>
+		</dependency>
+  </dependencies>
+</project>
