@@ -978,6 +978,39 @@ public class AntiSamyTest extends TestCase {
                 fail(t.getMessage());
             }
 
+            /*
+             * #107 - erroneous newlines appearing? couldn't reproduce this
+             * error but the test seems worthy of keeping.
+             */
+            String nl = "\n";
+
+            try {
+                sb = new StringBuilder();
+                String header = "<h1>Header</h1>";
+                String para = "<p>Paragraph</p>";
+                sb.append(header);
+                sb.append(nl);
+                sb.append(para);
+
+                String crDom = as.scan(sb.toString(), policy, AntiSamy.DOM).getCleanHTML();
+                String crSax = as.scan(sb.toString(), policy, AntiSamy.SAX).getCleanHTML();
+
+                /* Make sure only 1 newline appears */
+                assertTrue(crDom.lastIndexOf(nl) == crDom.indexOf(nl));
+                assertTrue(crSax.lastIndexOf(nl) == crSax.indexOf(nl));
+
+                int expectedLoc = header.length() + 1;
+                int actualLoc = crSax.indexOf(nl);
+                assertTrue(expectedLoc == actualLoc);
+
+                actualLoc = crDom.indexOf(nl);
+                // account for line separator length difference across OSes.
+                assertTrue(expectedLoc == actualLoc || expectedLoc == actualLoc+1); 
+
+            } catch(Exception e) {
+                fail(e.getMessage());
+            }
+
 	}
 
 	/*
