@@ -88,6 +88,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// pass through all character content.
 			if ( inCdata ) {
 				String encoded = HTMLEntityEncoder.htmlEntityEncode(text.toString());
+                                addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(text.toString())});
 				super.characters(new XMLStringBuffer(encoded), augs);
 			} else {
 				super.characters(text, augs);

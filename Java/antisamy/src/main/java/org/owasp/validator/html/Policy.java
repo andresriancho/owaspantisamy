@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,7 @@ import org.owasp.validator.html.model.AntiSamyPattern;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Property;
 import org.owasp.validator.html.model.Tag;
+import org.owasp.validator.html.scan.Constants;
 import org.owasp.validator.html.util.URIUtils;
 import org.owasp.validator.html.util.XMLUtil;
 import org.xml.sax.InputSource;
@@ -109,6 +111,7 @@ public class Policy {
 	private Set		encodeTags					= new HashSet();
 
 	private ArrayList tagNames;
+    private ArrayList allowedEmptyTags;
 
 	/** The path to the base policy file, used to resolve relative paths when reading included files */
 	private static URL baseUrl					= null;
@@ -349,7 +352,14 @@ public class Policy {
 		if (tagsToEncodeList != null && tagsToEncodeList.getLength() != 0) {
 			parseTagsToEncode((Element) tagsToEncodeList.item(0));
 		}
-		
+
+        /**
+         * Next, we read in the allowed empty tags
+         */
+        Element allowedEmptyTagsListNode = (Element) topLevelElement.getElementsByTagName("allowed-empty-tags").item(0);
+
+        this.allowedEmptyTags = parseAllowedEmptyTags(allowedEmptyTagsListNode);
+
 		/**
 		 * Next, we read in the tag restrictions.
 		 */
@@ -453,6 +463,42 @@ public class Policy {
 
 		}
 	}
+
+
+    /**
+     * Go through <allowed-empty-tags> section of the policy file.
+     * @param allowedEmptyTagsListNode Top level of <allowed-empty-tags>
+     * @return An ArrayList of global Attributes that need validation for every tag.
+     */
+    private ArrayList parseAllowedEmptyTags(Element allowedEmptyTagsListNode) throws PolicyException {
+
+        ArrayList allowedEmptyTags = new ArrayList();
+
+        if (allowedEmptyTagsListNode != null) {
+            Element literalListNode = (Element) allowedEmptyTagsListNode.getElementsByTagName("literal-list").item(0);
+
+            if (literalListNode != null) {
+
+                NodeList literalList = literalListNode.getElementsByTagName("literal");
+
+                for (int j = 0; j < literalList.getLength(); j++) {
+                    Element literalNode = (Element) literalList.item(j);
+
+                    String value = XMLUtil.getAttributeValue(literalNode, "value");
+
+                    if (value != null && value.length() > 0) {
+                        allowedEmptyTags.add(value);
+                    }
+                }
+
+            }
+        } else {
+
+            allowedEmptyTags = Constants.defaultAllowedEmptyTags;
+        }
+
+        return allowedEmptyTags;
+    }
 
 	/**
 	 * Go through <tags-to-encode> section of the policy file.
@@ -916,6 +962,14 @@ public class Policy {
 		return (Attribute) commonAttributes.get(attributeName.toLowerCase());
 
 	}
+
+    /**
+     * Return all the allowed empty tags configured in the Policy.
+     * @return A String array of all the he allowed empty tags configured in the Policy.
+     */
+    public String[] getAllowedEmptyTags() {
+        return (String[]) allowedEmptyTags.toArray(new String[allowedEmptyTags.size()]);
+    }
 
 
 	/**

@@ -89,7 +89,7 @@ public class AntiSamy {
 			throw new PolicyException("No policy loaded");
 		}
 
-		return this.scan(taintedHTML, this.policy, DOM);
+		return this.scan(taintedHTML, this.policy, SAX);
 	}
 
 	public CleanResults scan(String taintedHTML, int scanType) throws ScanException, PolicyException {
