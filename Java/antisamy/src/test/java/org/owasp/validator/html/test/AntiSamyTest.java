@@ -89,11 +89,11 @@ public class AntiSamyTest extends TestCase {
 		 */
 
 		//get Policy instance from a stream to make sure includes fail nicely
-                InputStream is = getClass().getResourceAsStream("/antisamy.xml");
+        InputStream is = getClass().getResourceAsStream("/antisamy.xml");
 		policy = Policy.getInstance(is);
 
 		//get Policy instance from a URL.
-                URL url = getClass().getResource("/antisamy.xml");
+        URL url = getClass().getResource("/antisamy.xml");
 		policy = Policy.getInstance(url);
 	}
 
@@ -441,10 +441,9 @@ public class AntiSamyTest extends TestCase {
 			p = Pattern.compile(".*<i(\\s*)/>.*");
 			assertFalse(p.matcher(s1).matches());
 			assertFalse(p.matcher(s2).matches());
-
-			p = Pattern.compile(".*<hr(\\s*)/>.*");
-			assertFalse(p.matcher(s1).matches());
-			assertFalse(p.matcher(s2).matches());
+			
+			assertTrue(s1.indexOf("<hr />") != -1 || s1.indexOf("<hr/>") != -1);
+			assertTrue(s2.indexOf("<hr />") != -1 || s2.indexOf("<hr/>") != -1);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -469,8 +468,11 @@ public class AntiSamyTest extends TestCase {
 
 			String s = "<div style=\"margin: -5em\">Test</div>";
 			String expected = "<div style=\"\">Test</div>";
-			assertEquals(as.scan(s, policy, AntiSamy.DOM).getCleanHTML(), expected);
-			assertEquals(as.scan(s, policy, AntiSamy.SAX).getCleanHTML(), expected);
+			
+			String crDom = as.scan(s, policy, AntiSamy.DOM).getCleanHTML(); 
+			assertEquals(crDom, expected);
+			String crSax = as.scan(s, policy, AntiSamy.SAX).getCleanHTML(); 
+			assertEquals(crSax, expected);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -858,8 +860,12 @@ public class AntiSamyTest extends TestCase {
 
 		try {
 			String s = "<td char='.'>test</td>";
-			assertTrue(as.scan(s, policy, AntiSamy.DOM).getCleanHTML().indexOf("char") > -1);
-			assertTrue(as.scan(s, policy, AntiSamy.SAX).getCleanHTML().indexOf("char") > -1);
+			CleanResults crDom = as.scan(s, policy, AntiSamy.DOM);
+			CleanResults crSax = as.scan(s, policy, AntiSamy.SAX);
+			String domValue = crDom.getCleanHTML();
+			String saxValue = crSax.getCleanHTML();
+			assertTrue(domValue.indexOf("char") > -1);
+			assertTrue(saxValue.indexOf("char") > -1);
 
 			s = "<td char='..'>test</td>";
 			assertTrue(as.scan(s, policy, AntiSamy.DOM).getCleanHTML().indexOf("char") == -1);
@@ -877,8 +883,9 @@ public class AntiSamyTest extends TestCase {
 			assertTrue(as.scan(s, policy, AntiSamy.DOM).getCleanHTML().indexOf("char") == -1);
 			assertTrue(as.scan(s, policy, AntiSamy.SAX).getCleanHTML().indexOf("char") == -1);
 
-		} catch (Exception e) {
-			fail(e.getMessage());
+		} catch (Throwable t) {
+			t.printStackTrace();
+			fail(t.getMessage());
 		}
 		
 		/* privately disclosed issue - cdata bypass */
@@ -937,80 +944,136 @@ public class AntiSamyTest extends TestCase {
 			fail(e.getMessage());
 		}
 
+            /*
+             * Test Julian Cohen's stack exhaustion bug.
+             */
+
+            StringBuilder sb = new StringBuilder();
+            for(int i=0;i<249;i++) {
+                sb.append("<div>" );
+            }
+            try {
+
                 /*
-                 * Test Julian Cohen's stack exhaustion bug.
+                 * First, make sure this attack is useless against the
+                 * SAX parser.
+                 */
+                CleanResults crs = as.scan(sb.toString(), policy, AntiSamy.SAX);
+
+                /*
+                 * Scan this really deep tree (depth=249, 1 less than the
+                 * max) and make sure it doesn't blow up.
                  */
 
-                StringBuilder sb = new StringBuilder();
-                for(int i=0;i<249;i++) {
-                    sb.append("<div>" );
-                }
+                CleanResults crd = as.scan(sb.toString(), policy, AntiSamy.DOM);
+
+                String crDom = crd.getCleanHTML();
+                assertTrue(crDom.length() != 0);
+                /*
+                 * Now push it over the limit to 251 and make sure we blow
+                 * up safely.
+                 */
+                sb.append("<div><div>"); // this makes 251
+
                 try {
+                    crd = as.scan(sb.toString(), policy, AntiSamy.DOM);
+                    fail("DOM depth exceeded max - should've errored");
+                } catch (ScanException e) {
+                    
+                }
+        } catch (Throwable t) {
+            fail(t.getMessage());
+        }
 
-                    /*
-                     * First, make sure this attack is useless against the
-                     * SAX parser.
-                     */
-                    CleanResults crs = as.scan(sb.toString(), policy, AntiSamy.SAX);
+        /*
+         * #107 - erroneous newlines appearing? couldn't reproduce this
+         * error but the test seems worthy of keeping.
+         */
+        String nl = "\n";
 
-                    /*
-                     * Scan this really deep tree (depth=249, 1 less than the
-                     * max) and make sure it doesn't blow up.
-                     */
+        try {
+            sb = new StringBuilder();
+            String header = "<h1>Header</h1>";
+            String para = "<p>Paragraph</p>";
+            sb.append(header);
+            sb.append(nl);
+            sb.append(para);
+            
+            String html = sb.toString();
 
-                    CleanResults crd = as.scan(sb.toString(), policy, AntiSamy.DOM);
+            String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+            String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
 
-                    String crDom = crd.getCleanHTML();
-                    assertTrue(crDom.length() != 0);
-                    /*
-                     * Now push it over the limit to 251 and make sure we blow
-                     * up safely.
-                     */
-                    sb.append("<div><div>"); // this makes 251
+            /* Make sure only 1 newline appears */
+            assertTrue(crDom.lastIndexOf(nl) == crDom.indexOf(nl));
+            assertTrue(crSax.lastIndexOf(nl) == crSax.indexOf(nl));
 
-                    try {
-                        crd = as.scan(sb.toString(), policy, AntiSamy.DOM);
-                        fail("DOM depth exceeded max - should've errored");
-                    } catch (ScanException e) {
-                        
-                    }
-            } catch (Throwable t) {
-                fail(t.getMessage());
-            }
+            int expectedLoc = header.length() + 1;
+            int actualLoc = crSax.indexOf(nl);
+            assertTrue(expectedLoc == actualLoc);
 
-            /*
-             * #107 - erroneous newlines appearing? couldn't reproduce this
-             * error but the test seems worthy of keeping.
-             */
-            String nl = "\n";
+            actualLoc = crDom.indexOf(nl);
+            // account for line separator length difference across OSes.
+            assertTrue(expectedLoc == actualLoc || expectedLoc == actualLoc+1); 
 
-            try {
-                sb = new StringBuilder();
-                String header = "<h1>Header</h1>";
-                String para = "<p>Paragraph</p>";
-                sb.append(header);
-                sb.append(nl);
-                sb.append(para);
-
-                String crDom = as.scan(sb.toString(), policy, AntiSamy.DOM).getCleanHTML();
-                String crSax = as.scan(sb.toString(), policy, AntiSamy.SAX).getCleanHTML();
-
-                /* Make sure only 1 newline appears */
-                assertTrue(crDom.lastIndexOf(nl) == crDom.indexOf(nl));
-                assertTrue(crSax.lastIndexOf(nl) == crSax.indexOf(nl));
-
-                int expectedLoc = header.length() + 1;
-                int actualLoc = crSax.indexOf(nl);
-                assertTrue(expectedLoc == actualLoc);
-
-                actualLoc = crDom.indexOf(nl);
-                // account for line separator length difference across OSes.
-                assertTrue(expectedLoc == actualLoc || expectedLoc == actualLoc+1); 
-
-            } catch(Exception e) {
-                fail(e.getMessage());
-            }
-
+        } catch(Exception e) {
+            fail(e.getMessage());
+        }	
+        
+        /*
+         * #112 - empty tag becomes self closing
+         */
+        
+        try {
+        	String html = "text <strong></strong> text <strong><em></em></strong> text";
+        	
+        	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+        	
+        	assertTrue(crDom.indexOf("<strong />") == -1 && crDom.indexOf("<strong/>") == -1);
+        	assertTrue(crSax.indexOf("<strong />") == -1 && crSax.indexOf("<strong/>") == -1);
+        	
+        } catch (Exception e) {
+        	fail(e.getMessage());
+        }
+        
+        /*
+         * #116 - unclosed tags appearing during XHTML sanitization in SAX parser.
+         */
+        try {
+        	String useXhtmlBefore = policy.getDirective(Policy.USE_XHTML);
+        	sb = new StringBuilder();
+        	sb.append("<html><head><title>foobar</title></head><body>");
+        	sb.append("<img src=\"http://foobar.com/pic.gif\"/></body></html>");
+        	
+        	String html = sb.toString();
+        	
+        	policy.setDirective(Policy.USE_XHTML, "true");
+        	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+            
+            assertTrue(html.equals(crDom.replaceAll(" />", "/>")));
+            assertTrue(html.equals(crSax));
+            
+            policy.setDirective(Policy.USE_XHTML, useXhtmlBefore);
+            
+        } catch (Exception e) {
+        	fail(e.getMessage());
+        }
+        
+        /*
+         * Testing for nested CDATA attacks against the SAX parser.
+         */
+        
+        try {
+        	String html ="<![CDATA[]><script>alert(1)</script><![CDATA[]>]]><script>alert(2)</script>>]]>";
+        	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+        	assertTrue(crDom.indexOf("<script>") == -1);
+        	assertTrue(crSax.indexOf("<script>") == -1);
+        } catch (Exception e) {
+        	fail(e.getMessage());
+        }
 	}
 
 	/*
@@ -1064,16 +1127,19 @@ public class AntiSamyTest extends TestCase {
 			// activate policy setting for this test
 			String isValidateParamAsEmbed = policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED);
 			String isFormatOutput = policy.getDirective(Policy.FORMAT_OUTPUT);
+			String isXhtml = policy.getDirective(Policy.USE_XHTML);
+			
 			policy.setDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true");
 			policy.setDirective(Policy.FORMAT_OUTPUT, "false");
-
+			policy.setDirective(Policy.USE_XHTML, "true");
+			
 			// let's start with a YouTube embed
 			String input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
 			String expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
 			CleanResults cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
 
-			String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"><param name=\"allowFullScreen\" value=\"true\"><param name=\"allowscriptaccess\" value=\"always\"><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+			String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"/><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"/></object>";
 			cr = as.scan(input, policy, AntiSamy.SAX);
 			// System.out.println("Expected: " + saxExpectedOutput);
 			// System.out.println("Received: " + cr.getCleanHTML());
@@ -1083,7 +1149,7 @@ public class AntiSamyTest extends TestCase {
 			// value attribute in the param tag? remove that param tag
 			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://supermaliciouscode.com/badstuff.swf\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
 			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
-			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\"><param name=\"allowscriptaccess\" value=\"always\"><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"/></object>";
 			cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
 
@@ -1096,7 +1162,7 @@ public class AntiSamyTest extends TestCase {
 			// attribute in the embed tag? remove that embed tag
 			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://hereswhereikeepbadcode.com/ohnoscary.swf\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
 			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
-			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"><param name=\"allowFullScreen\" value=\"true\"><param name=\"allowscriptaccess\" value=\"always\"></object>";
+			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"/><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/></object>";
 
 			cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
@@ -1109,7 +1175,8 @@ public class AntiSamyTest extends TestCase {
 			// revert policy settings
 			policy.setDirective(Policy.VALIDATE_PARAM_AS_EMBED, isValidateParamAsEmbed);
 			policy.setDirective(Policy.FORMAT_OUTPUT, isFormatOutput);
-
+			policy.setDirective(Policy.USE_XHTML, isXhtml);
+			
 		} catch (Exception e) {
 			fail("Caught exception in testValidateParamAsEmbed(): " + e.getMessage());
 		}

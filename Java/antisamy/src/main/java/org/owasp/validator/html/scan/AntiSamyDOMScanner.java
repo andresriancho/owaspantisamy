@@ -39,6 +39,7 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XHTMLSerializer;
 import org.cyberneko.html.parsers.DOMFragmentParser;
 import org.owasp.validator.css.CssScanner;
+import org.owasp.validator.css.ExternalCssScanner;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
@@ -284,21 +285,14 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         if (node instanceof Element && node.getChildNodes().getLength() == 0) {
 
-            boolean isEmptyAllowed = false;
-            String[] allowedEmptyTags = policy.getAllowedEmptyTags();
-            for (int i = 0; i < allowedEmptyTags.length; i++) {
-                if (allowedEmptyTags[i].equalsIgnoreCase(node.getNodeName())) {
-                    isEmptyAllowed = true;
-                    i = allowedEmptyTags.length;
-                }
-            }
+        	String tagName = node.getNodeName();
 
-            if (!isEmptyAllowed) {
+            if (!isAllowedEmptyTag(tagName)) {
                 /*
                  * Wasn't in the list of allowed elements, so we'll nuke it.
                  */
                 addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getNodeName())});
-                node.getParentNode().removeChild(node);
+                removeNode(node);
                 currentStackDepth--;
                 return;
             }
@@ -320,6 +314,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         if (node instanceof ProcessingInstruction) {
             addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())});
+            removeNode(node);
             node.getParentNode().removeChild(node);
         }
 
@@ -459,7 +454,13 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 /*
                  * Invoke the css parser on this element.
                  */
-                CssScanner styleScanner = new CssScanner(policy, messages);
+            	CssScanner styleScanner = null;
+            	
+            	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
+            		styleScanner = new ExternalCssScanner(policy, messages);
+            	}else{
+            		styleScanner = new CssScanner(policy, messages);
+            	}
 
                 try {
 
@@ -638,8 +639,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                                  * Remove the tag and its contents.
                                  */
 
-                                parentNode.removeChild(ele);
-
+                                removeNode(ele);
+                            	
                                 addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
                                         new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
                                 currentStackDepth--;
@@ -812,8 +813,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              */
 
             addError(ErrorMessageUtil.ERROR_TAG_DISALLOWED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
-
-            parentNode.removeChild(ele);
+            removeNode(ele);
 
         }
 
@@ -822,7 +822,30 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         return;
     }
 
-    /**
+    private void removeNode(Node node) {
+		Node parent = node.getParentNode();
+		parent.removeChild(node);
+		String tagName = parent.getNodeName();
+		if(	parent instanceof Element && 
+			parent.getChildNodes().getLength() == 0 && 
+			!isAllowedEmptyTag(tagName)) {
+			removeNode(parent);
+		}
+	}
+
+	private boolean isAllowedEmptyTag(String tagName) {
+    	boolean allowed = false;
+        String[] allowedEmptyTags = policy.getAllowedEmptyTags();
+        for (int i = 0; i < allowedEmptyTags.length; i++) {
+            if (allowedEmptyTags[i].equalsIgnoreCase(tagName)) {
+                allowed = true;
+                i = allowedEmptyTags.length;
+            }
+        }
+        return allowed;
+	}
+
+	/**
      * This method replaces all entity codes with a normalized version of all
      * entity references contained in order to reduce our encoding/parsing
      * attack surface.
@@ -895,8 +918,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             parent.insertBefore(node, ele);
         }
 
-        parent.removeChild(ele);
-
+        removeNode(ele);
     }
 
     /**

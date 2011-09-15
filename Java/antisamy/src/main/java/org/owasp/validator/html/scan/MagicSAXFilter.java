@@ -41,6 +41,7 @@ import org.apache.xerces.xni.XNIException;
 import org.apache.xerces.xni.parser.XMLDocumentFilter;
 import org.cyberneko.html.filters.DefaultFilter;
 import org.owasp.validator.css.CssScanner;
+import org.owasp.validator.css.ExternalCssScanner;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
@@ -53,7 +54,6 @@ import org.owasp.validator.html.util.HTMLEntityEncoder;
  * Implementation of an HTML-filter that adheres to an AntiSamy policy. This
  * filter is SAX-based which means it is much more memory-efficient and also a
  * bit faster than the DOM-based implementation.
- * 
  */
 public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
@@ -88,7 +88,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// pass through all character content.
 			if ( inCdata ) {
 				String encoded = HTMLEntityEncoder.htmlEntityEncode(text.toString());
-                                addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(text.toString())});
+                addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(text.toString())});
 				super.characters(new XMLStringBuffer(encoded), augs);
 			} else {
 				super.characters(text, augs);
@@ -111,7 +111,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	}
 
 	public void doctypeDecl(String root, String publicId, String systemId, Augmentations augs) throws XNIException {
-		// doctype declaration is skipped
+		// user supplied doctypes are ignored
 	}
 
 	public void emptyElement(QName element, XMLAttributes attributes, Augmentations augs) throws XNIException {
@@ -176,7 +176,11 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	private CssScanner makeCssScanner() {
 		if (cssScanner == null) {
-			cssScanner = new CssScanner(policy, messages);
+        	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
+        		cssScanner = new ExternalCssScanner(policy, messages);
+        	}else{
+        		cssScanner = new CssScanner(policy, messages);
+        	}
 		}
 		return cssScanner;
 	}
@@ -203,8 +207,6 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		 * Handle the automatic translation of <param> to nested <embed> for IE.
 		 * This is only if the "validateParamAsEmbed" directive is enabled.
 		 */
-		XMLAttributes originalAttributes = attributes;
-
 		boolean masqueradingParam = false;
 		String embedName = null;
 		String embedValue = null;

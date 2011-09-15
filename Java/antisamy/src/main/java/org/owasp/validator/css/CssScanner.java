@@ -28,11 +28,8 @@
  */
 package org.owasp.validator.css;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -43,15 +40,9 @@ import java.util.regex.Pattern;
 
 import org.apache.batik.css.parser.ParseException;
 import org.apache.batik.css.parser.Parser;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpContentTooLargeException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
-import org.owasp.validator.html.util.ErrorMessageUtil;
-import org.owasp.validator.html.util.HTMLEntityEncoder;
 import org.w3c.css.sac.InputSource;
 
 /**
@@ -67,24 +58,24 @@ import org.w3c.css.sac.InputSource;
  */
 public class CssScanner {
 
-    private static final int DEFAULT_TIMEOUT = 1000;
+    protected static final int DEFAULT_TIMEOUT = 1000;
 
     private static final String CDATA = "^\\s*<!\\[CDATA\\[(.*)\\]\\]>\\s*$";
     
     /**
      * The parser to be used in any scanning
      */
-    private final Parser parser = new Parser();
+    protected final Parser parser = new Parser();
 
     /**
      * The policy file to be used in any scanning
      */
-    private final Policy policy;
+    protected final Policy policy;
 
     /**
      * The message bundled to pull error messages from.
      */
-    private final ResourceBundle messages;
+    protected final ResourceBundle messages;
     
     /**
      * Constructs a scanner based on the given policy.
@@ -223,126 +214,28 @@ public class CssScanner {
 	return new CleanResults(startOfScan, new Date(), handler
 		.getCleanStylesheet(), null, errorMessages);
     }
-
+    
     /**
-     * Parses through a <code>LinkedList</code> of imported stylesheet
-     * URIs, this method parses through those stylesheets and validates them
-     * 
-     * @param stylesheets
-     *                the <code>LinkedList</code> of stylesheet URIs to
-     *                parse
-     * @param handler
-     *                the <code>CssHandler</code> to use for parsing
-     * @param errorMessages
-     *                the list of error messages to append to
-     * @param sizeLimit
-     *                the limit on the total size in bites of any imported
-     *                stylesheets
-     * @throws ScanException
-     *                 if an error occurs during scanning
-     */
-    private void parseImportedStylesheets(LinkedList stylesheets,
-	    CssHandler handler, ArrayList errorMessages, int sizeLimit)
-	    throws ScanException {
-
-	int importedStylesheets = 0;
-
-	// if stylesheets were imported by the inline style declaration,
-	// continue parsing the nested styles. Note this only happens
-	// if CSS importing was enabled in the policy file
-	if (!stylesheets.isEmpty()) {
-	    HttpClient httpClient = new HttpClient();
-
-	    // Ensure that we have appropriate timeout values so we don't
-	    // get DoSed waiting for returns
-	    HttpConnectionManagerParams params = httpClient
-		    .getHttpConnectionManager().getParams();
-
-	    int timeout = DEFAULT_TIMEOUT;
-
-	    try {
-		timeout = Integer.parseInt(policy
-			.getDirective(Policy.CONNECTION_TIMEOUT));
-	    } catch (NumberFormatException nfe) {
-	    }
-
-	    params.setConnectionTimeout(timeout);
-	    params.setSoTimeout(timeout);
-	    httpClient.getHttpConnectionManager().setParams(params);
-
-	    int allowedImports = Policy.DEFAULT_MAX_STYLESHEET_IMPORTS;
-	    try {
-		allowedImports = Integer.parseInt(policy
-			.getDirective("maxStyleSheetImports"));
-	    } catch (NumberFormatException nfe) {
-	    }
-
-	    while (!stylesheets.isEmpty()) {
-
-		URI stylesheetUri = (URI) stylesheets.removeFirst();
-
-		if (++importedStylesheets > allowedImports) {
-		    errorMessages.add(ErrorMessageUtil.getMessage(
-		    	messages,
-			    ErrorMessageUtil.ERROR_CSS_IMPORT_EXCEEDED,
-			    new Object[] {
-				    HTMLEntityEncoder
-					    .htmlEntityEncode(stylesheetUri
-						    .toString()),
-				    String.valueOf(allowedImports) }));
-		    continue;
-		}
-
-		GetMethod stylesheetRequest = new GetMethod(stylesheetUri
-			.toString());
-
-		byte[] stylesheet = null;
-		try {
-		    // pull down stylesheet, observing size limit
-		    httpClient.executeMethod(stylesheetRequest);
-		    stylesheet = stylesheetRequest.getResponseBody(sizeLimit);
-		} catch (HttpContentTooLargeException hctle) {
-		    errorMessages
-			    .add(ErrorMessageUtil
-				    .getMessage(
-				    	messages,
-					    ErrorMessageUtil.ERROR_CSS_IMPORT_INPUT_SIZE,
-					    new Object[] {
-						    HTMLEntityEncoder
-							    .htmlEntityEncode(stylesheetUri
-								    .toString()),
-						    String.valueOf(policy
-							    .getMaxInputSize()) }));
-		} catch (IOException ioe) {
-		    errorMessages.add(ErrorMessageUtil
-			    .getMessage(
-			    	messages,
-				    ErrorMessageUtil.ERROR_CSS_IMPORT_FAILURE,
-				    new Object[] { HTMLEntityEncoder
-					    .htmlEntityEncode(stylesheetUri
-						    .toString()) }));
-		} finally {
-		    stylesheetRequest.releaseConnection();
-		}
-
-		if (stylesheet != null) {
-		    // decrease the size limit based on the
-		    sizeLimit -= stylesheet.length;
-
-		    try {
-			InputSource nextStyleSheet = new InputSource(
-				new InputStreamReader(new ByteArrayInputStream(
-					stylesheet)));
-			parser.parseStyleSheet(nextStyleSheet);
-
-		    } catch (IOException ioe) {
-			throw new ScanException(ioe);
-		    }
-
-		}
-	    }
+	 * Parses through a <code>LinkedList</code> of imported stylesheet
+	 * URIs, this method parses through those stylesheets and validates them
+	 * 
+	 * @param stylesheets
+	 *                the <code>LinkedList</code> of stylesheet URIs to
+	 *                parse
+	 * @param handler
+	 *                the <code>CssHandler</code> to use for parsing
+	 * @param errorMessages
+	 *                the list of error messages to append to
+	 * @param sizeLimit
+	 *                the limit on the total size in bites of any imported
+	 *                stylesheets
+	 * @throws ScanException
+	 *                 if an error occurs during scanning
+	 */
+	protected void parseImportedStylesheets(LinkedList stylesheets, CssHandler handler,
+			ArrayList errorMessages, int sizeLimit) throws ScanException {
+		// Implemented in ExternalCssScanner.java
 	}
-    }
 
     /**
      * Test method to demonstrate CSS scanning.
@@ -355,7 +248,14 @@ public class CssScanner {
      */
     public static void main(String[] args) throws Exception {
 	Policy policy = Policy.getInstance("resources/antisamy-1.2.xml");
-	CssScanner scanner = new CssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
+	
+	CssScanner scanner = null;
+	
+	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
+		scanner = new ExternalCssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
+	}else{
+		scanner = new CssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
+	}
 
 	CleanResults results = null;
 

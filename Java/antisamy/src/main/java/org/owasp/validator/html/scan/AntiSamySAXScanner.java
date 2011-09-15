@@ -60,43 +60,69 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
 		int maxInputSize = policy.getMaxInputSize();
 
-		if (maxInputSize < html.length()) {
+		if (html.length() > maxInputSize) {
 			addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) });
 			throw new ScanException(errorMessages.get(0).toString());
 		}
 
-		MagicSAXFilter filter = new MagicSAXFilter(policy, messages);
-		XMLDocumentFilter[] filters = { filter };
-
+		
 		try {
 			SAXParser parser = new SAXParser();
 			parser.setFeature("http://xml.org/sax/features/namespaces", false);
 			parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
 			parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
 			
+			StringWriter out = new StringWriter();
+			
+			MagicSAXFilter sanitizingFilter = new MagicSAXFilter(policy, messages);
+			EmptyTagFilter emptyTagFilter = new EmptyTagFilter(policy, out);
+			XMLDocumentFilter[] filters = { sanitizingFilter, emptyTagFilter };
+
 			parser.setProperty("http://cyberneko.org/html/properties/filters", filters);
 			parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
 
 			Date start = new Date();
 
 			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
-			StringWriter out = new StringWriter();
+			
 			StreamResult result = new StreamResult(out);
 
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
 			Transformer transformer = transformerFactory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "no");
-			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			transformer.setOutputProperty(OutputKeys.METHOD, "html");
+			boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
+			transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
+			
+			boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
+			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
+			
+			boolean xhtml = "true".equals(policy.getDirective( Policy.USE_XHTML));
 
+			if(xhtml) {
+				transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+			} else {
+				transformer.setOutputProperty(OutputKeys.METHOD, "html");
+			}
+			
 			transformer.transform(source, result);
 
 			Date end = new Date();
 
-			// System.out.println(out.getBuffer().toString());
-			errorMessages = filter.getErrorMessages();
-			return new CleanResults(start, end, out.getBuffer().toString(), null, errorMessages);
+			String cleanHtml = out.getBuffer().toString();
+			
+			if (cleanHtml.endsWith("\n")) {
+                if (!html.endsWith("\n")) {
+
+                    if (cleanHtml.endsWith("\r\n")) {
+                        cleanHtml= cleanHtml.substring(0, cleanHtml.length() - 2);
+                    } else if (cleanHtml.endsWith("\n")) {
+                        cleanHtml = cleanHtml.substring(0, cleanHtml.length() - 1);
+                    }
+                }
+            }
+
+			errorMessages = sanitizingFilter.getErrorMessages();
+			return new CleanResults(start, end, cleanHtml, null, errorMessages);
 
 		} catch (Exception e) {
 			throw new ScanException(e);
