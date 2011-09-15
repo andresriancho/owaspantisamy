@@ -2648,6 +2648,7 @@ http://www.w3.org/TR/html401/struct/global.html
             <literal value="embed"/>
             <literal value="basefont"/>
             <literal value="col"/>
+            <literal value="div"/>
         </literal-list>
     </allowed-empty-tags>
 </anti-samy-rules>
