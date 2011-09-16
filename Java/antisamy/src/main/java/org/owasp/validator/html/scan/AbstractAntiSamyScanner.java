@@ -24,11 +24,16 @@
 
 package org.owasp.validator.html.scan;
 
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.apache.xml.serialize.HTMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XHTMLSerializer;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
@@ -70,5 +75,51 @@ public abstract class AbstractAntiSamyScanner {
 
 	protected void addError(String errorKey, Object[] objs) {
 		errorMessages.add(ErrorMessageUtil.getMessage(messages, errorKey, objs));
+	}
+	
+	
+	protected OutputFormat getOutputFormat(String encoding) {
+		
+		 boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
+         boolean preserveSpace = "true".equals(policy.getDirective(Policy.PRESERVE_SPACE));
+         
+		OutputFormat format = new OutputFormat();
+        format.setEncoding(encoding);
+        format.setOmitXMLDeclaration("true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION)));
+        format.setOmitDocumentType("true".equals(policy.getDirective(Policy.OMIT_DOCTYPE_DECLARATION)));
+        format.setPreserveEmptyAttributes(true);
+        format.setPreserveSpace(preserveSpace);
+        
+        if (formatOutput) {
+            format.setLineWidth(80);
+            format.setIndenting(true);
+            format.setIndent(2);
+        }
+        
+        return format;
+	}
+	
+	protected HTMLSerializer getHTMLSerializer(Writer w, OutputFormat format) {
+		boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
+       	
+        if(useXhtml) {
+        	return new ASXHTMLSerializer(w, format, policy);
+        }
+        
+        return new ASHTMLSerializer(w, format, policy);
+	}
+
+	protected String trim(String original, String cleaned) {
+        if (cleaned.endsWith("\n")) {
+            if (!original.endsWith("\n")) {
+                if (cleaned.endsWith("\r\n")) {
+                	cleaned = cleaned.substring(0, cleaned.length() - 2);
+                } else if (cleaned.endsWith("\n")) {
+                	cleaned = cleaned.substring(0, cleaned.length() - 1);
+                }
+            }
+        }
+        
+        return cleaned;
 	}
 }

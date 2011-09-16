@@ -36,6 +36,7 @@ import org.apache.xerces.util.XMLStringBuffer;
 import org.apache.xerces.xni.Augmentations;
 import org.apache.xerces.xni.QName;
 import org.apache.xerces.xni.XMLAttributes;
+import org.apache.xerces.xni.XMLResourceIdentifier;
 import org.apache.xerces.xni.XMLString;
 import org.apache.xerces.xni.XNIException;
 import org.apache.xerces.xni.parser.XMLDocumentFilter;
@@ -88,11 +89,9 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// pass through all character content.
 			if ( inCdata ) {
 				String encoded = HTMLEntityEncoder.htmlEntityEncode(text.toString());
-                addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(text.toString())});
-				super.characters(new XMLStringBuffer(encoded), augs);
-			} else {
-				super.characters(text, augs);
+                addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{encoded});
 			}
+			super.characters(text, augs);
 		}
 	}
 

@@ -733,7 +733,7 @@ public class AntiSamyTest extends TestCase {
 			assertEquals(expected, output);
 
 			input = "<div>text <!--[if IE]> <!--[if gte 6]> comment <[endif]--><[endif]--></div>";
-			expected = "<div>text <!-- <!- - comment -->&lt;[endif]--&gt;</div>";
+			expected = "<div>text <!-- <!-- comment -->&lt;[endif]--&gt;</div>";
 			output = as.scan(input, policy, AntiSamy.SAX).getCleanHTML();
 
 			assertEquals(expected, output);
@@ -1008,7 +1008,7 @@ public class AntiSamyTest extends TestCase {
             assertTrue(crDom.lastIndexOf(nl) == crDom.indexOf(nl));
             assertTrue(crSax.lastIndexOf(nl) == crSax.indexOf(nl));
 
-            int expectedLoc = header.length() + 1;
+            int expectedLoc = header.length();
             int actualLoc = crSax.indexOf(nl);
             assertTrue(expectedLoc == actualLoc);
 
@@ -1044,7 +1044,7 @@ public class AntiSamyTest extends TestCase {
         	String useXhtmlBefore = policy.getDirective(Policy.USE_XHTML);
         	sb = new StringBuilder();
         	sb.append("<html><head><title>foobar</title></head><body>");
-        	sb.append("<img src=\"http://foobar.com/pic.gif\"/></body></html>");
+        	sb.append("<img src=\"http://foobar.com/pic.gif\" /></body></html>");
         	
         	String html = sb.toString();
         	
@@ -1052,7 +1052,7 @@ public class AntiSamyTest extends TestCase {
         	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
         	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
             
-            assertTrue(html.equals(crDom.replaceAll(" />", "/>")));
+            assertTrue(html.equals(crDom));
             assertTrue(html.equals(crSax));
             
             policy.setDirective(Policy.USE_XHTML, useXhtmlBefore);
@@ -1073,6 +1073,46 @@ public class AntiSamyTest extends TestCase {
         	assertTrue(crSax.indexOf("<script>") == -1);
         } catch (Exception e) {
         	fail(e.getMessage());
+        }
+        
+        /*
+         * #101 - testing international character support
+         */
+        String entityEncodeUnicodeChars = policy.getDirective(Policy.ENTITY_ENCODE_INTL_CHARS);
+        String useXhtml = policy.getDirective(Policy.USE_XHTML);
+        
+        policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "false");
+        
+        try {
+        	String html = "<b>letter 'a' with umlaut: Ã";
+        	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+        	assertTrue(crDom.indexOf("Ã") != -1);
+        	assertTrue(crSax.indexOf("Ã") != -1);
+        	
+        	policy.setDirective(Policy.USE_XHTML, "false");
+        	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
+        	crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+        	assertTrue(crDom.indexOf("Ã") == -1);
+        	assertTrue(crDom.indexOf("&Atilde;") != -1);
+        	assertTrue(crSax.indexOf("Ã") == -1);
+        	assertTrue(crSax.indexOf("&Atilde;") != -1);
+        	
+        	policy.setDirective(Policy.USE_XHTML, "true");
+        	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
+        	crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+        	assertTrue(crDom.indexOf("Ã") == -1);
+        	assertTrue(crDom.indexOf("&Atilde;") != -1);
+        	assertTrue(crSax.indexOf("Ã") == -1);
+        	assertTrue(crSax.indexOf("&Atilde;") != -1);
+        	
+        } catch (Exception e) {
+        	fail(e.getMessage());
+        } finally {
+        	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, entityEncodeUnicodeChars);
+        	policy.setDirective(Policy.USE_XHTML, useXhtml);
         }
 	}
 
@@ -1139,17 +1179,17 @@ public class AntiSamyTest extends TestCase {
 			CleanResults cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
 
-			String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"/><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"/></object>";
+			String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>"; 
 			cr = as.scan(input, policy, AntiSamy.SAX);
 			// System.out.println("Expected: " + saxExpectedOutput);
 			// System.out.println("Received: " + cr.getCleanHTML());
-			assertTrue(cr.getCleanHTML().indexOf(saxExpectedOutput) > -1);
+			assertTrue(cr.getCleanHTML().equals(saxExpectedOutput));
 
 			// now what if someone sticks malicious URL in the value of the
 			// value attribute in the param tag? remove that param tag
 			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://supermaliciouscode.com/badstuff.swf\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
 			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
-			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"/></object>";
+			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>";
 			cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);
 
@@ -1162,7 +1202,7 @@ public class AntiSamyTest extends TestCase {
 			// attribute in the embed tag? remove that embed tag
 			input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://hereswhereikeepbadcode.com/ohnoscary.swf\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
 			expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
-			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\"/><param name=\"allowFullScreen\" value=\"true\"/><param name=\"allowscriptaccess\" value=\"always\"/></object>";
+			saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
 
 			cr = as.scan(input, policy, AntiSamy.DOM);
 			assertTrue(cr.getCleanHTML().indexOf(expectedOutput) > -1);

@@ -169,74 +169,23 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * its string representation.
              */
 
-            OutputFormat format = new OutputFormat();
-            format.setEncoding(outputEncoding);
+            StringWriter out = new StringWriter();
 
-            StringWriter sw = new StringWriter();
+            OutputFormat format = getOutputFormat(outputEncoding);
 
-            /*
-             * Using the HTMLSerializer is the only way to notify the parser to
-             * fire events for recognizing HTML-entities. The other ways should,
-             * but do not work.
-             *
-             * We're using HTMLSerializer even though it's deprecated.
-             *
-             * See http://marc.info/?l=xerces-j-dev&m=108071323405980&w=2 for
-             * why we know it's still ok to use.
-             */
-
-            format.setEncoding(outputEncoding);
-            format.setOmitXMLDeclaration("true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION)));
-            format.setOmitDocumentType("true".equals(policy.getDirective(Policy.OMIT_DOCTYPE_DECLARATION)));
-
-            format.setPreserveEmptyAttributes(true);
-
-            if ("true".equals(policy.getDirective(Policy.FORMAT_OUTPUT))) {
-                format.setLineWidth(80);
-                format.setIndenting(true);
-                format.setIndent(2);
-            }
-
-            boolean preserveSpace = policy.getDirective(Policy.PRESERVE_SPACE) != null ? "true".equals(policy.getDirective(Policy.PRESERVE_SPACE)) : true;
-
-            format.setPreserveSpace(preserveSpace);
-
-            if ("true".equals(policy.getDirective(Policy.USE_XHTML))) {
-
-                XHTMLSerializer serializer = new XHTMLSerializer(sw, format);
-                serializer.serialize(dom);
-
-            } else {
-
-                HTMLSerializer serializer = new HTMLSerializer(sw, format);
-                serializer.serialize(dom);
-
-            }
-
+            HTMLSerializer serializer = getHTMLSerializer(out, format);
+            serializer.serialize(dom);
+            
             /*
              * Get the String out of the StringWriter and rip out the XML
              * declaration if the Policy says we should.
              */
-            String finalCleanHTML = sw.getBuffer().toString();
-
-            /*
-             * I thought you could just call String.trim(), but it doesn't work.
-             */
-            if (finalCleanHTML.endsWith("\n")) {
-                if (!html.endsWith("\n")) {
-
-                    if (finalCleanHTML.endsWith("\r\n")) {
-                        finalCleanHTML = finalCleanHTML.substring(0, finalCleanHTML.length() - 2);
-                    } else if (finalCleanHTML.endsWith("\n")) {
-                        finalCleanHTML = finalCleanHTML.substring(0, finalCleanHTML.length() - 1);
-                    }
-                }
-            }
+            String cleanHtml = trim(html, out.getBuffer().toString());
 
             /**
-             * Return DOM object as well as string HTML.
+             * Return the DOM object as well as string HTML.
              */
-            results = new CleanResults(start, new Date(), finalCleanHTML, dom, errorMessages);
+            results = new CleanResults(start, new Date(), cleanHtml, dom, errorMessages);
 
             return results;
 

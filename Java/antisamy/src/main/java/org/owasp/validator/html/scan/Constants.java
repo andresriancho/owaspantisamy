@@ -59,4 +59,6 @@ public class Constants {
     }
     public static final String DEFAULT_LOCALE_LANG = "en";
     public static final String DEFAULT_LOCALE_LOC = "US";
+    
+    public static final String big5CharsToEncode = "<>\"'&";
 }

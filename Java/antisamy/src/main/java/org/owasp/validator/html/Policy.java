@@ -84,7 +84,7 @@ public class Policy {
 	public static final String VALIDATE_PARAM_AS_EMBED = "validateParamAsEmbed";
 	public static final String PRESERVE_SPACE = "preserveSpace";
 	public static final String PRESERVE_COMMENTS = "preserveComments";
-	
+	public static final String ENTITY_ENCODE_INTL_CHARS = "entityEncodeIntlChars";
 	public static final String ENCODE_TAGS = "onUnknownTag";
 	
 	public static final String ACTION_VALIDATE	= "validate";
