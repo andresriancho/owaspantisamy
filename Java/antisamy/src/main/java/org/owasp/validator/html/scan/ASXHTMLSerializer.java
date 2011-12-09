@@ -11,14 +11,20 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XHTMLSerializer;
 import org.owasp.validator.html.Policy;
 
+/**
+ * This is an extension of the default XHTMLSerializer class that's had it's endElementIO()
+ * method tweaked to serialize closing tags and self-closing tags the way we require.
+ */
 public class ASXHTMLSerializer extends XHTMLSerializer {
 
 	private boolean encodeAllPossibleEntities;
 	private String[] allowedEmptyTags;
+	private String[] requireClosingTags;
 	
 	public ASXHTMLSerializer(Writer w, OutputFormat format, Policy policy) {
 		super(w, format);
 		this.allowedEmptyTags = policy.getAllowedEmptyTags();
+		this.requireClosingTags = policy.getRequiresClosingTags();
 		this.encodeAllPossibleEntities = "true".equals(policy.getDirective(Policy.ENTITY_ENCODE_INTL_CHARS));
 	}
 	
@@ -40,37 +46,20 @@ public class ASXHTMLSerializer extends XHTMLSerializer {
 		_printer.unindent();
 		state = getElementState();
 
-		if (true) {
-			if (state.empty && isAllowedEmptyTag(rawName)) {
-				_printer.printText(" />");
-			} else {
-				// Must leave CData section first
-				if (state.inCData)
-					_printer.printText("]]>");
-				// XHTML: element names are lower case, DOM will be different
-				_printer.printText("</");
-				_printer.printText(state.rawName.toLowerCase(Locale.ENGLISH));
-				_printer.printText('>');
-			}
+		if (state.empty && isAllowedEmptyTag(rawName) && !requiresClosingTag(rawName)) { //
+			_printer.printText(" />");
 		} else {
-			if (state.empty)
+			if(state.empty)
 				_printer.printText('>');
-			// This element is not empty and that last content was
-			// another element, so print a line break before that
-			// last element and this element's closing tag.
-			// [keith] Provided this is not an anchor.
-			// HTML: some elements do not print closing tag (e.g. LI)
-			if (htmlName == null || !HTMLdtd.isOnlyOpening(htmlName)) {
-				if (_indenting && !state.preserveSpace && state.afterElement)
-					_printer.breakLine();
-				// Must leave CData section first (Illegal in HTML, but still)
-				if (state.inCData)
-					_printer.printText("]]>");
-				_printer.printText("</");
-				_printer.printText(state.rawName);
-				_printer.printText('>');
-			}
+			// Must leave CData section first
+			if (state.inCData)
+				_printer.printText("]]>");
+			// XHTML: element names are lower case, DOM will be different
+			_printer.printText("</");
+			_printer.printText(state.rawName.toLowerCase(Locale.ENGLISH));
+			_printer.printText('>');
 		}
+
 		// Leave the element state and update that of the parent
 		// (if we're not root) to not empty and after element.
 		state = leaveElementState();
@@ -85,6 +74,15 @@ public class ASXHTMLSerializer extends XHTMLSerializer {
 			_printer.flush();
 	}
 	
+	private boolean requiresClosingTag(String tagName) {
+		for(int i=0;i<requireClosingTags.length;i++) {
+			String requiresClosingTag  = requireClosingTags[i];
+			if (tagName.equalsIgnoreCase(requiresClosingTag))
+				return true;
+		}
+		return false;
+	}
+
 	private boolean isAllowedEmptyTag(String tagName) {
     	boolean allowed = false;
         for (int i = 0; i < allowedEmptyTags.length; i++) {

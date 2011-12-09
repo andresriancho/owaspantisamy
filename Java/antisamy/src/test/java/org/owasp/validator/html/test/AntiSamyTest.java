@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import junit.framework.Test;
@@ -43,6 +44,7 @@ import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.model.Tag;
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which
@@ -1113,6 +1115,33 @@ public class AntiSamyTest extends TestCase {
         } finally {
         	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, entityEncodeUnicodeChars);
         	policy.setDirective(Policy.USE_XHTML, useXhtml);
+        }
+        
+        /*
+         * Testing iframe as reported by Ondrej.
+         */
+        try {
+        	String useXhtmlBefore = policy.getDirective(Policy.USE_XHTML);
+        	String html = "<iframe></iframe>";
+        	
+        	policy.setDirective(Policy.USE_XHTML, "true");
+        	
+        	Tag tag = new Tag("iframe");
+        	tag.setAction(Policy.ACTION_VALIDATE);
+        	tag.setAllowedAttributes(new HashMap());
+        	policy.addTagRule(tag);
+        	
+        	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
+        	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
+            
+            assertTrue(html.equals(crDom));
+            assertTrue(html.equals(crSax));
+            
+            policy.setDirective(Policy.USE_XHTML, useXhtmlBefore);
+        } catch (Exception e) {
+        	fail(e.getMessage());
+        } finally {
+
         }
 	}
 

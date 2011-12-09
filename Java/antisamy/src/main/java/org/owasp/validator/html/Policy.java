@@ -104,6 +104,7 @@ public class Policy {
 
 	private ArrayList tagNames;
     private ArrayList allowedEmptyTags;
+    private ArrayList requiresClosingTags;
 
 	/** The path to the base policy file, used to resolve relative paths when reading included files */
 	private static URL baseUrl					= null;
@@ -352,6 +353,13 @@ public class Policy {
 
         this.allowedEmptyTags = parseAllowedEmptyTags(allowedEmptyTagsListNode);
 
+        /**
+         * Next, we read in those tags that must have a closing tag.
+         */
+        Element requiresClosingTagsListNode = (Element) topLevelElement.getElementsByTagName("require-closing-tags").item(0);
+
+        this.requiresClosingTags = parseRequiresClosingTags(requiresClosingTagsListNode);
+        
 		/**
 		 * Next, we read in the tag restrictions.
 		 */
@@ -490,6 +498,40 @@ public class Policy {
         }
 
         return allowedEmptyTags;
+    }
+    
+    /**
+     * Go through <require-closing-tags> section of the policy file.
+     * @param requiresClosingTagsListNode Top level of <require-closing-tags>
+     * @return An ArrayList of tags that require a closing tag, even if they're empty
+     */
+    private ArrayList parseRequiresClosingTags(Element requiresClosingTagsListNode) throws PolicyException {
+
+        ArrayList requiresClosingTags = new ArrayList();
+
+        if (requiresClosingTagsListNode != null) {
+            Element literalListNode = (Element) requiresClosingTagsListNode.getElementsByTagName("literal-list").item(0);
+
+            if (literalListNode != null) {
+
+                NodeList literalList = literalListNode.getElementsByTagName("literal");
+
+                for (int j = 0; j < literalList.getLength(); j++) {
+                    Element literalNode = (Element) literalList.item(j);
+
+                    String value = XMLUtil.getAttributeValue(literalNode, "value");
+
+                    if (value != null && value.length() > 0) {
+                        requiresClosingTags.add(value);
+                    }
+                }
+
+            }
+        } else {
+            requiresClosingTags = Constants.defaultRequiresClosingTags;
+        }
+
+        return requiresClosingTags;
     }
 
 	/**
@@ -963,6 +1005,13 @@ public class Policy {
         return (String[]) allowedEmptyTags.toArray(new String[allowedEmptyTags.size()]);
     }
 
+    /**
+     * Return all the tags that are required to be closed with an end tag, even if they have no child content.
+     * @return A String array of all the tags that are required to be closed with an end tag, even if they have no child content.
+     */
+    public String[] getRequiresClosingTags() {
+        return (String[]) requiresClosingTags.toArray(new String[requiresClosingTags.size()]);
+    }
 
 	/**
 	 * Return all the tags accepted by the Policy object.
@@ -1057,6 +1106,10 @@ public class Policy {
 
 		// No resolving.
 		return null;
+	}
+
+	public void addTagRule(Tag tag) {
+		this.tagRules.put(tag.getName().toLowerCase(), tag);
 	}
 
 	/**

@@ -34,12 +34,17 @@ public class Constants {
     public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
     public static final Tag BASIC_PARAM_TAG_RULE;
     public static ArrayList defaultAllowedEmptyTags;
-
+    public static ArrayList defaultRequiresClosingTags;
+    
     private static final String[] allowedEmptyTags = {
          "br", "hr", "a", "img", "link", "iframe", "script", "object", "applet",
          "frame", "base", "param", "meta", "input", "textarea", "embed",
          "basefont", "col"
         };
+    
+    private static final String[] requiresClosingTags = {
+    	"iframe", "script", "link"
+    };
 
     static {
         Attribute paramNameAttr = new Attribute("name");
@@ -56,7 +61,11 @@ public class Constants {
 
         defaultAllowedEmptyTags = new ArrayList();
         defaultAllowedEmptyTags.addAll(Arrays.asList(allowedEmptyTags));
+        
+        defaultRequiresClosingTags = new ArrayList();
+        defaultRequiresClosingTags.addAll(Arrays.asList(requiresClosingTags));
     }
+    
     public static final String DEFAULT_LOCALE_LANG = "en";
     public static final String DEFAULT_LOCALE_LOC = "US";
     
