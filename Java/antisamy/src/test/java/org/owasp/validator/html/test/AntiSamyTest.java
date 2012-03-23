@@ -1086,29 +1086,29 @@ public class AntiSamyTest extends TestCase {
         policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "false");
         
         try {
-        	String html = "<b>letter 'a' with umlaut: Ã";
+        	String html = "<b>letter 'a' with umlaut: Ã¤";
         	String crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
         	String crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
-        	assertTrue(crDom.indexOf("Ã") != -1);
-        	assertTrue(crSax.indexOf("Ã") != -1);
+        	assertTrue(crDom.indexOf("Ã¤") != -1);
+        	assertTrue(crSax.indexOf("Ã¤") != -1);
         	
         	policy.setDirective(Policy.USE_XHTML, "false");
         	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
         	crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
         	crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
-        	assertTrue(crDom.indexOf("Ã") == -1);
-        	assertTrue(crDom.indexOf("&Atilde;") != -1);
-        	assertTrue(crSax.indexOf("Ã") == -1);
-        	assertTrue(crSax.indexOf("&Atilde;") != -1);
+        	assertTrue(crDom.indexOf("Ã¤") == -1);
+        	assertTrue(crDom.indexOf("&auml;") != -1);
+        	assertTrue(crSax.indexOf("Ã¤") == -1);
+        	assertTrue(crSax.indexOf("&auml;") != -1);
         	
         	policy.setDirective(Policy.USE_XHTML, "true");
         	policy.setDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
         	crDom = as.scan(html, policy, AntiSamy.DOM).getCleanHTML();
         	crSax = as.scan(html, policy, AntiSamy.SAX).getCleanHTML();
-        	assertTrue(crDom.indexOf("Ã") == -1);
-        	assertTrue(crDom.indexOf("&Atilde;") != -1);
-        	assertTrue(crSax.indexOf("Ã") == -1);
-        	assertTrue(crSax.indexOf("&Atilde;") != -1);
+        	assertTrue(crDom.indexOf("Ã¤") == -1);
+        	assertTrue(crDom.indexOf("&auml;") != -1);
+        	assertTrue(crSax.indexOf("Ã¤") == -1);
+        	assertTrue(crSax.indexOf("&auml;") != -1);
         	
         } catch (Exception e) {
         	fail(e.getMessage());
