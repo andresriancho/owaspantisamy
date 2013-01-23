@@ -95,7 +95,10 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		}
 	}
 
-	public void comment(XMLString text, Augmentations augs) throws XNIException {
+    private static final Pattern conditionalDirectives =
+            Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
+
+    public void comment(XMLString text, Augmentations augs) throws XNIException {
 		String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
 
 		if ("true".equals(preserveComments)) {
@@ -103,7 +106,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// Strip conditional directives regardless of the
 			// PRESERVE_COMMENTS setting.
 			if (value != null) {
-				value = value.replaceAll("<?!?\\[\\s*(?:end)?if[^]]*\\]>?", "");
+                value = conditionalDirectives.matcher(value).replaceAll("");
 				super.comment(new XMLString(value.toCharArray(), 0, value.length()), augs);
 			}
 		}

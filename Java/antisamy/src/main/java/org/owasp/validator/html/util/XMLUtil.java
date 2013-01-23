@@ -27,9 +27,21 @@ package org.owasp.validator.html.util;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.util.regex.Pattern;
+
 public class XMLUtil {
 
-	/**
+    private static final Pattern encgt = Pattern.compile("&gt;");
+    private static final Pattern enclt = Pattern.compile("&lt;");
+    private static final Pattern encQuot = Pattern.compile("&quot;");
+    private static final Pattern encAmp = Pattern.compile("&amp;");
+
+    private static final Pattern gt = Pattern.compile(">");
+    private static final Pattern lt = Pattern.compile("<");
+    private static final Pattern quot = Pattern.compile("\"");
+    private static final Pattern amp = Pattern.compile("&");
+
+    /**
 	 * Helper function for quickly retrieving an attribute from a given
 	 * element. 
 	 * @param ele The document element from which to pull the attribute value.
@@ -132,7 +144,7 @@ public class XMLUtil {
 		
 		return boolVal;
 	}
-	
+
 
 	/**
 	 * Helper function for decode XML entities.
@@ -145,10 +157,10 @@ public class XMLUtil {
 			return null;
 		}
 		
-		str = str.replaceAll("&gt;",">");
-		str = str.replaceAll("&lt;","<");
-		str = str.replaceAll("&quot;","\"");
-		str = str.replaceAll("&amp;","&");
+		str = encgt.matcher(str).replaceAll(">");
+		str = enclt.matcher(str).replaceAll("<");
+		str = encQuot.matcher(str).replaceAll("\"");
+		str = encAmp.matcher(str).replaceAll("&");
 		
 		return str;
 	}
@@ -159,10 +171,10 @@ public class XMLUtil {
 			return null;
 		}
 		
-		str = str.replaceAll(">","&gt;");
-		str = str.replaceAll("<","&lt;");
-		str = str.replaceAll("\"","&quot;");
-		str = str.replaceAll("&","&amp;");
+		str = gt.matcher(str).replaceAll("&gt;");
+		str = lt.matcher(str).replaceAll("&lt;");
+		str = quot.matcher(str).replaceAll("&quot;");
+		str = amp.matcher(str).replaceAll("&amp;");
 		
 		return str;
 	}

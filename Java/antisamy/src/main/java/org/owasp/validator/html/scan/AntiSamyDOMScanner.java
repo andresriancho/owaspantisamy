@@ -76,6 +76,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     private DocumentFragment dom = document.createDocumentFragment();
     private CleanResults results = null;
     private static int maxDepth = 250;
+    private static final Pattern invalidXmlCharacters =
+            Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
+    private static final Pattern conditionalDirectives =
+            Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
     private int currentStackDepth;
 
     /**
@@ -224,7 +228,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 // Strip conditional directives regardless of the
                 // PRESERVE_COMMENTS setting.
                 if (value != null) {
-                    ((Comment) node).setData(value.replaceAll("<?!?\\[\\s*(?:end)?if[^]]*\\]>?", ""));
+                    ((Comment) node).setData(conditionalDirectives.matcher(value).replaceAll(""));
                 }
             }
 
@@ -889,8 +893,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         if (in == null || ("".equals(in))) {
             return ""; // vacancy test.
         }
-        return in.replaceAll("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]", "");
-
+        return invalidXmlCharacters.matcher(in).replaceAll("");
     }
 
     // private void debug(String s) { System.out.println(s); }
