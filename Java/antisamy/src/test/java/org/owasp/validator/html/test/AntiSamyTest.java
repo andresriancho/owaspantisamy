@@ -1304,4 +1304,23 @@ public class AntiSamyTest extends TestCase {
 		System.out.println("Total DOM time: " + totalDomTime);
 		System.out.println("Total SAX time: " + totalSaxTime);
 	}
+
+    public void testCompareSpeedsShortStrings() throws IOException, ScanException, PolicyException {
+
+        double totalDomTime = 0;
+        double totalSaxTime = 0;
+
+        int testReps = 1000;
+
+        String html = "<body> hey you <img/> out there on your own </body>";
+
+        for (int j = 0; j < testReps; j++) {
+            totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();;
+            totalSaxTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
+        }
+
+        System.out.println("Total DOM time short string: " + totalDomTime);
+        System.out.println("Total SAX time short string: " + totalSaxTime);
+    }
+
 }
