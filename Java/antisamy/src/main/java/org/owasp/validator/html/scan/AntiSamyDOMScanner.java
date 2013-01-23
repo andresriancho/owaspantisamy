@@ -27,9 +27,7 @@ import java.io.IOException;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.batik.css.parser.ParseException;
@@ -61,6 +59,7 @@ import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 /**
  * This is where the magic lives. All the scanning/filtration logic resides
@@ -126,19 +125,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * W3C.
              */
 
-            DOMFragmentParser parser = new DOMFragmentParser();
-            parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
-            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", inputEncoding);
-
-            parser.setFeature("http://cyberneko.org/html/features/scanner/style/strip-cdata-delims", false);
-            parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
-
-            try {
-                parser.setFeature("http://cyberneko.org/html/features/enforce-strict-attribute-names", true);
-            } catch (SAXNotRecognizedException se) {
-                // this indicates that the patched nekohtml is not on the
-                // classpath
-            }
+          DOMFragmentParser parser = getThreadLocalDomParser(inputEncoding);
 
             try {
                 parser.parse(new InputSource(new StringReader(html)), dom);
@@ -199,6 +186,44 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             throw new ScanException(e);
         }
 
+    }
+
+    private static final ThreadLocal parsers = new ThreadLocal(){
+        protected Object initialValue() {
+            return new HashMap();
+        }
+    };
+
+    DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
+        if (inputEncoding == null) {
+            inputEncoding = "DEFAULT-ENC";
+        }
+        Map byEncoding = (Map) parsers.get();
+        DOMFragmentParser parser = (DOMFragmentParser) byEncoding.get(inputEncoding);
+        if (parser == null){
+            parser = getDomParser( inputEncoding);
+            byEncoding.put( inputEncoding, parser);
+        }
+        return parser;
+    }
+
+
+    DOMFragmentParser getDomParser(String inputEncoding)
+            throws SAXNotRecognizedException, SAXNotSupportedException {
+        DOMFragmentParser parser = new DOMFragmentParser();
+        parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
+        parser.setProperty("http://cyberneko.org/html/properties/default-encoding", inputEncoding);
+
+        parser.setFeature("http://cyberneko.org/html/features/scanner/style/strip-cdata-delims", false);
+        parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
+
+        try {
+            parser.setFeature("http://cyberneko.org/html/features/enforce-strict-attribute-names", true);
+        } catch (SAXNotRecognizedException se) {
+            // this indicates that the patched nekohtml is not on the
+            // classpath
+        }
+        return parser;
     }
 
     /**
