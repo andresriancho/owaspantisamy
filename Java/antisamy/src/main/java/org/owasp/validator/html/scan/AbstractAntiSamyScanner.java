@@ -24,16 +24,13 @@
 
 package org.owasp.validator.html.scan;
 
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-import org.apache.xml.serialize.HTMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XHTMLSerializer;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
@@ -53,7 +50,8 @@ public abstract class AbstractAntiSamyScanner {
 
 	public abstract CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException;
 
-	public abstract CleanResults getResults();
+	/** @noinspection UnusedDeclaration TODO: Investigate */
+    public abstract CleanResults getResults();
 
 	public AbstractAntiSamyScanner(Policy policy) {
 		this.policy = policy;
@@ -99,7 +97,8 @@ public abstract class AbstractAntiSamyScanner {
         return format;
 	}
 	
-	protected HTMLSerializer getHTMLSerializer(Writer w, OutputFormat format) {
+	/** @noinspection deprecation*/
+    protected org.apache.xml.serialize.HTMLSerializer getHTMLSerializer(Writer w, OutputFormat format) {
 		boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
        	
         if(useXhtml) {

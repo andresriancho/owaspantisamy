@@ -32,9 +32,7 @@ import java.util.regex.Pattern;
 
 import org.apache.batik.css.parser.ParseException;
 import org.apache.xerces.dom.DocumentImpl;
-import org.apache.xml.serialize.HTMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XHTMLSerializer;
 import org.cyberneko.html.parsers.DOMFragmentParser;
 import org.owasp.validator.css.CssScanner;
 import org.owasp.validator.css.ExternalCssScanner;
@@ -74,12 +72,21 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     private Document document = new DocumentImpl();
     private DocumentFragment dom = document.createDocumentFragment();
     private CleanResults results = null;
-    private static int maxDepth = 250;
+    private static final int maxDepth = 250;
     private static final Pattern invalidXmlCharacters =
             Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
     private static final Pattern conditionalDirectives =
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
     private int currentStackDepth;
+
+    public AntiSamyDOMScanner(Policy policy) {
+        super(policy);
+    }
+
+    /** @noinspection UnusedDeclaration Todo Investigate */
+    public AntiSamyDOMScanner() throws PolicyException {
+        super();
+    }
 
     /**
      * This is where the magic lives.
@@ -164,7 +171,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
             OutputFormat format = getOutputFormat(outputEncoding);
 
-            HTMLSerializer serializer = getHTMLSerializer(out, format);
+            //noinspection deprecation
+            org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
             serializer.serialize(dom);
             
             /*
@@ -303,7 +311,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         Element ele = (Element) node;
         Node parentNode = ele.getParentNode();
-        Node tmp = null;
+        Node tmp;
 
         /*
          * See if we have a policy for this tag. If we do, getTagByName() will
@@ -432,7 +440,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 /*
                  * Invoke the css parser on this element.
                  */
-            	CssScanner styleScanner = null;
+            	CssScanner styleScanner;
             	
             	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
             		styleScanner = new ExternalCssScanner(policy, messages);
@@ -517,7 +525,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * attribute.
              */
 
-            Node attribute = null;
+            Node attribute;
 
             for (int currentAttributeIndex = 0; currentAttributeIndex < ele.getAttributes().getLength(); currentAttributeIndex++) {
 
@@ -796,8 +804,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         }
 
         currentStackDepth--;
-
-        return;
     }
 
     private void removeNode(Node node) {
@@ -823,61 +829,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         return allowed;
 	}
 
-	/**
-     * This method replaces all entity codes with a normalized version of all
-     * entity references contained in order to reduce our encoding/parsing
-     * attack surface.
-     *
-     * @param txt
-     *            The string to be normalized.
-     * @return The normalized version of the string.
-     */
-    /*
-     * private String replaceEntityCodes(String txt) {
-     *
-     * if ( txt == null ) { return null; }
-     *
-     * String entityPattern = "&[a-zA-Z0-9]{2,};"; Pattern pattern =
-     * Pattern.compile(entityPattern); Matcher matcher = pattern.matcher(txt);
-     * StringBuffer buff = new StringBuffer();
-     *
-     * int lastIndex = 0;
-     *
-     * while ( matcher.find() ) {
-     *
-     * String entity = matcher.group(); int startPos = matcher.start(); int
-     * endPos = matcher.end();
-     *
-     * entity = entity.substring(1); entity =
-     * entity.substring(0,entity.length()-1);
-     *
-     * String code = policy.getEntityReferenceCode(entity);
-     *
-     * if ( code != null ) {
-     *
-     * buff.append(txt.substring(lastIndex,startPos)); buff.append(code);
-     * lastIndex = endPos;
-     *
-     * }
-     *
-     * }
-     *
-     * buff.append(txt.substring(lastIndex));
-     *
-     * return buff.toString();
-     *
-     * }
-     */
     public static void main(String[] args) throws PolicyException {
     }
 
-    public AntiSamyDOMScanner(Policy policy) {
-        super(policy);
-    }
-
-    public AntiSamyDOMScanner() throws PolicyException {
-        super();
-    }
 
     /**
      * Used to promote the children of a parent to accomplish the "filterTag"
@@ -954,7 +908,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     private String toString(Element ele) {
         StringBuffer eleAsString = new StringBuffer("<" + ele.getNodeName());
         NamedNodeMap attributes = ele.getAttributes();
-        Node attribute = null;
+        Node attribute;
         for (int i = 0; i < attributes.getLength(); i++) {
             attribute = attributes.item(i);
 

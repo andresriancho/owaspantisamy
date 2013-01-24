@@ -24,34 +24,24 @@
 
 package org.owasp.validator.html.scan;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 
 import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xerces.xni.parser.XMLDocumentFilter;
-import org.apache.xml.serialize.HTMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XHTMLSerializer;
 import org.cyberneko.html.parsers.SAXParser;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.util.ErrorMessageUtil;
-import org.xml.sax.AttributeList;
-import org.xml.sax.DocumentHandler;
-import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
 
 public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
@@ -111,7 +101,8 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
 			
 			OutputFormat format = getOutputFormat(outputEncoding);
-			HTMLSerializer serializer = getHTMLSerializer(out, format);
+            //noinspection deprecation
+            org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
 			transformer.transform(source, new SAXResult(serializer));			
 			Date end = new Date();
 
