@@ -25,10 +25,7 @@
 package org.owasp.validator.html.scan;
 
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import org.apache.xml.serialize.OutputFormat;
 import org.owasp.validator.html.CleanResults;
@@ -40,7 +37,7 @@ import org.owasp.validator.html.util.ErrorMessageUtil;
 public abstract class AbstractAntiSamyScanner {
 
 	protected Policy policy;
-	protected ArrayList errorMessages = new ArrayList();
+	protected List<String> errorMessages = new ArrayList<String>();
 
 	protected ResourceBundle messages;
 	protected Locale locale = Locale.getDefault();

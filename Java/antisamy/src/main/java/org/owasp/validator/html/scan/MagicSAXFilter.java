@@ -24,10 +24,7 @@
 
 package org.owasp.validator.html.scan;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.ResourceBundle;
-import java.util.Stack;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.xerces.util.AugmentationsImpl;
@@ -57,8 +54,8 @@ import org.owasp.validator.html.util.HTMLEntityEncoder;
  */
 public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
-	private final Stack operations = new Stack();
-	private ArrayList errorMessages = new ArrayList();
+	private final Stack<String> operations = new Stack<String>();
+	private List<String> errorMessages = new ArrayList<String>();
 	private StringBuffer cssContent = null;
 	private XMLAttributes cssAttributes = null;
 	private CssScanner cssScanner = null;
@@ -282,15 +279,14 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 					} else if (attribute != null) {
 						// validate the values against the policy
 						boolean isValid = false;
-						Iterator allowedValues = attribute.getAllowedValues().iterator();
-						while (allowedValues.hasNext()) {
-							String allowedValue = (String) allowedValues.next();
-							if (allowedValue != null && allowedValue.equalsIgnoreCase(value)) {
-								validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
-								isValid = true;
-								break;
-							}
-						}
+                        for (Object o : attribute.getAllowedValues()) {
+                            String allowedValue = (String) o;
+                            if (allowedValue != null && allowedValue.equalsIgnoreCase(value)) {
+                                validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
+                                isValid = true;
+                                break;
+                            }
+                        }
 						Iterator allowedRexexps = attribute.getAllowedRegExp().iterator();
 						while (!isValid && allowedRexexps.hasNext()) {
 							Pattern pattern = (Pattern) allowedRexexps.next();
@@ -378,7 +374,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		errorMessages.add(ErrorMessageUtil.getMessage(messages, errorKey, objs));
 	}
 
-	public ArrayList getErrorMessages() {
+	public List<String> getErrorMessages() {
 		return errorMessages;
 	}
 

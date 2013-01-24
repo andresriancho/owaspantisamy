@@ -65,8 +65,8 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 		int maxInputSize = policy.getMaxInputSize();
 
 		if (html.length() > maxInputSize) {
-			addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] { new Integer(html.length()), new Integer(maxInputSize) });
-			throw new ScanException(errorMessages.get(0).toString());
+			addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[] {html.length(), maxInputSize});
+			throw new ScanException(errorMessages.get(0));
 		}
 		
 		try {

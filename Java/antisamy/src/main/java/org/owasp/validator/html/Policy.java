@@ -30,10 +30,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -94,15 +91,15 @@ public class Policy {
 	private static char REGEXP_BEGIN = '^';
 	private static char REGEXP_END = '$';
 
-	private HashMap commonRegularExpressions	= new HashMap();
+	private Map<String, AntiSamyPattern> commonRegularExpressions	= new HashMap<String, AntiSamyPattern>();
 	private HashMap commonAttributes			= new HashMap();
 	private HashMap tagRules					= new HashMap();
 	private HashMap cssRules					= new HashMap();
-	private HashMap directives					= new HashMap();
+	private Map<String,String> directives					= new HashMap<String,String>();
 	private HashMap globalAttributes			= new HashMap();
 	private Set		encodeTags					= new HashSet();
 
-	private ArrayList tagNames;
+	private ArrayList<String> tagNames;
     private ArrayList allowedEmptyTags;
     private ArrayList requiresClosingTags;
 
@@ -203,7 +200,7 @@ public class Policy {
 	/**
 	 * Load the policy from a URL.
 	 *
-	 * @param filename Load a policy from the filename specified.
+	 * @param url Load a policy from the url specified.
 	 * @throws PolicyException
 	 */
 	private Policy(URL url) throws PolicyException {
@@ -221,7 +218,7 @@ public class Policy {
 
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document dom = null;
+			Document dom;
 
 			/**
 			 * Load and parse the file.
@@ -270,7 +267,7 @@ public class Policy {
 
 	/**
 	 * Load the policy from an XML file.
-	 * @param filename Load a policy from the filename specified.
+	 * @param is Load a policy from the inpustream specified.
 	 * @throws PolicyException
 	 * @deprecated This constructor does not properly load included policy files. Use Policy(URL) instead.
 	 */
@@ -443,7 +440,7 @@ public class Policy {
 
 	/**
 	 * Go through <directives> section of the policy file.
-	 * @param directiveListNode Top level of <directives>
+	 * @param root Top level of <directives>
 	 * @return A HashMap of directives for validation behavior.
 	 */
 	private void parseDirectives(Element root) {
@@ -472,7 +469,7 @@ public class Policy {
      */
     private ArrayList parseAllowedEmptyTags(Element allowedEmptyTagsListNode) throws PolicyException {
 
-        ArrayList allowedEmptyTags = new ArrayList();
+        ArrayList<String> allowedEmptyTags = new ArrayList<String>();
 
         if (allowedEmptyTagsListNode != null) {
             Element literalListNode = (Element) allowedEmptyTagsListNode.getElementsByTagName("literal-list").item(0);
@@ -507,7 +504,7 @@ public class Policy {
      */
     private ArrayList parseRequiresClosingTags(Element requiresClosingTagsListNode) throws PolicyException {
 
-        ArrayList requiresClosingTags = new ArrayList();
+        ArrayList<String> requiresClosingTags = new ArrayList<String>();
 
         if (requiresClosingTagsListNode != null) {
             Element literalListNode = (Element) requiresClosingTagsListNode.getElementsByTagName("literal-list").item(0);
@@ -561,7 +558,7 @@ public class Policy {
 
 	/**
 	 * Go through <global-tag-attributes> section of the policy file.
-	 * @param globalAttributeListNode Top level of <global-tag-attributes>
+	 * @param root Top level of <global-tag-attributes>
 	 * @return A HashMap of global Attributes that need validation for every tag.
 	 * @throws PolicyException
 	 */
@@ -969,7 +966,7 @@ public class Policy {
 	 */
 	public AntiSamyPattern getRegularExpression(String name) {
 
-		return (AntiSamyPattern) commonRegularExpressions.get(name);
+		return commonRegularExpressions.get(name);
 
 	}
 
@@ -988,7 +985,7 @@ public class Policy {
 	/**
 	 * A simple method for returning on of the <common-attribute> entries by
 	 * name.
-	 * @param name The name of the common-attribute we want to look up.
+	 * @param attributeName The name of the common-attribute we want to look up.
 	 * @return An Attribute associated with the common-attribute lookup name specified.
 	 */
 	private Attribute getCommonAttributeByName(String attributeName) {
@@ -1068,7 +1065,7 @@ public class Policy {
 	public InputSource resolveEntity(final String publicId,
 			final String systemId) throws IOException, SAXException {
 		int i;
-		InputSource source = null;
+		InputSource source;
 
 		// Can't resolve public id, but might be able to resolve relative
 		// system id, since we have a base URI.

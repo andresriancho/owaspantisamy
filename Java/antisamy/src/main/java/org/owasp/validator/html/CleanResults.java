@@ -26,6 +26,7 @@ package org.owasp.validator.html;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.w3c.dom.DocumentFragment;
 
@@ -42,7 +43,7 @@ import org.w3c.dom.DocumentFragment;
 
 public class CleanResults {
 
-	private ArrayList errorMessages = new ArrayList();
+	private List<String> errorMessages = new ArrayList<String>();
 	private String cleanHTML;
 	private Date startOfScan;
 	private Date endOfScan;
@@ -57,7 +58,7 @@ public class CleanResults {
 	}
 
 	public CleanResults(Date startOfScan, Date endOfScan, String cleanHTML,
-			DocumentFragment XMLDocumentFragment, ArrayList errorMessages) {
+			DocumentFragment XMLDocumentFragment, List<String> errorMessages) {
 		this.startOfScan = startOfScan;
 		this.endOfScan = endOfScan;
 		this.cleanXMLDocumentFragment = XMLDocumentFragment;
@@ -99,7 +100,7 @@ public class CleanResults {
 	 * @return An ArrayList object which contain the error messages after a
 	 *         scan.
 	 */
-	public ArrayList getErrorMessages() {
+	public List<String> getErrorMessages() {
 		return errorMessages;
 	}
 

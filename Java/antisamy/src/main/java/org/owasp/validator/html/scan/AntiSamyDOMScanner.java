@@ -107,8 +107,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         int maxInputSize = policy.getMaxInputSize();
 
         if (maxInputSize < html.length()) {
-            addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[]{new Integer(html.length()), new Integer(maxInputSize)});
-            throw new ScanException(errorMessages.get(0).toString());
+            addError(ErrorMessageUtil.ERROR_INPUT_SIZE, new Object[]{html.length(), maxInputSize});
+            throw new ScanException(errorMessages.get(0));
         }
 
         isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
@@ -206,8 +206,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         if (inputEncoding == null) {
             inputEncoding = "DEFAULT-ENC";
         }
-        Map byEncoding = (Map) parsers.get();
-        DOMFragmentParser parser = (DOMFragmentParser) byEncoding.get(inputEncoding);
+        @SuppressWarnings("unchecked")
+        Map<String,DOMFragmentParser> byEncoding = (Map<String,DOMFragmentParser>) parsers.get();
+        DOMFragmentParser parser = byEncoding.get(inputEncoding);
         if (parser == null){
             parser = getDomParser( inputEncoding);
             byEncoding.put( inputEncoding, parser);
@@ -564,7 +565,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                         attribute.setNodeValue(cr.getCleanHTML());
 
-                        ArrayList cssScanErrorMessages = cr.getErrorMessages();
+                        List<String> cssScanErrorMessages = cr.getErrorMessages();
 
                         errorMessages.addAll(cssScanErrorMessages);
 
@@ -906,7 +907,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      * @return String representation of the element
      */
     private String toString(Element ele) {
-        StringBuffer eleAsString = new StringBuffer("<" + ele.getNodeName());
+        StringBuilder eleAsString = new StringBuilder("<" + ele.getNodeName());
         NamedNodeMap attributes = ele.getAttributes();
         Node attribute;
         for (int i = 0; i < attributes.getLength(); i++) {

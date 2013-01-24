@@ -1,12 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <name>OWASP AntiSamy Project</name>
-    <description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML and CSS without exposing the site to XSS vulnerabilities.</description>
+    <description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML
+        and CSS without exposing the site to XSS vulnerabilities.
+    </description>
     <url>http://www.owasp.org/index.php/Category:OWASP_AntiSamy_Project</url>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
     <developers>
         <developer>
             <name>Arshan Dabirsiaghi</name>
@@ -82,7 +85,27 @@
         <module>antisamy-demo</module>
     </modules>
 
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.5.1</version>
+                    <configuration>
+                        <source>1.5</source>
+                        <target>1.5</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.13</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -96,24 +119,10 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.4</source>
-                    <target>1.4</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
                     <tagBase>https://owaspantisamy.googlecode.com/svn/tags/Java/</tagBase>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.13</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
