@@ -32,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.Test;
@@ -1321,6 +1322,36 @@ public class AntiSamyTest extends TestCase {
 
         System.out.println("Total DOM time short string: " + totalDomTime);
         System.out.println("Total SAX time short string: " + totalSaxTime);
+    }
+
+    public void testComparePatternSpeed() throws IOException, ScanException, PolicyException {
+
+        final Pattern invalidXmlCharacters =
+                Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
+
+        int testReps = 10000;
+
+        String html = "<body> hey you <img/> out there on your own </body>";
+
+        String s;
+        long start = System.currentTimeMillis();
+        for (int j = 0; j < testReps; j++) {
+            s = invalidXmlCharacters.matcher(html).replaceAll("");
+        }
+        long total = System.currentTimeMillis() -start;
+
+        start = System.currentTimeMillis();
+        Matcher matcher;
+        for (int j = 0; j < testReps; j++) {
+            matcher = invalidXmlCharacters.matcher(html);
+            if (matcher.matches()){
+                s = matcher.replaceAll("");
+            }
+        }
+        long total2 = System.currentTimeMillis() -start;
+
+        System.out.println("replaceAllDirect " + total);
+        System.out.println("match then replace: " + total2);
     }
 
 }
