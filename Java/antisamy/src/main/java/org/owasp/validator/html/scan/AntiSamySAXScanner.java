@@ -30,6 +30,7 @@ import java.util.Date;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXSource;
@@ -42,6 +43,8 @@ import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.util.ErrorMessageUtil;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
@@ -68,38 +71,18 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 		
 		try {
 			
-			boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
-            boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
-            boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
-           
-			SAXParser parser = new SAXParser();
-			parser.setFeature("http://xml.org/sax/features/namespaces", false);
-			parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
-			parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
-			parser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
-			parser.setFeature("http://apache.org/xml/features/scanner/notify-builtin-refs", true);
-			
 			StringWriter out = new StringWriter();
 			
 			MagicSAXFilter sanitizingFilter = new MagicSAXFilter(policy, messages);
 			XMLDocumentFilter[] filters = { sanitizingFilter };
 
-			parser.setProperty("http://cyberneko.org/html/properties/filters", filters);
-			parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
-			
+            SAXParser parser = getParser( filters);
+
 			Date start = new Date();
 
 			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
 			
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-
-			Transformer transformer = transformerFactory.newTransformer();
-			transformer.setParameter("encoding", outputEncoding);
-			transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
-			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
-			transformer.setOutputProperty(OutputKeys.ENCODING, outputEncoding);
-			transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
-			
+            Transformer transformer = getTransformer(TransformerFactory.newInstance());
 			OutputFormat format = getOutputFormat(outputEncoding);
             //noinspection deprecation
             org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
@@ -116,6 +99,39 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 		}
 
 	}
-	
 
+    private Transformer getTransformer(TransformerFactory transformerFactory)  {
+        try {
+            Transformer  transformer = transformerFactory.newTransformer();
+            boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
+            boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
+            boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
+
+            transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
+            transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
+            return transformer;
+        } catch (TransformerConfigurationException e) {
+            throw new RuntimeException( e);
+        }
+    }
+    private SAXParser getParser(XMLDocumentFilter[] docFilters)  {
+        try {
+            SAXParser parser = new SAXParser();
+            parser.setFeature("http://xml.org/sax/features/namespaces", false);
+            parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
+            parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);
+            parser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
+            parser.setFeature("http://apache.org/xml/features/scanner/notify-builtin-refs", true);
+
+
+            parser.setProperty("http://cyberneko.org/html/properties/filters", docFilters);
+            parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
+            return parser;
+        } catch (SAXNotRecognizedException e) {
+            throw new RuntimeException(e);
+        } catch (SAXNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
