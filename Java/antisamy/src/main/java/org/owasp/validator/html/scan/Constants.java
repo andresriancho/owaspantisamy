@@ -25,6 +25,8 @@ package org.owasp.validator.html.scan;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
@@ -33,8 +35,8 @@ public class Constants {
 
     public static final String DEFAULT_ENCODING_ALGORITHM = "UTF-8";
     public static final Tag BASIC_PARAM_TAG_RULE;
-    public static ArrayList defaultAllowedEmptyTags;
-    public static ArrayList defaultRequiresClosingTags;
+    public static List<String> defaultAllowedEmptyTags;
+    public static List<String> defaultRequiresClosingTags;
     
     private static final String[] allowedEmptyTags = {
          "br", "hr", "a", "img", "link", "iframe", "script", "object", "applet",
@@ -59,10 +61,10 @@ public class Constants {
         
         BASIC_PARAM_TAG_RULE.setAction(Policy.ACTION_VALIDATE);
 
-        defaultAllowedEmptyTags = new ArrayList();
+        defaultAllowedEmptyTags = new ArrayList<String>();
         defaultAllowedEmptyTags.addAll(Arrays.asList(allowedEmptyTags));
         
-        defaultRequiresClosingTags = new ArrayList();
+        defaultRequiresClosingTags = new ArrayList<String>();
         defaultRequiresClosingTags.addAll(Arrays.asList(requiresClosingTags));
     }
     

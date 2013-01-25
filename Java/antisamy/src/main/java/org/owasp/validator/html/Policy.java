@@ -92,16 +92,16 @@ public class Policy {
 	private static char REGEXP_END = '$';
 
 	private Map<String, AntiSamyPattern> commonRegularExpressions	= new HashMap<String, AntiSamyPattern>();
-	private HashMap commonAttributes			= new HashMap();
-	private HashMap tagRules					= new HashMap();
-	private HashMap cssRules					= new HashMap();
+	private Map<String, Attribute> commonAttributes			= new HashMap<String, Attribute>();
+	private Map<String, Tag> tagRules					= new HashMap<String, Tag>();
+	private Map<String, Property> cssRules					= new HashMap<String, Property>();
 	private Map<String,String> directives					= new HashMap<String,String>();
-	private HashMap globalAttributes			= new HashMap();
-	private Set		encodeTags					= new HashSet();
+	private Map<String, Attribute> globalAttributes			= new HashMap<String, Attribute>();
+	private Set<String>		encodeTags					= new HashSet<String>();
 
-	private ArrayList<String> tagNames;
-    private ArrayList allowedEmptyTags;
-    private ArrayList requiresClosingTags;
+	private List<String> tagNames;
+    private List<String> allowedEmptyTags;
+    private List<String> requiresClosingTags;
 
 	/** The path to the base policy file, used to resolve relative paths when reading included files */
 	private static URL baseUrl					= null;
@@ -117,7 +117,7 @@ public class Policy {
 	 */
 	public Tag getTagByName(String tagName) {
 
-		return (Tag) tagRules.get(tagName.toLowerCase());
+		return tagRules.get(tagName.toLowerCase());
 
 	}
 
@@ -128,7 +128,7 @@ public class Policy {
 	 */
 	public Property getPropertyByName(String propertyName) {
 
-		return (Property) cssRules.get(propertyName.toLowerCase());
+		return cssRules.get(propertyName.toLowerCase());
 
 	}
 
@@ -208,7 +208,7 @@ public class Policy {
 
 		try {
 
-			InputSource source = resolveEntity(null, url.toExternalForm());
+			InputSource source = resolveEntity(url.toExternalForm());
 			if (source == null) {
 				source = new InputSource(url.toExternalForm());
 				source.setByteStream(url.openStream());
@@ -277,7 +277,7 @@ public class Policy {
 
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document dom = null;
+			Document dom;
 
 			/**
 			 * Load and parse the file.
@@ -314,33 +314,33 @@ public class Policy {
 		 * First thing to read is the <common-regexps> section.
 		 */
 		Element commonRegularExpressionListNode = (Element) topLevelElement.getElementsByTagName("common-regexps").item(0);
-		parseCommonRegExps(commonRegularExpressionListNode);
+		parseCommonRegExps(commonRegularExpressionListNode, commonRegularExpressions);
 
 		/**
 		 * Next we read in the directives.
 		 */
 		Element directiveListNode = (Element)topLevelElement.getElementsByTagName("directives").item(0);
-		parseDirectives(directiveListNode);
+		parseDirectives(directiveListNode, directives);
 
 
 		/**
 		 * Next we read in the common attributes.
 		 */
 		Element commonAttributeListNode = (Element)topLevelElement.getElementsByTagName("common-attributes").item(0);
-		parseCommonAttributes(commonAttributeListNode);
+		parseCommonAttributes(commonAttributeListNode, commonAttributes);
 
 		/**
 		 * Next we need the global tag attributes (id, style, etc.)
 		 */
 		Element globalAttributeListNode = (Element)topLevelElement.getElementsByTagName("global-tag-attributes").item(0);
-		parseGlobalAttributes(globalAttributeListNode);
+		parseGlobalAttributes(globalAttributeListNode, globalAttributes);
 
 		/**
 		 * Next we read in the tags that should be encoded when they're encountered like <g>.
 		 */
 		NodeList tagsToEncodeList = topLevelElement.getElementsByTagName("tags-to-encode");
 		if (tagsToEncodeList != null && tagsToEncodeList.getLength() != 0) {
-			parseTagsToEncode((Element) tagsToEncodeList.item(0));
+			parseTagsToEncode((Element) tagsToEncodeList.item(0), encodeTags);
 		}
 
         /**
@@ -368,7 +368,7 @@ public class Policy {
 		 */
 		Element cssListNode = (Element)topLevelElement.getElementsByTagName("css-rules").item(0);
 
-		parseCSSRules(cssListNode);
+		parseCSSRules(cssListNode, cssRules);
 
 	}
 
@@ -417,7 +417,7 @@ public class Policy {
 
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
-		Document dom = null;
+		Document dom;
 
 		/**
 		 * Load and parse the file.
@@ -429,9 +429,8 @@ public class Policy {
 			/**
 			 * Get the policy information out of it!
 			 */
-			Element topLevelElement = dom.getDocumentElement();
 
-			return topLevelElement;
+            return dom.getDocumentElement();
 		}
 
 		return null;
@@ -441,9 +440,9 @@ public class Policy {
 	/**
 	 * Go through <directives> section of the policy file.
 	 * @param root Top level of <directives>
-	 * @return A HashMap of directives for validation behavior.
+	 * @param directives The directives map to update
 	 */
-	private void parseDirectives(Element root) {
+	private static void parseDirectives(Element root, Map<String, String> directives) {
 
 		if (root == null) return;
 
@@ -456,7 +455,7 @@ public class Policy {
 			String name = XMLUtil.getAttributeValue(ele,"name");
 			String value = XMLUtil.getAttributeValue(ele,"value");
 
-			directives.put(name,value);
+			directives.put(name, value);
 
 		}
 	}
@@ -467,9 +466,9 @@ public class Policy {
      * @param allowedEmptyTagsListNode Top level of <allowed-empty-tags>
      * @return An ArrayList of global Attributes that need validation for every tag.
      */
-    private ArrayList parseAllowedEmptyTags(Element allowedEmptyTagsListNode) throws PolicyException {
+    private List<String> parseAllowedEmptyTags(Element allowedEmptyTagsListNode) throws PolicyException {
 
-        ArrayList<String> allowedEmptyTags = new ArrayList<String>();
+        List<String> allowedEmptyTags = new ArrayList<String>();
 
         if (allowedEmptyTagsListNode != null) {
             Element literalListNode = (Element) allowedEmptyTagsListNode.getElementsByTagName("literal-list").item(0);
@@ -502,9 +501,9 @@ public class Policy {
      * @param requiresClosingTagsListNode Top level of <require-closing-tags>
      * @return An ArrayList of tags that require a closing tag, even if they're empty
      */
-    private ArrayList parseRequiresClosingTags(Element requiresClosingTagsListNode) throws PolicyException {
+    private List<String> parseRequiresClosingTags(Element requiresClosingTagsListNode) throws PolicyException {
 
-        ArrayList<String> requiresClosingTags = new ArrayList<String>();
+        List<String> requiresClosingTags = new ArrayList<String>();
 
         if (requiresClosingTagsListNode != null) {
             Element literalListNode = (Element) requiresClosingTagsListNode.getElementsByTagName("literal-list").item(0);
@@ -534,10 +533,10 @@ public class Policy {
 	/**
 	 * Go through <tags-to-encode> section of the policy file.
 	 * @param root Top level of <tags-to-encode>
-	 * @return A HashMap of String tags that are to be encoded when they're encountered.
+	 * @param encodeTags1 The set of tags to be encoded when encountered
 	 * @throws PolicyException
 	 */
-	private void parseTagsToEncode(Element root) throws PolicyException {
+	private static void parseTagsToEncode(Element root, Set<String> encodeTags1) throws PolicyException {
 
 		if (root == null) return;
 
@@ -549,7 +548,7 @@ public class Policy {
 
 				Element ele = (Element)tagsToEncodeNodes.item(i);
 				if ( ele.getFirstChild() != null && ele.getFirstChild().getNodeType() == Node.TEXT_NODE ) {
-					encodeTags.add(ele.getFirstChild().getNodeValue());
+					encodeTags1.add(ele.getFirstChild().getNodeValue());
 				}
 
 			}
@@ -559,10 +558,10 @@ public class Policy {
 	/**
 	 * Go through <global-tag-attributes> section of the policy file.
 	 * @param root Top level of <global-tag-attributes>
-	 * @return A HashMap of global Attributes that need validation for every tag.
+	 * @param globalAttributes1  A HashMap of global Attributes that need validation for every tag.
 	 * @throws PolicyException
 	 */
-	private void parseGlobalAttributes(Element root) throws PolicyException {
+	private void parseGlobalAttributes(Element root, Map<String, Attribute> globalAttributes1) throws PolicyException {
 
 		if (root == null) return;
 
@@ -579,7 +578,7 @@ public class Policy {
 			Attribute toAdd = getCommonAttributeByName(name);
 
 			if ( toAdd != null ) {
-				globalAttributes.put(name.toLowerCase(),toAdd);
+				globalAttributes1.put(name.toLowerCase(), toAdd);
 			} else {
 				throw new PolicyException("Global attribute '"+name+"' was not defined in <common-attributes>");
 			}
@@ -589,9 +588,9 @@ public class Policy {
 	/**
 	 * Go through the <common-regexps> section of the policy file.
 	 * @param root Top level of <common-regexps>
-	 * @return An ArrayList of AntiSamyPattern objects.
+	 * @param commonRegularExpressions1 the antisamy pattern objects
 	 */
-	private void parseCommonRegExps(Element root) {
+	private static void parseCommonRegExps(Element root, Map<String, AntiSamyPattern> commonRegularExpressions1) {
 
 		if (root == null) return;
 
@@ -606,7 +605,7 @@ public class Policy {
 			String name = XMLUtil.getAttributeValue(ele,"name");
 			Pattern pattern = Pattern.compile(XMLUtil.getAttributeValue(ele,"value"));
 
-			commonRegularExpressions.put(name,new AntiSamyPattern(name,pattern));
+			commonRegularExpressions1.put(name, new AntiSamyPattern(name, pattern));
 
 		}
 	}
@@ -615,9 +614,9 @@ public class Policy {
 	/**
 	 * Go through the <common-attributes> section of the policy file.
 	 * @param root Top level of <common-attributes>
-	 * @return An ArrayList of Attribute objects.
+	 * @param commonAttributes1 The attributes to update
 	 */
-	private void parseCommonAttributes(Element root) {
+	private void parseCommonAttributes(Element root, Map<String, Attribute> commonAttributes1) {
 
 		if (root == null) return;
 
@@ -691,7 +690,7 @@ public class Policy {
 
 			}
 
-			commonAttributes.put(name.toLowerCase(),attribute);
+			commonAttributes1.put(name.toLowerCase(), attribute);
 
 		}
 	}
@@ -726,7 +725,7 @@ public class Policy {
 			Tag tag = new Tag(name);
 
 			if ( tagNames == null ) {
-				tagNames = new ArrayList();
+				tagNames = new ArrayList<String>();
 			}
 
 			tagNames.add(name);
@@ -861,10 +860,10 @@ public class Policy {
 	/**
 	 * Go through the <css-rules> section of the policy file.
 	 * @param root Top level of <css-rules>
-	 * @return An ArrayList of Property objects.
+	 * @param cssRules1 The rules map to update
 	 * @throws PolicyException
 	 */
-	private void parseCSSRules(Element root) throws PolicyException {
+	private void parseCSSRules(Element root, Map<String,Property> cssRules1) throws PolicyException {
 
 		if (root == null) return;
 
@@ -950,7 +949,7 @@ public class Policy {
 
 			}
 
-			cssRules.put(name.toLowerCase(),property);
+			cssRules1.put(name.toLowerCase(), property);
 
 		}
 	}
@@ -978,7 +977,7 @@ public class Policy {
 	 */
 	public Attribute getGlobalAttributeByName(String name) {
 
-		return (Attribute) globalAttributes.get(name.toLowerCase());
+		return globalAttributes.get(name.toLowerCase());
 
 	}
 
@@ -990,7 +989,7 @@ public class Policy {
 	 */
 	private Attribute getCommonAttributeByName(String attributeName) {
 
-		return (Attribute) commonAttributes.get(attributeName.toLowerCase());
+		return commonAttributes.get(attributeName.toLowerCase());
 
 	}
 
@@ -999,7 +998,7 @@ public class Policy {
      * @return A String array of all the he allowed empty tags configured in the Policy.
      */
     public String[] getAllowedEmptyTags() {
-        return (String[]) allowedEmptyTags.toArray(new String[allowedEmptyTags.size()]);
+        return allowedEmptyTags.toArray(new String[allowedEmptyTags.size()]);
     }
 
     /**
@@ -1007,7 +1006,7 @@ public class Policy {
      * @return A String array of all the tags that are required to be closed with an end tag, even if they have no child content.
      */
     public String[] getRequiresClosingTags() {
-        return (String[]) requiresClosingTags.toArray(new String[requiresClosingTags.size()]);
+        return requiresClosingTags.toArray(new String[requiresClosingTags.size()]);
     }
 
 	/**
@@ -1015,7 +1014,7 @@ public class Policy {
 	 * @return A String array of all the tag names accepted by the current Policy.
 	 */
 	public String[] getTags() {
-		return (String[])tagNames.toArray(new String[1]);
+		return tagNames.toArray(new String[1]);
 	}
 
 	/**
@@ -1023,7 +1022,7 @@ public class Policy {
 	 * @return A String object containing the directive associated with the lookup name, or null if none is found.
 	 */
 	public String getDirective(String name) {
-		return (String) directives.get(name);
+		return directives.get(name);
 	}
 
 	/**
@@ -1045,7 +1044,7 @@ public class Policy {
 
 		try {
 			maxInputSize = Integer.parseInt(getDirective("maxInputSize"));
-		} catch (NumberFormatException nfe) {}
+		} catch (NumberFormatException ignore) {}
 
 		return maxInputSize;
 	}
@@ -1053,7 +1052,7 @@ public class Policy {
 	/**
 	 * Set the base directory to use to resolve relative file paths when including other policy files.
 	 *
-	 * @param newValue
+	 * @param newValue  The new base url
 	 */
 	public static void setBaseURL(URL newValue) {
 		baseUrl = newValue;
@@ -1062,9 +1061,7 @@ public class Policy {
 	/**
 	 * Resolves public & system ids to files stored within the JAR.
 	 */
-	public InputSource resolveEntity(final String publicId,
-			final String systemId) throws IOException, SAXException {
-		int i;
+	public InputSource resolveEntity(final String systemId) throws IOException, SAXException {
 		InputSource source;
 
 		// Can't resolve public id, but might be able to resolve relative

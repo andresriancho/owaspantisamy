@@ -16,6 +16,7 @@ import org.owasp.validator.html.scan.Constants;
  * @author Jacob Coulter & Mark Oberhaus
  */
 
+@SuppressWarnings("deprecation")
 public class PolicyTest extends TestCase {
 
     private Policy policy;
@@ -48,7 +49,7 @@ public class PolicyTest extends TestCase {
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
 
-        List expectedTags = new ArrayList();
+        List<String> expectedTags = new ArrayList<String>();
         expectedTags.add("td");
         expectedTags.add("span");
 
