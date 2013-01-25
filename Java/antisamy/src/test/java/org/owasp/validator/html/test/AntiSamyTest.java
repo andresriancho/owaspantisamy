@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1254,18 +1255,21 @@ public class AntiSamyTest extends TestCase {
 
 	public void testCompareSpeeds() throws IOException, ScanException, PolicyException {
 
-		String urls[] = {
-				"http://slashdot.org/", "http://www.fark.com/", "http://www.cnn.com/", "http://google.com/", "http://www.microsoft.com/en/us/default.aspx", "http://deadspin.com/"
-		};
+        URL[] urls = {
+                this.getClass().getResource("/s/slashdot.org.htm"),
+                this.getClass().getResource("/s/fark.com"),
+                this.getClass().getResource("/s/cnn.com"),
+                this.getClass().getResource("/s/google.com.html"),
+                this.getClass().getResource("/s/microsoft.com"),
+        };
 
-		double totalDomTime = 0;
-		double totalSaxTime = 0;
+        double totalDomTime = 0;
+        double totalSaxTime = 0;
 
-		int testReps = 15;
+        int testReps = 15;
 
-		for (int i = 0; i < urls.length; i++) {
-			URL url = new URL(urls[i]);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        for (URL url : urls) {
+            URLConnection conn =url.openConnection();
 			InputStreamReader in = new InputStreamReader(conn.getInputStream());
 			StringBuilder out = new StringBuilder();
 			char[] buffer = new char[5000];
