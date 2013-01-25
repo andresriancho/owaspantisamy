@@ -48,7 +48,21 @@ import org.xml.sax.SAXNotSupportedException;
 
 public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
-	public AntiSamySAXScanner(Policy policy) {
+    private static final ThreadLocal<SAXParser> saxParser = new ThreadLocal<SAXParser>(){
+        @Override
+        protected SAXParser initialValue() {
+            return getParser();
+        }
+    };
+
+    private static final ThreadLocal<Transformer> transformers = new ThreadLocal<Transformer>(){
+        @Override
+        protected Transformer initialValue() {
+            return getTransformer();
+        }
+    };
+
+    public AntiSamySAXScanner(Policy policy) {
 		super(policy);
 	}
 
@@ -76,14 +90,23 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			MagicSAXFilter sanitizingFilter = new MagicSAXFilter(policy, messages);
 			XMLDocumentFilter[] filters = { sanitizingFilter };
 
-            SAXParser parser = getParser( filters);
+            SAXParser parser = saxParser.get();
+            parser.setProperty("http://cyberneko.org/html/properties/filters", filters);
 
-			Date start = new Date();
+            Date start = new Date();
 
 			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
 			
-            Transformer transformer = getTransformer(TransformerFactory.newInstance());
-			OutputFormat format = getOutputFormat(outputEncoding);
+            Transformer transformer = transformers.get();
+            boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
+            boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
+            boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
+
+            transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
+            transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
+
+            OutputFormat format = getOutputFormat(outputEncoding);
             //noinspection deprecation
             org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
 			transformer.transform(source, new SAXResult(serializer));			
@@ -100,22 +123,14 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
 	}
 
-    private Transformer getTransformer(TransformerFactory transformerFactory)  {
+    private static Transformer getTransformer()  {
         try {
-            Transformer  transformer = transformerFactory.newTransformer();
-            boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
-            boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
-            boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
-
-            transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
-            transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
-            return transformer;
+            return TransformerFactory.newInstance().newTransformer();
         } catch (TransformerConfigurationException e) {
             throw new RuntimeException( e);
         }
     }
-    private SAXParser getParser(XMLDocumentFilter[] docFilters)  {
+    private static SAXParser getParser()  {
         try {
             SAXParser parser = new SAXParser();
             parser.setFeature("http://xml.org/sax/features/namespaces", false);
@@ -125,7 +140,6 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
             parser.setFeature("http://apache.org/xml/features/scanner/notify-builtin-refs", true);
 
 
-            parser.setProperty("http://cyberneko.org/html/properties/filters", docFilters);
             parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
             return parser;
         } catch (SAXNotRecognizedException e) {
