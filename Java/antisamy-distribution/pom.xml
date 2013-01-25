@@ -15,17 +15,14 @@
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy-sample-configs</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.owasp.antisamy</groupId>
             <artifactId>antisamy-demo</artifactId>
-            <version>${project.version}</version>
             <type>war</type>
         </dependency>
     </dependencies>
