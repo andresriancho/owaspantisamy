@@ -50,9 +50,9 @@
         <url>http://www.owasp.org/</url>
     </organization>
     <scm>
-        <url>http://owaspantisamy.googlecode.com/svn/tags/Java</url>
-        <connection>scm:svn:http://owaspantisamy.googlecode.com/svn/trunk/Java</connection>
-        <developerConnection>scm:svn:https://owaspantisamy.googlecode.com/svn/trunk/Java</developerConnection>
+        <url>http://http://code.google.com/p/owaspantisamy</url>
+        <connection>scm:git:https://code.google.com/p/owaspantisamy/</connection>
+        <developerConnection>scm:git:https://code.google.com/p/owaspantisamy/</developerConnection>
     </scm>
     <licenses>
         <license>
