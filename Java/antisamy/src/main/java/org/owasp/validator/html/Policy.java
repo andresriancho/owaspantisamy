@@ -101,7 +101,9 @@ public class Policy {
 
 	private List<String> tagNames;
     private List<String> allowedEmptyTags;
+    private TagMatcher allowedEmptyTagsMatcher;
     private List<String> requiresClosingTags;
+    private TagMatcher requiresClosingTagsMatcher;
 
 	/** The path to the base policy file, used to resolve relative paths when reading included files */
 	private static URL baseUrl					= null;
@@ -349,6 +351,7 @@ public class Policy {
         Element allowedEmptyTagsListNode = (Element) topLevelElement.getElementsByTagName("allowed-empty-tags").item(0);
 
         this.allowedEmptyTags = parseAllowedEmptyTags(allowedEmptyTagsListNode);
+        this.allowedEmptyTagsMatcher = new TagMatcher(allowedEmptyTags);
 
         /**
          * Next, we read in those tags that must have a closing tag.
@@ -356,6 +359,7 @@ public class Policy {
         Element requiresClosingTagsListNode = (Element) topLevelElement.getElementsByTagName("require-closing-tags").item(0);
 
         this.requiresClosingTags = parseRequiresClosingTags(requiresClosingTagsListNode);
+        this.requiresClosingTagsMatcher = new TagMatcher(requiresClosingTags);
         
 		/**
 		 * Next, we read in the tag restrictions.
@@ -997,16 +1001,16 @@ public class Policy {
      * Return all the allowed empty tags configured in the Policy.
      * @return A String array of all the he allowed empty tags configured in the Policy.
      */
-    public String[] getAllowedEmptyTags() {
-        return allowedEmptyTags.toArray(new String[allowedEmptyTags.size()]);
+    public TagMatcher getAllowedEmptyTags() {
+        return allowedEmptyTagsMatcher;
     }
 
     /**
      * Return all the tags that are required to be closed with an end tag, even if they have no child content.
      * @return A String array of all the tags that are required to be closed with an end tag, even if they have no child content.
      */
-    public String[] getRequiresClosingTags() {
-        return requiresClosingTags.toArray(new String[requiresClosingTags.size()]);
+    public TagMatcher getRequiresClosingTags() {
+        return requiresClosingTagsMatcher;
     }
 
 	/**

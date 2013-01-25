@@ -37,10 +37,7 @@ import org.apache.xml.serialize.OutputFormat;
 import org.cyberneko.html.parsers.DOMFragmentParser;
 import org.owasp.validator.css.CssScanner;
 import org.owasp.validator.css.ExternalCssScanner;
-import org.owasp.validator.html.CleanResults;
-import org.owasp.validator.html.Policy;
-import org.owasp.validator.html.PolicyException;
-import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.*;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
 import org.owasp.validator.html.util.ErrorMessageUtil;
@@ -820,15 +817,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 	}
 
 	private boolean isAllowedEmptyTag(String tagName) {
-    	boolean allowed = false;
-        String[] allowedEmptyTags = policy.getAllowedEmptyTags();
-        for (int i = 0; i < allowedEmptyTags.length; i++) {
-            if (allowedEmptyTags[i].equalsIgnoreCase(tagName)) {
-                allowed = true;
-                i = allowedEmptyTags.length;
-            }
-        }
-        return allowed;
+        return policy.getAllowedEmptyTags().matches(tagName);
 	}
 
     public static void main(String[] args) throws PolicyException {

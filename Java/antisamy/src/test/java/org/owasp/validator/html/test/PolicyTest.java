@@ -7,6 +7,8 @@ import org.owasp.validator.html.PolicyException;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.owasp.validator.html.TagMatcher;
 import org.owasp.validator.html.scan.Constants;
 
 
@@ -49,16 +51,10 @@ public class PolicyTest extends TestCase {
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
 
-        List<String> expectedTags = new ArrayList<String>();
-        expectedTags.add("td");
-        expectedTags.add("span");
+        TagMatcher actualTags = policy.getAllowedEmptyTags();
 
-        String[] actualTags = policy.getAllowedEmptyTags();
-
-        for (int i = 0; i < expectedTags.size(); i++) {
-            assertEquals(expectedTags.get(i), actualTags[i]);
-
-        }
+        assertTrue(actualTags.matches("td"));
+        assertTrue(actualTags.matches("span"));
     }
 
     public void testGetAllowedEmptyTags_emptyList() throws PolicyException {
@@ -70,7 +66,7 @@ public class PolicyTest extends TestCase {
 
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
-        assertEquals(0, policy.getAllowedEmptyTags().length);
+        assertEquals(0, policy.getAllowedEmptyTags().size());
     }
     
     public void testGetAllowedEmptyTags_emptySection() throws PolicyException {
@@ -80,7 +76,7 @@ public class PolicyTest extends TestCase {
 
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
-        assertEquals(0, policy.getAllowedEmptyTags().length);
+        assertEquals(0, policy.getAllowedEmptyTags().size());
     }
 
     public void testGetAllowedEmptyTags_NoSection() throws PolicyException {
@@ -90,7 +86,7 @@ public class PolicyTest extends TestCase {
 
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
-        assertTrue(policy.getAllowedEmptyTags().length == Constants.defaultAllowedEmptyTags.size());
+        assertTrue(policy.getAllowedEmptyTags().size() == Constants.defaultAllowedEmptyTags.size());
 
     }
 }

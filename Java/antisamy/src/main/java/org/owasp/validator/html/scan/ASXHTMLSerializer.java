@@ -1,25 +1,24 @@
 package org.owasp.validator.html.scan;
 
+import org.apache.xml.serialize.ElementState;
+import org.apache.xml.serialize.OutputFormat;
+import org.owasp.validator.html.Policy;
+import org.owasp.validator.html.TagMatcher;
+
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Locale;
-
-import org.apache.xml.serialize.ElementState;
-import org.apache.xml.serialize.HTMLdtd;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XHTMLSerializer;
-import org.owasp.validator.html.Policy;
 
 /**
  * This is an extension of the default XHTMLSerializer class that's had it's endElementIO()
  * method tweaked to serialize closing tags and self-closing tags the way we require.
  */
-public class ASXHTMLSerializer extends XHTMLSerializer {
+@SuppressWarnings("deprecation")
+public class ASXHTMLSerializer extends org.apache.xml.serialize.XHTMLSerializer {
 
 	private boolean encodeAllPossibleEntities;
-	private String[] allowedEmptyTags;
-	private String[] requireClosingTags;
+	private final TagMatcher allowedEmptyTags;
+	private final TagMatcher requireClosingTags;
 	
 	public ASXHTMLSerializer(Writer w, OutputFormat format, Policy policy) {
 		super(w, format);
@@ -38,9 +37,8 @@ public class ASXHTMLSerializer extends XHTMLSerializer {
 			String rawName) throws IOException {
 		
 		ElementState state;
-		String htmlName;
 
-		// Works much like content() with additions for closing
+        // Works much like content() with additions for closing
 		// an element. Note the different checks for the closed
 		// element's state and the parent element's state.
 		_printer.unindent();
@@ -75,22 +73,10 @@ public class ASXHTMLSerializer extends XHTMLSerializer {
 	}
 	
 	private boolean requiresClosingTag(String tagName) {
-		for(int i=0;i<requireClosingTags.length;i++) {
-			String requiresClosingTag  = requireClosingTags[i];
-			if (tagName.equalsIgnoreCase(requiresClosingTag))
-				return true;
-		}
-		return false;
+        return requireClosingTags.matches(tagName);
 	}
 
 	private boolean isAllowedEmptyTag(String tagName) {
-    	boolean allowed = false;
-        for (int i = 0; i < allowedEmptyTags.length; i++) {
-            if (allowedEmptyTags[i].equalsIgnoreCase(tagName)) {
-                allowed = true;
-                i = allowedEmptyTags.length;
-            }
-        }
-        return allowed;
+        return  allowedEmptyTags.matches( tagName);
 	}
 }
