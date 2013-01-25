@@ -241,9 +241,10 @@ public class CssHandler implements DocumentHandler {
 			importedStyleSheet.normalize();
 
 			// validate the URL
-			if (!policy.getRegularExpression("offsiteURL").getPattern()
+
+            if (!policy.commonRegularExpressions.get("offsiteURL").getPattern()
 				.matcher(importedStyleSheet.toString()).matches()
-				&& !policy.getRegularExpression("onsiteURL").getPattern()
+				&& !policy.commonRegularExpressions.get("onsiteURL").getPattern()
 						.matcher(importedStyleSheet.toString()).matches()) {
 			    errorMessages.add(ErrorMessageUtil.getMessage(
 						messages,

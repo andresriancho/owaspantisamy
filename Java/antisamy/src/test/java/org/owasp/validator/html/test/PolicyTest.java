@@ -4,12 +4,10 @@ package org.owasp.validator.html.test;
 import junit.framework.TestCase;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
-import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.owasp.validator.html.TagMatcher;
 import org.owasp.validator.html.scan.Constants;
+
+import java.io.ByteArrayInputStream;
 
 
 /**
