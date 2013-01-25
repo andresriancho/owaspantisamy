@@ -37,7 +37,7 @@ public class LiteralTest extends TestCase {
 		return url;
 	}
 
-	public void testSAX() throws Exception {
+	public void testSAXGoodResult() throws Exception {
 		System.out.println("Policy: " + policy);
 
 		// good
@@ -47,30 +47,30 @@ public class LiteralTest extends TestCase {
 		System.out.println("SAX cleanResults: " + cleanResults.getCleanHTML());
 		System.out.println("SAX cleanResults error messages: " + cleanResults.getErrorMessages().size());
 
-		Iterator i = cleanResults.getErrorMessages().iterator();
-		while (i.hasNext()) {
-			String msg = (String)i.next();
-			System.out.println("error msg: " + msg);
-		}
+        for (String msg : cleanResults.getErrorMessages()) {
+            System.out.println("error msg: " + msg);
+        }
 
 		assertTrue(cleanResults.getErrorMessages().isEmpty());
-
-		// AntiSamy should complain about the attribute value "foo" ... but it is not
-		String badHtml = "<div align=\"foo\">badhtml</div>";
-
-		CleanResults cleanResults2 = new AntiSamy(policy).scan(badHtml, AntiSamy.SAX);
-
-		System.out.println("SAX cleanResults2: " + cleanResults2.getCleanHTML());
-		System.out.println("SAX cleanResults2 error messages: " + cleanResults2.getErrorMessages().size());
-		i = cleanResults2.getErrorMessages().iterator();
-		while (i.hasNext()) {
-			String msg = (String)i.next();
-			System.out.println("error msg: " + msg);
-		}
-		assertTrue(cleanResults2.getErrorMessages().size() > 0);
 	}
 
-	public void testDOM() throws Exception {
+    public void testSAXBadResult() throws Exception {
+        System.out.println("Policy: " + policy);
+
+        // AntiSamy should complain about the attribute value "foo" ... but it is not
+        String badHtml = "<div align=\"foo\">badhtml</div>";
+
+        CleanResults cleanResults2 = new AntiSamy(policy).scan(badHtml, AntiSamy.SAX);
+
+        System.out.println("SAX cleanResults2: " + cleanResults2.getCleanHTML());
+        System.out.println("SAX cleanResults2 error messages: " + cleanResults2.getErrorMessages().size());
+        for (String msg : cleanResults2.getErrorMessages()) {
+            System.out.println("error msg: " + msg);
+        }
+        assertTrue(cleanResults2.getErrorMessages().size() > 0);
+    }
+
+    public void testDOMGoodResult() throws Exception {
 		System.out.println("Policy: " + policy);
 
 		// good
@@ -78,25 +78,25 @@ public class LiteralTest extends TestCase {
 
 		CleanResults cleanResults = new AntiSamy(policy).scan(html, AntiSamy.DOM);
 		System.out.println("DOM cleanResults error messages: " + cleanResults.getErrorMessages().size());
-		Iterator i = cleanResults.getErrorMessages().iterator();
-		while (i.hasNext()) {
-			String msg = (String)i.next();
-			System.out.println("error msg: " + msg);
-		}
+        for (String msg : cleanResults.getErrorMessages()) {
+            System.out.println("error msg: " + msg);
+        }
 
 		assertTrue(cleanResults.getErrorMessages().isEmpty());
-
-		// AntiSamy should complain about the attribute value "foo" ... but it is not
-		String badHtml = "<div align=\"foo\">badhtml</div>";
-
-		CleanResults cleanResults2 = new AntiSamy(policy).scan(badHtml, AntiSamy.DOM);
-
-		System.out.println("DOM cleanResults2 error messages: " + cleanResults2.getErrorMessages().size());
-		i = cleanResults2.getErrorMessages().iterator();
-		while (i.hasNext()) {
-			String msg = (String)i.next();
-			System.out.println("error msg: " + msg);
-		}
-		assertTrue(cleanResults2.getErrorMessages().size() > 0);
 	}
+
+    public void testDOMBadResult() throws Exception {
+        System.out.println("Policy: " + policy);
+
+        // AntiSamy should complain about the attribute value "foo" ... but it is not
+        String badHtml = "<div align=\"foo\">badhtml</div>";
+
+        CleanResults cleanResults2 = new AntiSamy(policy).scan(badHtml, AntiSamy.DOM);
+
+        System.out.println("DOM cleanResults2 error messages: " + cleanResults2.getErrorMessages().size());
+        for (String msg : cleanResults2.getErrorMessages()) {
+            System.out.println("error msg: " + msg);
+        }
+        assertTrue(cleanResults2.getErrorMessages().size() > 0);
+    }
 }
