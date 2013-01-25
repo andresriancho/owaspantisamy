@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.batik.css.parser.ParseException;
@@ -873,7 +874,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         if (in == null || ("".equals(in))) {
             return ""; // vacancy test.
         }
-        return invalidXmlCharacters.matcher(in).replaceAll("");
+        Matcher matcher = invalidXmlCharacters.matcher(in);
+        return matcher.matches() ? matcher.replaceAll("") : in;
     }
 
     // private void debug(String s) { System.out.println(s); }

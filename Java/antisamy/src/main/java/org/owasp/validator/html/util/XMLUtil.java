@@ -27,6 +27,7 @@ package org.owasp.validator.html.util;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class XMLUtil {
@@ -146,36 +147,61 @@ public class XMLUtil {
 	}
 
 
-	/**
-	 * Helper function for decode XML entities.
-	 * @param str The XML-encoded String to decode.
-	 * @return An XML-decoded String.
-	 */
-	public static String decode(String str) {
-		
-		if ( str == null ) {
-			return null;
-		}
-		
-		str = encgt.matcher(str).replaceAll(">");
-		str = enclt.matcher(str).replaceAll("<");
-		str = encQuot.matcher(str).replaceAll("\"");
-		str = encAmp.matcher(str).replaceAll("&");
-		
-		return str;
-	}
-	
-	public static String encode(String str) {
-		
-		if ( str == null ) {
-			return null;
-		}
-		
-		str = gt.matcher(str).replaceAll("&gt;");
-		str = lt.matcher(str).replaceAll("&lt;");
-		str = quot.matcher(str).replaceAll("&quot;");
-		str = amp.matcher(str).replaceAll("&amp;");
-		
-		return str;
-	}
+    /**
+     * Helper function for decode XML entities.
+     *
+     * @param str The XML-encoded String to decode.
+     * @return An XML-decoded String.
+     */
+    public static String decode(String str) {
+
+        if (str == null) {
+            return null;
+        }
+
+        Matcher gtmatcher = encgt.matcher(str);
+        if (gtmatcher.matches()) {
+            str = gtmatcher.replaceAll(">");
+        }
+        Matcher ltmatcher = enclt.matcher(str);
+        if (ltmatcher.matches()) {
+            str = ltmatcher.replaceAll("<");
+        }
+        Matcher quotMatcher = encQuot.matcher(str);
+        if (quotMatcher.matches()) {
+            str = quotMatcher.replaceAll("\"");
+        }
+        Matcher ampMatcher = encAmp.matcher(str);
+        if (ampMatcher.matches()) {
+            str = ampMatcher.replaceAll("&");
+        }
+
+        return str;
+    }
+
+    public static String encode(String str) {
+
+        if (str == null) {
+            return null;
+        }
+
+        Matcher gtMatcher = gt.matcher(str);
+        if (gtMatcher.matches()) {
+            str = gtMatcher.replaceAll("&gt;");
+        }
+        Matcher ltMatcher = lt.matcher(str);
+        if (ltMatcher.matches()) {
+            str = ltMatcher.replaceAll("&lt;");
+        }
+        Matcher quotMatcher = quot.matcher(str);
+        if (quotMatcher.matches()) {
+            str = quotMatcher.replaceAll("&quot;");
+        }
+        Matcher ampMatcher = amp.matcher(str);
+        if (ampMatcher.matches()) {
+            str = ampMatcher.replaceAll("&amp;");
+        }
+
+        return str;
+    }
 }
