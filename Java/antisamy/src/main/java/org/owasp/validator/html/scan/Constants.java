@@ -25,6 +25,7 @@ package org.owasp.validator.html.scan;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.owasp.validator.html.Policy;
@@ -49,11 +50,8 @@ public class Constants {
     };
 
     static {
-        Attribute paramNameAttr = new Attribute("name");
-        Attribute paramValueAttr = new Attribute("value");
-
-        paramNameAttr.addAllowedRegExp(Policy.ANYTHING_REGEXP);
-        paramValueAttr.addAllowedRegExp(Policy.ANYTHING_REGEXP);
+        Attribute paramNameAttr = new Attribute("name", Arrays.asList(Policy.ANYTHING_REGEXP), Collections.<String>emptyList(), null, null );
+        Attribute paramValueAttr = new Attribute("value", Arrays.asList(Policy.ANYTHING_REGEXP), Collections.<String>emptyList(), null, null );
 
         BASIC_PARAM_TAG_RULE = new Tag("param");
         BASIC_PARAM_TAG_RULE.addAttribute(paramNameAttr);

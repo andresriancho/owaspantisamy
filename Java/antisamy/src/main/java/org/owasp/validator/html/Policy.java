@@ -88,7 +88,7 @@ public class Policy {
     private static char REGEXP_BEGIN = '^';
     private static char REGEXP_END = '$';
 
-    public final Map<String, AntiSamyPattern> commonRegularExpressions;
+    private final Map<String, AntiSamyPattern> commonRegularExpressions;
     private final Map<String, Tag> tagRules;
     private final Map<String, Property> cssRules;
     private final Map<String, String> directives;
@@ -131,9 +131,7 @@ public class Policy {
      * @return The Tag associated with the name specified, or null if none is found.
      */
     public Tag getTagByName(String tagName) {
-
         return tagRules.get(tagName.toLowerCase());
-
     }
 
     /**
@@ -225,7 +223,7 @@ public class Policy {
      * @throws PolicyException
      */
     private Policy(URL url) throws PolicyException {
-        this( getParseContext(getTopLevelElement(url)));
+        this(getParseContext(getTopLevelElement(url)));
 
     }
 
@@ -250,10 +248,10 @@ public class Policy {
         this.directives = Collections.unmodifiableMap(parseContext.directives);
         this.globalAttributes = Collections.unmodifiableMap(parseContext.globalAttributes);
         this.encodeTags = Collections.unmodifiableSet(parseContext.encodeTags);
-        this.tagNames = Collections.unmodifiableList( parseContext.tagNames);
+        this.tagNames = Collections.unmodifiableList(parseContext.tagNames);
     }
 
-    private Policy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules)  {
+    private Policy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
         this.allowedEmptyTagsMatcher = old.allowedEmptyTagsMatcher;
         this.requiresClosingTagsMatcher = old.requiresClosingTagsMatcher;
         this.commonRegularExpressions = old.commonRegularExpressions;
@@ -469,7 +467,7 @@ public class Policy {
      * Go through <allowed-empty-tags> section of the policy file.
      *
      * @param allowedEmptyTagsListNode Top level of <allowed-empty-tags>
-     * @param allowedEmptyTags The tags that can be empty
+     * @param allowedEmptyTags         The tags that can be empty
      */
     private static void parseAllowedEmptyTags(Element allowedEmptyTagsListNode, List<String> allowedEmptyTags) throws PolicyException {
 
@@ -501,7 +499,7 @@ public class Policy {
      * Go through <require-closing-tags> section of the policy file.
      *
      * @param requiresClosingTagsListNode Top level of <require-closing-tags>
-     * @param requiresClosingTags The list of tags that require closing
+     * @param requiresClosingTags         The list of tags that require closing
      */
     private static void parseRequiresClosingTags(Element requiresClosingTagsListNode, List<String> requiresClosingTags) throws PolicyException {
 
@@ -559,7 +557,7 @@ public class Policy {
      *
      * @param root              Top level of <global-tag-attributes>
      * @param globalAttributes1 A HashMap of global Attributes that need validation for every tag.
-     * @param commonAttributes The common attributes
+     * @param commonAttributes  The common attributes
      * @throws PolicyException
      */
     private static void parseGlobalAttributes(Element root, Map<String, Attribute> globalAttributes1, Map<String, Attribute> commonAttributes) throws PolicyException {
@@ -607,7 +605,7 @@ public class Policy {
             String name = XMLUtil.getAttributeValue(ele, "name");
             Pattern pattern = Pattern.compile(XMLUtil.getAttributeValue(ele, "value"));
 
-            commonRegularExpressions1.put(name, new AntiSamyPattern(name, pattern));
+            commonRegularExpressions1.put(name, new AntiSamyPattern(pattern));
 
         }
     }
@@ -629,67 +627,87 @@ public class Policy {
             String onInvalid = XMLUtil.getAttributeValue(ele, "onInvalid");
             String name = XMLUtil.getAttributeValue(ele, "name");
 
-            Attribute attribute = new Attribute(XMLUtil.getAttributeValue(ele, "name"));
-            attribute.setDescription(XMLUtil.getAttributeValue(ele, "description"));
+            List<Pattern> allowedRegexps = getAllowedRegexps(commonRegularExpressions1, ele);
+            List<String> allowedValues = getAllowedLiterals(ele);
 
+            final String onInvalidStr;
             if (onInvalid != null && onInvalid.length() > 0) {
-                attribute.setOnInvalid(onInvalid);
+                onInvalidStr = onInvalid;
             } else {
-                attribute.setOnInvalid(DEFAULT_ONINVALID);
+                onInvalidStr = DEFAULT_ONINVALID;
             }
+            String description = XMLUtil.getAttributeValue(ele, "description");
+            Attribute attribute = new Attribute(XMLUtil.getAttributeValue(ele, "name"), allowedRegexps, allowedValues, onInvalidStr, description);
 
-            Element regExpListNode = (Element) ele.getElementsByTagName("regexp-list").item(0);
-
-
-            if (regExpListNode != null) {
-                NodeList regExpList = regExpListNode.getElementsByTagName("regexp");
-
-                /*
-                     * First go through the allowed regular expressions.
-                     */
-                for (int j = 0; j < regExpList.getLength(); j++) {
-                    Element regExpNode = (Element) regExpList.item(j);
-
-                    String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
-                    String value = XMLUtil.getAttributeValue(regExpNode, "value");
-
-                    if (regExpName != null && regExpName.length() > 0) {
-                        /*
-                               * Get the common regular expression.
-                               */
-                        attribute.addAllowedRegExp(commonRegularExpressions1.get(regExpName).getPattern());
-                    } else {
-                        attribute.addAllowedRegExp(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
-                    }
-                }
-            }
-
-            Element literalListNode = (Element) ele.getElementsByTagName("literal-list").item(0);
-
-            if (literalListNode != null) {
-
-                NodeList literalList = literalListNode.getElementsByTagName("literal");
-                /*
-                     * Then go through the allowed constants.
-                     */
-                for (int j = 0; j < literalList.getLength(); j++) {
-                    Element literalNode = (Element) literalList.item(j);
-
-                    String value = XMLUtil.getAttributeValue(literalNode, "value");
-
-                    if (value != null && value.length() > 0) {
-                        attribute.addAllowedValue(value);
-                    } else if (literalNode.getNodeValue() != null) {
-                        attribute.addAllowedValue(literalNode.getNodeValue());
-                    }
-
-                }
-
-            }
 
             commonAttributes1.put(name.toLowerCase(), attribute);
 
         }
+    }
+
+    private static List<String> getAllowedLiterals(Element ele) {
+        List<String> allowedValues = new ArrayList<String>();
+        for (Element literalNode : getGrandChildrenByTagName(ele, "literal-list", "literal")) {
+            String value = XMLUtil.getAttributeValue(literalNode, "value");
+
+            if (value != null && value.length() > 0) {
+                allowedValues.add(value);
+            } else if (literalNode.getNodeValue() != null) {
+                allowedValues.add(literalNode.getNodeValue());
+            }
+
+        }
+        return allowedValues;
+    }
+
+    private static List<Pattern> getAllowedRegexps(Map<String, AntiSamyPattern> commonRegularExpressions1, Element ele) {
+        List<Pattern> allowedRegExp = new ArrayList<Pattern>();
+        for (Element regExpNode : getGrandChildrenByTagName(ele, "regexp-list", "regexp")) {
+            String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
+            String value = XMLUtil.getAttributeValue(regExpNode, "value");
+
+            if (regExpName != null && regExpName.length() > 0) {
+                /*
+                * Get the common regular expression.
+                */
+                allowedRegExp.add(commonRegularExpressions1.get(regExpName).getPattern());
+            } else {
+                allowedRegExp.add(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
+            }
+        }
+        return allowedRegExp;
+    }
+
+    private static List<Pattern> getAllowedRegexps2(Map<String, AntiSamyPattern> commonRegularExpressions1, Tag tag, Element attributeNode) throws PolicyException {
+        List<Pattern> allowedRegexps = new ArrayList<Pattern>();
+        for (Element regExpNode : getGrandChildrenByTagName(attributeNode, "regexp-list", "regexp")) {
+            String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
+            String value = XMLUtil.getAttributeValue(regExpNode, "value");
+
+            /*
+            * Look up common regular expression specified
+            * by the "name" field. They can put a common
+            * name in the "name" field or provide a custom
+            * value in the "value" field. They must choose
+            * one or the other, not both.
+            */
+            if (regExpName != null && regExpName.length() > 0) {
+
+                AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
+
+                if (pattern != null) {
+
+                    allowedRegexps.add(pattern.getPattern());
+                } else {
+
+                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + tag.getName() + "', but does not exist in <common-regexp>");
+                }
+
+            } else if (value != null && value.length() > 0) {
+                allowedRegexps.add(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
+            }
+        }
+        return allowedRegexps;
     }
 
 
@@ -723,7 +741,8 @@ public class Policy {
 
                 if (!attributeNode.hasChildNodes()) {
 
-                    Attribute attribute = commonAttributes1.get(XMLUtil.getAttributeValue(attributeNode, "name").toLowerCase());
+                    String attrName = XMLUtil.getAttributeValue(attributeNode, "name").toLowerCase();
+                    Attribute attribute = commonAttributes1.get(attrName);
 
                     /*
                           * All they provided was the name, so they must want a common
@@ -739,14 +758,11 @@ public class Policy {
                         String onInvalid = XMLUtil.getAttributeValue(attributeNode, "onInvalid");
                         String description = XMLUtil.getAttributeValue(attributeNode, "description");
 
-                        if (onInvalid != null && onInvalid.length() != 0) {
-                            attribute.setOnInvalid(onInvalid);
-                        }
-                        if (description != null && description.length() != 0) {
-                            attribute.setDescription(description);
-                        }
+                        Attribute changed = attribute.mutate(onInvalid, description);
 
-                        tag.addAttribute((Attribute) attribute.clone());
+                        commonAttributes1.put(attrName, changed);
+
+                        tag.addAttribute(changed);
 
                     } else {
 
@@ -758,74 +774,12 @@ public class Policy {
                     /*
                           * Custom attribute for this tag.
                           */
-                    Attribute attribute = new Attribute(XMLUtil.getAttributeValue(attributeNode, "name"));
-                    attribute.setOnInvalid(XMLUtil.getAttributeValue(attributeNode, "onInvalid"));
-                    attribute.setDescription(XMLUtil.getAttributeValue(attributeNode, "description"));
+                    List<Pattern> allowedRegexps2 = getAllowedRegexps2(commonRegularExpressions1, tag, attributeNode);
+                    List<String> allowedValues2 = getAllowedLiterals(attributeNode);
+                    String onInvalid = XMLUtil.getAttributeValue(attributeNode, "onInvalid");
+                    String description = XMLUtil.getAttributeValue(attributeNode, "description");
+                    Attribute attribute = new Attribute(XMLUtil.getAttributeValue(attributeNode, "name"), allowedRegexps2, allowedValues2, onInvalid, description);
 
-                    /*
-                          * Get the list of regexps for the attribute.
-                          */
-                    Element regExpListNode = (Element) attributeNode.getElementsByTagName("regexp-list").item(0);
-
-                    if (regExpListNode != null) {
-                        NodeList regExpList = regExpListNode.getElementsByTagName("regexp");
-
-                        for (int k = 0; k < regExpList.getLength(); k++) {
-
-                            Element regExpNode = (Element) regExpList.item(k);
-
-                            String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
-                            String value = XMLUtil.getAttributeValue(regExpNode, "value");
-
-                            /*
-                                    * Look up common regular expression specified
-                                    * by the "name" field. They can put a common
-                                    * name in the "name" field or provide a custom
-                                    * value in the "value" field. They must choose
-                                    * one or the other, not both.
-                                    */
-                            if (regExpName != null && regExpName.length() > 0) {
-
-                                AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
-
-                                if (pattern != null) {
-
-                                    attribute.addAllowedRegExp(pattern.getPattern());
-                                } else {
-
-                                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + tag.getName() + "', but does not exist in <common-regexp>");
-                                }
-
-                            } else if (value != null && value.length() > 0) {
-                                attribute.addAllowedRegExp(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
-                            }
-                        }
-                    }
-
-                    /*
-                          * Get the list of constant values for the attribute.
-                          */
-                    Element literalListNode = (Element) attributeNode.getElementsByTagName("literal-list").item(0);
-
-                    if (literalListNode != null) {
-                        NodeList literalList = literalListNode.getElementsByTagName("literal");
-
-                        for (int k = 0; k < literalList.getLength(); k++) {
-                            Element literalNode = (Element) literalList.item(k);
-                            String value = XMLUtil.getAttributeValue(literalNode, "value");
-
-                            /*
-                                    * Any constant value will do.
-                                    */
-
-                            if (value != null && value.length() > 0) {
-                                attribute.addAllowedValue(value);
-                            } else if (literalNode.getNodeValue() != null) {
-                                attribute.addAllowedValue(literalNode.getNodeValue());
-                            }
-
-                        }
-                    }
                     /*
                           * Add fully built attribute.
                           */
@@ -837,6 +791,8 @@ public class Policy {
             tagRules1.put(name.toLowerCase(), tag);
         }
     }
+
+
 
     private static void parseCSSRules(Element root, Map<String, Property> cssRules1, Map<String, AntiSamyPattern> commonRegularExpressions1) throws PolicyException {
 
@@ -985,7 +941,7 @@ public class Policy {
     public Policy addTagRule(Tag tag) {
         Map<String, Tag> newTagRules = new HashMap<String, Tag>(tagRules);
         newTagRules.put(tag.getName().toLowerCase(), tag);
-        return  new Policy(this, this.directives, newTagRules);
+        return new Policy(this, this.directives, newTagRules);
 
     }
 
@@ -1058,6 +1014,42 @@ public class Policy {
 
         // No resolving.
         return null;
+    }
+
+    private static Iterable<Element>  getGrandChildrenByTagName(Element parent, String immediateChildName, String subChild){
+        Element regExpListNode = (Element) parent.getElementsByTagName(immediateChildName).item(0);
+        return getByTagName( regExpListNode, subChild);
+    }
+
+    private static Iterable<Element> getByTagName(Element parent, String tagName) {
+        if (parent == null) {
+            return Collections.emptyList();
+        }
+        final NodeList nodes = parent.getElementsByTagName(tagName);
+        return new Iterable<Element>() {
+            public Iterator<Element> iterator() {
+                return new Iterator<Element>() {
+                    int pos = 0;
+                    int len = nodes.getLength();
+
+                    public boolean hasNext() {
+                        return pos < len;
+                    }
+
+                    public Element next() {
+                        return (Element) nodes.item(pos++);
+                    }
+
+                    public void remove() {
+                        throw new UnsupportedOperationException("Cant remove");
+                    }
+                };
+            }
+        };
+    }
+
+    public AntiSamyPattern getCommonRegularExpressions(String name) {
+        return commonRegularExpressions.get(name);
     }
 
 }

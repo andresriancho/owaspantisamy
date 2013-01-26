@@ -83,7 +83,7 @@ public class CssHandler implements DocumentHandler {
 	 * The encaspulated results including the error messages
 	 */
 //	private final CleanResults results;
-	private final Collection errorMessages;
+	private final Collection<String> errorMessages;
 	
 	/**
 	 * The error message bundled to pull from.
@@ -242,10 +242,8 @@ public class CssHandler implements DocumentHandler {
 
 			// validate the URL
 
-            if (!policy.commonRegularExpressions.get("offsiteURL").getPattern()
-				.matcher(importedStyleSheet.toString()).matches()
-				&& !policy.commonRegularExpressions.get("onsiteURL").getPattern()
-						.matcher(importedStyleSheet.toString()).matches()) {
+            if (!policy.getCommonRegularExpressions("offsiteURL").matches(importedStyleSheet.toString())
+				&& !policy.getCommonRegularExpressions("onsiteURL").matches(importedStyleSheet.toString())) {
 			    errorMessages.add(ErrorMessageUtil.getMessage(
 						messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_URL_INVALID,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2013, Arshan Dabirsiaghi, Jason Li, Kristian Rosenvold
  * 
  * All rights reserved.
  * 
@@ -24,7 +24,7 @@
 
 package org.owasp.validator.html.model;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -33,54 +33,35 @@ import java.util.regex.Pattern;
  * order to be considered valid.
  * 
  * @author Arshan Dabirsiaghi
+ * @author Kristian Rosenvold
  *
  */
 
-public class Attribute implements Cloneable {
+public class Attribute  {
 
-	private String name;
-	private String description;
-	private String onInvalid;
-	private List allowedValues = new ArrayList();
-	private List allowedRegExp = new ArrayList();
+	private final String name;
+	private final String description;
+	private final String onInvalid;
+	private final List<String> allowedValues;
+	private final List<Pattern> allowedRegExp;
 	
-	public Attribute(String name) {
-		this.name = name;
-	}
-	
-	/**
-	 * 
-	 * @param safeValue A legal literal value that an attribute can have, according to the Policy
-	 */
-	public void addAllowedValue(String safeValue) {
-		this.allowedValues.add(safeValue);
-	}
-	
-	/**
-	 * 
-	 * @param safeRegExpValue A legal regular expression value that an attribute could have, according to the Policy
-	 */
-	public void addAllowedRegExp(Pattern safeRegExpValue) {
-		this.allowedRegExp.add(safeRegExpValue);
-	}
+    public Attribute(String name, List<Pattern> allowedRegexps, List<String> allowedValues, String onInvalidStr, String description) {
+        this.name = name;
+        this.allowedRegExp = Collections.unmodifiableList(allowedRegexps);
+        this.allowedValues = Collections.unmodifiableList( allowedValues);
+        this.onInvalid = onInvalidStr;
+        this.description = description;
+    }
 
-	/**
+    /**
 	 *  
 	 * @return A <code>List</code> of regular expressions that an attribute can be validated from.
 	 */
 	public List getAllowedRegExp() {
 		return allowedRegExp;
 	}
-	
-	/**
-	 * 
-	 * @param allowedRegExp A <code>List</code> of regular expressions that an attribute can be validated from.
-	 */
-	public void setAllowedRegExp(List allowedRegExp) {
-		this.allowedRegExp = allowedRegExp;
-	}
 
-	/**
+    /**
 	 * 
 	 * @return A <code>List</code> of literal values that an attribute could have, according to the Policy.
 	 */
@@ -88,15 +69,7 @@ public class Attribute implements Cloneable {
 		return allowedValues;
 	}
 
-	/**
-	 * 
-	 * @param allowedValues A <code>List</code> of regular expressions that an attribute can be validated from.
-	 */
-	public void setAllowedValues(List allowedValues) {
-		this.allowedValues = allowedValues;
-	}
-
-	/**
+    /**
 	 * 
 	 * @return The name of an Attribute object.
 	 */
@@ -104,15 +77,7 @@ public class Attribute implements Cloneable {
 		return name;
 	}
 
-	/**
-	 * 
-	 * @param name The new name of an Attribute object.
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	/**
+    /**
 	 * 
 	 * @return The <code>onInvalid</code> value a tag could have, from the list of "filterTag", "removeTag" and "removeAttribute" 
 	 */
@@ -120,44 +85,9 @@ public class Attribute implements Cloneable {
 		return onInvalid;
 	}
 
-	
-	/**
-	 * 
-	 * @param onInvalid The new <code>onInvalid</code> value of an Attribute object.
-	 */
-	public void setOnInvalid(String onInvalid) {
-		this.onInvalid = onInvalid;
-	}
 
-	/**
-	 * 
-	 * @return The description of what the tag does.
-	 */
-	public String getDescription() {
-		return description;
-	}
-
-	/**
-	 * 
-	 * @param description The new description of what the tag does.
-	 */
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	
-	/**
-	 * We need to implement <code>clone()</code> to make the Policy file work with common attributes and the ability
-	 * to use a common-attribute with an alternative <code>onInvalid</code> action.
-	 */
-	public Object clone() {
-		
-		Attribute toReturn = new Attribute(name);
-		
-		toReturn.setDescription(description);
-		toReturn.setOnInvalid(onInvalid);
-		toReturn.setAllowedValues(allowedValues);
-		toReturn.setAllowedRegExp(allowedRegExp);
-		
-		return toReturn;
-	}
+    public Attribute mutate(String onInvalid, String description)  {
+        return new Attribute(name, allowedRegExp, allowedValues, onInvalid != null && onInvalid.length() != 0 ? onInvalid : this.onInvalid,
+                description != null && description.length() != 0 ? description : this.description);
+    }
 }

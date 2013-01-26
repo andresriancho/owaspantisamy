@@ -24,59 +24,39 @@
 
 package org.owasp.validator.html.model;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 
- * An extension of the Pattern to give it a "lookup name" that we can use from a
- * centralized store.
- * 
- * @author Arshan Dabirsiaghi
+ * An extension of the Pattern  with helper methods.
  *
+ * @author Arshan Dabirsiaghi
  */
 public class AntiSamyPattern {
-	
-	private String name;
-	private Pattern pattern;
-	
-	/**
-	 * Constructor for AntiSamyPattern. The "name" parameter is a lookup name for retrieving the Pattern parameter
-	 * passed in later.
-	 * @param name The lookup name by which we will retrieve this Pattern later.
-	 * @param pattern The Pattern to lookup based on the "name".
-	 */
-	public AntiSamyPattern(String name, Pattern pattern) {
-		this.name = name;
-		this.pattern = pattern;
-	}
 
-	/**
-	 * 
-	 * @return Return the name of the <code>AntiSamyPattern</code>.
-	 */
-	public String getName() {
-		return name;
-	}
+    private final Pattern pattern;
 
-	/**
-	 * 
-	 * @param name Set the name of the <code>AntiSamyPattern</code>.
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
+    /**
+     * Constructor for AntiSamyPattern.
+     *
+     * @param pattern The Pattern to lookup based on the "name".
+     */
+    public AntiSamyPattern(Pattern pattern) {
+        this.pattern = pattern;
+    }
 
-	/**
-	 * @return Return the Pattern of the <code>AntiSamyPattern</code>.
-	 */
-	public Pattern getPattern() {
-		return pattern;
-	}
+    /**
+     * @return Return the Pattern of the <code>AntiSamyPattern</code>.
+     */
+    public Pattern getPattern() {
+        return pattern;
+    }
 
-	/**
-	 * @param pattern Set the Pattern of the <code>AntiSamyPattern</code>.
-	 */
-	public void setPattern(Pattern pattern) {
-		this.pattern = pattern;
-	}
+    public Matcher matcher(CharSequence input) {
+        return pattern.matcher(input);
+    }
+
+    public boolean matches(String other) {
+        return matcher(other).matches();
+    }
 }

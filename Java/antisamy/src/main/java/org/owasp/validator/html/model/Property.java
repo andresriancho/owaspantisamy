@@ -81,8 +81,7 @@ public class Property {
 	}
 
 	/**
-	 * Return a <code>List</code> of allowed regular expressions as added
-	 * by the <code>addAllowedRegExp()</code> method.
+	 * Return a <code>List</code> of allowed regular expressions
 	 * @return A <code>List</code> of allowed regular expressions.
 	 */
 	public List getAllowedRegExp() {

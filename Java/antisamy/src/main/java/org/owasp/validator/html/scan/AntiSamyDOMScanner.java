@@ -327,8 +327,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          * policy to get the tag through to the validator.
          */
         boolean masqueradingParam = false;
+        Tag embedTag = policy.getTagByName("embed");
         if (tag == null && isValidateParamAsEmbed && "param".equals(tagName.toLowerCase())) {
-            Tag embedPolicy = policy.getTagByName("embed");
+            Tag embedPolicy = embedTag;
             if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
                 tag = Constants.BASIC_PARAM_TAG_RULE;
                 masqueradingParam = true;
@@ -424,7 +425,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                     ele.setAttribute(nameValue, valueValue);
                     ele.removeAttribute("name");
                     ele.removeAttribute("value");
-                    tag = policy.getTagByName("embed");
+                    tag = embedTag;
                 }
             }
 

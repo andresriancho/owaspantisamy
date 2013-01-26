@@ -186,11 +186,8 @@ public class CssValidator {
 		// NOTE: intentionally using non-short-circuited AND operator to
 		// generate all relevant error messages
 
-        return policy.commonRegularExpressions.get("cssElementSelector").getPattern()
-				.matcher(selector.toString().toLowerCase()).matches()
-				& !policy.commonRegularExpressions.get("cssElementExclusion")
-						.getPattern()
-						.matcher(selector.toString().toLowerCase()).matches();
+        return policy.getCommonRegularExpressions("cssElementSelector").matches(selector.toString().toLowerCase())
+				& !policy.getCommonRegularExpressions("cssElementExclusion").matches(selector.toString().toLowerCase());
 	}
 
 	/**
@@ -221,24 +218,24 @@ public class CssValidator {
 			// this is a basic class condition; compare condition against
 			// valid pattern and is not blacklisted by exclusion pattern
 
-            return validateCondition((AttributeCondition) condition, policy.commonRegularExpressions.get("cssClassSelector"), policy.commonRegularExpressions.get("cssClassExclusion"));
+            return validateCondition((AttributeCondition) condition, policy.getCommonRegularExpressions("cssClassSelector"), policy.getCommonRegularExpressions("cssClassExclusion"));
 		case Condition.SAC_ID_CONDITION:
 			// this is a basic ID condition; compare condition against
 			// valid pattern and is not blacklisted by exclusion pattern
 
-            return validateCondition((AttributeCondition) condition, policy.commonRegularExpressions.get("cssIDSelector"), policy.commonRegularExpressions.get("cssIDExclusion"));
+            return validateCondition((AttributeCondition) condition, policy.getCommonRegularExpressions("cssIDSelector"), policy.getCommonRegularExpressions("cssIDExclusion"));
 		case Condition.SAC_PSEUDO_CLASS_CONDITION:
 			// this is a basic psuedo element condition; compare condition
 			// against valid pattern and is not blacklisted by exclusion pattern
 
-            return validateCondition((AttributeCondition) condition, policy.commonRegularExpressions.get("cssPseudoElementSelector"), policy.commonRegularExpressions.get("cssPsuedoElementExclusion"));
+            return validateCondition((AttributeCondition) condition, policy.getCommonRegularExpressions("cssPseudoElementSelector"), policy.getCommonRegularExpressions("cssPsuedoElementExclusion"));
 		case Condition.SAC_BEGIN_HYPHEN_ATTRIBUTE_CONDITION:
 		case Condition.SAC_ONE_OF_ATTRIBUTE_CONDITION:
 		case Condition.SAC_ATTRIBUTE_CONDITION:
 			// this is a basic class condition; compare condition against
 			// valid pattern and is not blacklisted by exclusion pattern
 
-            return validateCondition((AttributeCondition) condition, policy.commonRegularExpressions.get("cssAttributeSelector"), policy.commonRegularExpressions.get("cssAttributeExclusion"));
+            return validateCondition((AttributeCondition) condition, policy.getCommonRegularExpressions("cssAttributeSelector"), policy.getCommonRegularExpressions("cssAttributeExclusion"));
 		case Condition.SAC_NEGATIVE_CONDITION:
 			// this is a compound condition; decompose to simple condition
 			return isValidCondition(selectorName,
@@ -276,10 +273,8 @@ public class CssValidator {
 		// not match exclusion pattern
 		// NOTE: intentionally using non-short-circuited AND operator to
 		// generate all relevant error messages
-		return pattern.getPattern().matcher(condition.toString().toLowerCase())
-				.matches()
-				& !exclusionPattern.getPattern().matcher(
-						condition.toString().toLowerCase()).matches();
+		return pattern.matches(condition.toString().toLowerCase())
+				& !exclusionPattern.matches(condition.toString().toLowerCase());
 	}
 
 	/**
