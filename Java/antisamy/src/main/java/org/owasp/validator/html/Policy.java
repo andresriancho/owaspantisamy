@@ -43,13 +43,14 @@ import org.owasp.validator.html.model.Property;
 import org.owasp.validator.html.model.Tag;
 import org.owasp.validator.html.scan.Constants;
 import org.owasp.validator.html.util.URIUtils;
-import org.owasp.validator.html.util.XMLUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import static org.owasp.validator.html.util.XMLUtil.getAttributeValue;
 
 /**
  * Policy.java
@@ -63,7 +64,7 @@ public class Policy {
 
     public static final Pattern ANYTHING_REGEXP = Pattern.compile(".*");
 
-    private static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
+    protected static final String DEFAULT_POLICY_URI = "resources/antisamy.xml";
     private static final String DEFAULT_ONINVALID = "removeAttribute";
 
     public static final int DEFAULT_MAX_INPUT_SIZE = 100000;
@@ -89,9 +90,9 @@ public class Policy {
     private static char REGEXP_END = '$';
 
     private final Map<String, AntiSamyPattern> commonRegularExpressions;
-    private final Map<String, Tag> tagRules;
+    protected final Map<String, Tag> tagRules;
     private final Map<String, Property> cssRules;
-    private final Map<String, String> directives;
+    protected final Map<String, String> directives;
     private final Map<String, Attribute> globalAttributes;
     private final Set<String> encodeTags;
 
@@ -102,10 +103,26 @@ public class Policy {
     /**
      * The path to the base policy file, used to resolve relative paths when reading included files
      */
-    private static URL baseUrl = null;
+    protected static URL baseUrl = null;
+
+    /**
+     * Retrieves a Tag from the Policy.
+     *
+     * @param tagName The name of the Tag to look up.
+     * @return The Tag associated with the name specified, or null if none is found.
+     */
+    public Tag getTagByName(String tagName) {
+        return tagRules.get(tagName.toLowerCase());
+    }
+
+    public Policy mutateTag(Tag tag) {
+        Map<String, Tag> newRUles = new HashMap<String, Tag>(this.tagRules);
+        newRUles.put( tag.getName().toLowerCase(), tag);
+        return new Policy(this, this.directives, newRUles);
+    }
 
 
-    private static class ParseContext {
+    protected static class ParseContext {
         Map<String, AntiSamyPattern> commonRegularExpressions = new HashMap<String, AntiSamyPattern>();
         Map<String, Attribute> commonAttributes = new HashMap<String, Attribute>();
         Map<String, Tag> tagRules = new HashMap<String, Tag>();
@@ -124,15 +141,6 @@ public class Policy {
         }
     }
 
-    /**
-     * Retrieves a Tag from the Policy.
-     *
-     * @param tagName The name of the Tag to look up.
-     * @return The Tag associated with the name specified, or null if none is found.
-     */
-    public Tag getTagByName(String tagName) {
-        return tagRules.get(tagName.toLowerCase());
-    }
 
     /**
      * Retrieves a CSS Property from the Policy.
@@ -222,7 +230,7 @@ public class Policy {
      * @param url Load a policy from the url specified.
      * @throws PolicyException
      */
-    private Policy(URL url) throws PolicyException {
+    protected Policy(URL url) throws PolicyException {
         this(getParseContext(getTopLevelElement(url)));
 
     }
@@ -234,12 +242,12 @@ public class Policy {
      * @throws PolicyException
      * @deprecated This constructor does not properly load included policy files. Use Policy(URL) instead.
      */
-    private Policy(InputStream is) throws PolicyException {
+    protected Policy(InputStream is) throws PolicyException {
         this(getSimpleParseContext(getTopLevelElement(is)));
     }
 
 
-    private Policy(ParseContext parseContext) throws PolicyException {
+    protected Policy(ParseContext parseContext) throws PolicyException {
         this.allowedEmptyTagsMatcher = new TagMatcher(parseContext.allowedEmptyTags);
         this.requiresClosingTagsMatcher = new TagMatcher(parseContext.requireClosingTags);
         this.commonRegularExpressions = Collections.unmodifiableMap(parseContext.commonRegularExpressions);
@@ -251,7 +259,7 @@ public class Policy {
         this.tagNames = Collections.unmodifiableList(parseContext.tagNames);
     }
 
-    private Policy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
+    protected Policy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
         this.allowedEmptyTagsMatcher = old.allowedEmptyTagsMatcher;
         this.requiresClosingTagsMatcher = old.requiresClosingTagsMatcher;
         this.commonRegularExpressions = old.commonRegularExpressions;
@@ -282,11 +290,8 @@ public class Policy {
          * NOTE that by this being here we only support one level of includes.
          * To support recursion, move this into the parsePolicy method.
          */
-        NodeList includes = topLevelElement.getElementsByTagName("include");
-        for (int i = 0; i < includes.getLength(); i++) {
-            Element include = (Element) includes.item(i);
-
-            String href = XMLUtil.getAttributeValue(include, "href");
+        for (Element include : getByTagName(topLevelElement, "include")) {
+            String href = getAttributeValue(include, "href");
 
             Element includedPolicy = getPolicy(href);
             parsePolicy(includedPolicy, parseContext);
@@ -357,14 +362,6 @@ public class Policy {
         parseRequiresClosingTags(getFirstChild(topLevelElement, "require-closing-tags"), parseContext.requireClosingTags);
     }
 
-    private static Element getFirstChild(Element element, String tagName) {
-        if (element == null) return null;
-        NodeList elementsByTagName = element.getElementsByTagName(tagName);
-        if (elementsByTagName != null && elementsByTagName.getLength() > 0)
-            return (Element) elementsByTagName.item(0);
-        else
-            return null;
-    }
 
     /**
      * Returns the top level element of a loaded policy Document
@@ -445,20 +442,10 @@ public class Policy {
      * @param directives The directives map to update
      */
     private static void parseDirectives(Element root, Map<String, String> directives) {
-
-        if (root == null) return;
-
-        NodeList directiveNodes = root.getElementsByTagName("directive");
-
-        for (int i = 0; i < directiveNodes.getLength(); i++) {
-
-            Element ele = (Element) directiveNodes.item(i);
-
-            String name = XMLUtil.getAttributeValue(ele, "name");
-            String value = XMLUtil.getAttributeValue(ele, "value");
-
+        for (Element ele : getByTagName(root, "directive")) {
+            String name = getAttributeValue(ele, "name");
+            String value = getAttributeValue(ele, "value");
             directives.put(name, value);
-
         }
     }
 
@@ -470,27 +457,16 @@ public class Policy {
      * @param allowedEmptyTags         The tags that can be empty
      */
     private static void parseAllowedEmptyTags(Element allowedEmptyTagsListNode, List<String> allowedEmptyTags) throws PolicyException {
-
         if (allowedEmptyTagsListNode != null) {
-            Element literalListNode = (Element) allowedEmptyTagsListNode.getElementsByTagName("literal-list").item(0);
+            for (Element literalNode : getGrandChildrenByTagName(allowedEmptyTagsListNode, "literal-list", "literal")) {
 
-            if (literalListNode != null) {
+                String value = getAttributeValue(literalNode, "value");
 
-                NodeList literalList = literalListNode.getElementsByTagName("literal");
-
-                for (int j = 0; j < literalList.getLength(); j++) {
-                    Element literalNode = (Element) literalList.item(j);
-
-                    String value = XMLUtil.getAttributeValue(literalNode, "value");
-
-                    if (value != null && value.length() > 0) {
-                        allowedEmptyTags.add(value);
-                    }
+                if (value != null && value.length() > 0) {
+                    allowedEmptyTags.add(value);
                 }
-
             }
         } else {
-
             allowedEmptyTags.addAll(Constants.defaultAllowedEmptyTags);
         }
     }
@@ -502,24 +478,14 @@ public class Policy {
      * @param requiresClosingTags         The list of tags that require closing
      */
     private static void parseRequiresClosingTags(Element requiresClosingTagsListNode, List<String> requiresClosingTags) throws PolicyException {
-
         if (requiresClosingTagsListNode != null) {
-            Element literalListNode = (Element) requiresClosingTagsListNode.getElementsByTagName("literal-list").item(0);
+            for (Element literalNode : getGrandChildrenByTagName(requiresClosingTagsListNode, "literal-list", "literal")) {
 
-            if (literalListNode != null) {
+                String value = getAttributeValue(literalNode, "value");
 
-                NodeList literalList = literalListNode.getElementsByTagName("literal");
-
-                for (int j = 0; j < literalList.getLength(); j++) {
-                    Element literalNode = (Element) literalList.item(j);
-
-                    String value = XMLUtil.getAttributeValue(literalNode, "value");
-
-                    if (value != null && value.length() > 0) {
-                        requiresClosingTags.add(value);
-                    }
+                if (value != null && value.length() > 0) {
+                    requiresClosingTags.add(value);
                 }
-
             }
         } else {
             requiresClosingTags.addAll(Constants.defaultRequiresClosingTags);
@@ -534,21 +500,11 @@ public class Policy {
      * @throws PolicyException
      */
     private static void parseTagsToEncode(Element root, Set<String> encodeTags1) throws PolicyException {
-
-        if (root == null) return;
-
-        NodeList tagsToEncodeNodes = root.getElementsByTagName("tag");
-
-        if (tagsToEncodeNodes != null) {
-
-            for (int i = 0; i < tagsToEncodeNodes.getLength(); i++) {
-
-                Element ele = (Element) tagsToEncodeNodes.item(i);
-                if (ele.getFirstChild() != null && ele.getFirstChild().getNodeType() == Node.TEXT_NODE) {
-                    encodeTags1.add(ele.getFirstChild().getNodeValue());
-                }
-
+        for (Element ele : getByTagName(root, "tag")) {
+            if (ele.getFirstChild() != null && ele.getFirstChild().getNodeType() == Node.TEXT_NODE) {
+                encodeTags1.add(ele.getFirstChild().getNodeValue());
             }
+
         }
     }
 
@@ -561,18 +517,9 @@ public class Policy {
      * @throws PolicyException
      */
     private static void parseGlobalAttributes(Element root, Map<String, Attribute> globalAttributes1, Map<String, Attribute> commonAttributes) throws PolicyException {
+        for (Element ele : getByTagName(root, "attribute")) {
 
-        if (root == null) return;
-
-        NodeList globalAttributeNodes = root.getElementsByTagName("attribute");
-
-        /*
-           * Loop through the list of regular expressions and add them to the collection.
-           */
-        for (int i = 0; i < globalAttributeNodes.getLength(); i++) {
-            Element ele = (Element) globalAttributeNodes.item(i);
-
-            String name = XMLUtil.getAttributeValue(ele, "name");
+            String name = getAttributeValue(ele, "name");
 
             Attribute toAdd = commonAttributes.get(name.toLowerCase());
 
@@ -591,41 +538,21 @@ public class Policy {
      * @param commonRegularExpressions1 the antisamy pattern objects
      */
     private static void parseCommonRegExps(Element root, Map<String, AntiSamyPattern> commonRegularExpressions1) {
+        for (Element ele : getByTagName(root, "regexp")) {
 
-        if (root == null) return;
-
-        NodeList commonRegExpPatternNodes = root.getElementsByTagName("regexp");
-
-        /*
-           * Loop through the list of regular expressions and add them to the collection.
-           */
-        for (int i = 0; i < commonRegExpPatternNodes.getLength(); i++) {
-            Element ele = (Element) commonRegExpPatternNodes.item(i);
-
-            String name = XMLUtil.getAttributeValue(ele, "name");
-            Pattern pattern = Pattern.compile(XMLUtil.getAttributeValue(ele, "value"));
+            String name = getAttributeValue(ele, "name");
+            Pattern pattern = Pattern.compile(getAttributeValue(ele, "value"));
 
             commonRegularExpressions1.put(name, new AntiSamyPattern(pattern));
-
         }
     }
 
 
     private static void parseCommonAttributes(Element root, Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1) {
+        for (Element ele : getByTagName(root, "attribute")) {
 
-        if (root == null) return;
-
-        NodeList commonAttributesNodes = root.getElementsByTagName("attribute");
-
-        /*
-           * Loop through the list of attributes and add them to the collection.
-           */
-        for (int i = 0; i < commonAttributesNodes.getLength(); i++) {
-
-            Element ele = (Element) commonAttributesNodes.item(i);
-
-            String onInvalid = XMLUtil.getAttributeValue(ele, "onInvalid");
-            String name = XMLUtil.getAttributeValue(ele, "name");
+            String onInvalid = getAttributeValue(ele, "onInvalid");
+            String name = getAttributeValue(ele, "name");
 
             List<Pattern> allowedRegexps = getAllowedRegexps(commonRegularExpressions1, ele);
             List<String> allowedValues = getAllowedLiterals(ele);
@@ -636,19 +563,18 @@ public class Policy {
             } else {
                 onInvalidStr = DEFAULT_ONINVALID;
             }
-            String description = XMLUtil.getAttributeValue(ele, "description");
-            Attribute attribute = new Attribute(XMLUtil.getAttributeValue(ele, "name"), allowedRegexps, allowedValues, onInvalidStr, description);
+            String description = getAttributeValue(ele, "description");
+            Attribute attribute = new Attribute(getAttributeValue(ele, "name"), allowedRegexps, allowedValues, onInvalidStr, description);
 
 
             commonAttributes1.put(name.toLowerCase(), attribute);
-
         }
     }
 
     private static List<String> getAllowedLiterals(Element ele) {
         List<String> allowedValues = new ArrayList<String>();
         for (Element literalNode : getGrandChildrenByTagName(ele, "literal-list", "literal")) {
-            String value = XMLUtil.getAttributeValue(literalNode, "value");
+            String value = getAttributeValue(literalNode, "value");
 
             if (value != null && value.length() > 0) {
                 allowedValues.add(value);
@@ -663,8 +589,8 @@ public class Policy {
     private static List<Pattern> getAllowedRegexps(Map<String, AntiSamyPattern> commonRegularExpressions1, Element ele) {
         List<Pattern> allowedRegExp = new ArrayList<Pattern>();
         for (Element regExpNode : getGrandChildrenByTagName(ele, "regexp-list", "regexp")) {
-            String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
-            String value = XMLUtil.getAttributeValue(regExpNode, "value");
+            String regExpName = getAttributeValue(regExpNode, "name");
+            String value = getAttributeValue(regExpNode, "value");
 
             if (regExpName != null && regExpName.length() > 0) {
                 /*
@@ -678,11 +604,11 @@ public class Policy {
         return allowedRegExp;
     }
 
-    private static List<Pattern> getAllowedRegexps2(Map<String, AntiSamyPattern> commonRegularExpressions1, Tag tag, Element attributeNode) throws PolicyException {
+    private static List<Pattern> getAllowedRegexps2(Map<String, AntiSamyPattern> commonRegularExpressions1, Element attributeNode, String tagName) throws PolicyException {
         List<Pattern> allowedRegexps = new ArrayList<Pattern>();
         for (Element regExpNode : getGrandChildrenByTagName(attributeNode, "regexp-list", "regexp")) {
-            String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
-            String value = XMLUtil.getAttributeValue(regExpNode, "value");
+            String regExpName = getAttributeValue(regExpNode, "name");
+            String value = getAttributeValue(regExpNode, "value");
 
             /*
             * Look up common regular expression specified
@@ -700,7 +626,7 @@ public class Policy {
                     allowedRegexps.add(pattern.getPattern());
                 } else {
 
-                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + tag.getName() + "', but does not exist in <common-regexp>");
+                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + tagName + "', but does not exist in <common-regexp>");
                 }
 
             } else if (value != null && value.length() > 0) {
@@ -715,104 +641,87 @@ public class Policy {
 
         if (root == null) return;
 
-        NodeList tagList = root.getElementsByTagName("tag");
+        for (Element tagNode : getByTagName(root, "tag")) {
 
-        for (int i = 0; i < tagList.getLength(); i++) {
-
-            Element tagNode = (Element) tagList.item(i);
-
-            String name = XMLUtil.getAttributeValue(tagNode, "name");
-            String action = XMLUtil.getAttributeValue(tagNode, "action");
-
-            Tag tag = new Tag(name);
-
-            tagNames1.add(name);
-
-            tag.setAction(action);
+            String name = getAttributeValue(tagNode, "name");
+            String action = getAttributeValue(tagNode, "action");
 
             NodeList attributeList = tagNode.getElementsByTagName("attribute");
+            Map<String, Attribute> tagAttributes = getTagAttributes(commonAttributes1, commonRegularExpressions1, attributeList, name);
+            Tag tag = new Tag(name, tagAttributes, action);
 
-            /*
-                * Add its attribute rules.
-                */
-            for (int j = 0; j < attributeList.getLength(); j++) {
-
-                Element attributeNode = (Element) attributeList.item(j);
-
-                if (!attributeNode.hasChildNodes()) {
-
-                    String attrName = XMLUtil.getAttributeValue(attributeNode, "name").toLowerCase();
-                    Attribute attribute = commonAttributes1.get(attrName);
-
-                    /*
-                          * All they provided was the name, so they must want a common
-                          * attribute.
-                          */
-                    if (attribute != null) {
-
-                        /*
-                               * If they provide onInvalid/description values here they will
-                               * override the common values.
-                               */
-
-                        String onInvalid = XMLUtil.getAttributeValue(attributeNode, "onInvalid");
-                        String description = XMLUtil.getAttributeValue(attributeNode, "description");
-
-                        Attribute changed = attribute.mutate(onInvalid, description);
-
-                        commonAttributes1.put(attrName, changed);
-
-                        tag.addAttribute(changed);
-
-                    } else {
-
-                        throw new PolicyException("Attribute '" + XMLUtil.getAttributeValue(attributeNode, "name") + "' was referenced as a common attribute in definition of '" + tag.getName() + "', but does not exist in <common-attributes>");
-
-                    }
-
-                } else {
-                    /*
-                          * Custom attribute for this tag.
-                          */
-                    List<Pattern> allowedRegexps2 = getAllowedRegexps2(commonRegularExpressions1, tag, attributeNode);
-                    List<String> allowedValues2 = getAllowedLiterals(attributeNode);
-                    String onInvalid = XMLUtil.getAttributeValue(attributeNode, "onInvalid");
-                    String description = XMLUtil.getAttributeValue(attributeNode, "description");
-                    Attribute attribute = new Attribute(XMLUtil.getAttributeValue(attributeNode, "name"), allowedRegexps2, allowedValues2, onInvalid, description);
-
-                    /*
-                          * Add fully built attribute.
-                          */
-                    tag.addAttribute(attribute);
-                }
-
-            }
+            tagNames1.add(name);
 
             tagRules1.put(name.toLowerCase(), tag);
         }
     }
 
+    private static Map<String, Attribute> getTagAttributes(Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, NodeList attributeList, String tagName) throws PolicyException {
+        Map<String,Attribute> tagAttributes = new HashMap<String, Attribute>();
+        for (int j = 0; j < attributeList.getLength(); j++) {
+
+            Element attributeNode = (Element) attributeList.item(j);
+
+            String attrName = getAttributeValue(attributeNode, "name").toLowerCase();
+            if (!attributeNode.hasChildNodes()) {
+
+                Attribute attribute = commonAttributes1.get(attrName);
+
+                /*
+                      * All they provided was the name, so they must want a common
+                      * attribute.
+                      */
+                if (attribute != null) {
+
+                    /*
+                           * If they provide onInvalid/description values here they will
+                           * override the common values.
+                           */
+
+                    String onInvalid = getAttributeValue(attributeNode, "onInvalid");
+                    String description = getAttributeValue(attributeNode, "description");
+
+                    Attribute changed = attribute.mutate(onInvalid, description);
+
+                    commonAttributes1.put(attrName, changed);
+
+                    tagAttributes.put(attrName, changed);
+
+                } else {
+
+                    throw new PolicyException("Attribute '" + getAttributeValue(attributeNode, "name") + "' was referenced as a common attribute in definition of '" + tagName + "', but does not exist in <common-attributes>");
+
+                }
+
+            } else {
+                List<Pattern> allowedRegexps2 = getAllowedRegexps2(commonRegularExpressions1, attributeNode, tagName);
+                List<String> allowedValues2 = getAllowedLiterals(attributeNode);
+                String onInvalid = getAttributeValue(attributeNode, "onInvalid");
+                String description = getAttributeValue(attributeNode, "description");
+                Attribute attribute = new Attribute(getAttributeValue(attributeNode, "name"), allowedRegexps2, allowedValues2, onInvalid, description);
+
+                /*
+                      * Add fully built attribute.
+                      */
+                tagAttributes.put(attrName, attribute);
+            }
+
+        }
+        return tagAttributes;
+    }
 
 
     private static void parseCSSRules(Element root, Map<String, Property> cssRules1, Map<String, AntiSamyPattern> commonRegularExpressions1) throws PolicyException {
 
-        if (root == null) return;
+        for (Element ele : getByTagName(root, "property")){
 
-        NodeList propertyNodes = root.getElementsByTagName("property");
-
-        /*
-           * Loop through the list of attributes and add them to the collection.
-           */
-        for (int i = 0; i < propertyNodes.getLength(); i++) {
-            Element ele = (Element) propertyNodes.item(i);
-
-            String name = XMLUtil.getAttributeValue(ele, "name");
-            String description = XMLUtil.getAttributeValue(ele, "description");
+            String name = getAttributeValue(ele, "name");
+            String description = getAttributeValue(ele, "description");
 
             Property property = new Property(name);
             property.setDescription(description);
 
-            String onInvalid = XMLUtil.getAttributeValue(ele, "onInvalid");
+            String onInvalid = getAttributeValue(ele, "onInvalid");
 
             if (onInvalid != null && onInvalid.length() > 0) {
                 property.setOnInvalid(onInvalid);
@@ -820,64 +729,35 @@ public class Policy {
                 property.setOnInvalid(DEFAULT_ONINVALID);
             }
 
-            Element regExpListNode = (Element) ele.getElementsByTagName("regexp-list").item(0);
+            /*
+            * First go through the allowed regular expressions.
+            */
+            for (Element regExpNode : getGrandChildrenByTagName(ele, "regexp-list", "regexp")) {
 
+                String regExpName = getAttributeValue(regExpNode, "name");
+                String value = getAttributeValue(regExpNode, "value");
 
-            if (regExpListNode != null) {
-                NodeList regExpList = regExpListNode.getElementsByTagName("regexp");
+                AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
 
-                /*
-                     * First go through the allowed regular expressions.
-                     */
-                for (int j = 0; j < regExpList.getLength(); j++) {
-                    Element regExpNode = (Element) regExpList.item(j);
+                if (pattern != null) {
 
-                    String regExpName = XMLUtil.getAttributeValue(regExpNode, "name");
-                    String value = XMLUtil.getAttributeValue(regExpNode, "value");
+                    property.addAllowedRegExp(pattern.getPattern());
+                } else if (value != null) {
+                    property.addAllowedRegExp(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
 
-                    AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
+                } else {
 
-                    if (pattern != null) {
-
-                        property.addAllowedRegExp(pattern.getPattern());
-                    } else if (value != null) {
-                        property.addAllowedRegExp(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
-
-                    } else {
-
-                        throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + property.getName() + "', but does not exist in <common-regexp>");
-                    }
-
-                }
-            }
-
-            Element literalListNode = (Element) ele.getElementsByTagName("literal-list").item(0);
-
-            if (literalListNode != null) {
-
-                NodeList literalList = literalListNode.getElementsByTagName("literal");
-                /*
-                     * Then go through the allowed constants.
-                     */
-                for (int j = 0; j < literalList.getLength(); j++) {
-                    Element literalNode = (Element) literalList.item(j);
-                    property.addAllowedValue(XMLUtil.getAttributeValue(literalNode, "value"));
+                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + property.getName() + "', but does not exist in <common-regexp>");
                 }
 
             }
 
-            Element shorthandListNode = (Element) ele.getElementsByTagName("shorthand-list").item(0);
-            if (shorthandListNode != null) {
+            for (Element literalNode : getGrandChildrenByTagName(ele, "literal-list", "literal")) {
+                property.addAllowedValue(getAttributeValue(literalNode, "value"));
+            }
 
-                NodeList shorthandList = shorthandListNode.getElementsByTagName("shorthand");
-                /*
-                     * Then go through the allowed constants.
-                     */
-                for (int j = 0; j < shorthandList.getLength(); j++) {
-                    Element shorthandNode = (Element) shorthandList.item(j);
-                    property.addShorthandRef(XMLUtil.getAttributeValue(shorthandNode, "name"));
-                }
-
+            for (Element shorthandNode : getGrandChildrenByTagName(ele, "shorthand-list", "shorthand")) {
+                property.addShorthandRef(getAttributeValue(shorthandNode, "name"));
             }
 
             cssRules1.put(name.toLowerCase(), property);
@@ -924,25 +804,6 @@ public class Policy {
      */
     public String getDirective(String name) {
         return directives.get(name);
-    }
-
-    /**
-     * Set a directive for a value based on a name.
-     *
-     * @param name  A directive to set a value for.
-     * @param value The new value for the directive.
-     */
-    public Policy changeDirective(String name, String value) {
-        Map<String, String> directives = new HashMap<String, String>(this.directives);
-        directives.put(name, value);
-        return new Policy(this, Collections.unmodifiableMap(directives), tagRules);
-    }
-
-    public Policy addTagRule(Tag tag) {
-        Map<String, Tag> newTagRules = new HashMap<String, Tag>(tagRules);
-        newTagRules.put(tag.getName().toLowerCase(), tag);
-        return new Policy(this, this.directives, newTagRules);
-
     }
 
 
@@ -1016,8 +877,19 @@ public class Policy {
         return null;
     }
 
+    private static Element getFirstChild(Element element, String tagName) {
+        if (element == null) return null;
+        NodeList elementsByTagName = element.getElementsByTagName(tagName);
+        if (elementsByTagName != null && elementsByTagName.getLength() > 0)
+            return (Element) elementsByTagName.item(0);
+        else
+            return null;
+    }
+
     private static Iterable<Element>  getGrandChildrenByTagName(Element parent, String immediateChildName, String subChild){
-        Element regExpListNode = (Element) parent.getElementsByTagName(immediateChildName).item(0);
+        NodeList elementsByTagName = parent.getElementsByTagName(immediateChildName);
+        if (elementsByTagName.getLength() == 0) return Collections.emptyList();
+        Element regExpListNode = (Element) elementsByTagName.item(0);
         return getByTagName( regExpListNode, subChild);
     }
 

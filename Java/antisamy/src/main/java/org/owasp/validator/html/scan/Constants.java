@@ -23,10 +23,7 @@
  */
 package org.owasp.validator.html.scan;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.model.Attribute;
@@ -53,11 +50,10 @@ public class Constants {
         Attribute paramNameAttr = new Attribute("name", Arrays.asList(Policy.ANYTHING_REGEXP), Collections.<String>emptyList(), null, null );
         Attribute paramValueAttr = new Attribute("value", Arrays.asList(Policy.ANYTHING_REGEXP), Collections.<String>emptyList(), null, null );
 
-        BASIC_PARAM_TAG_RULE = new Tag("param");
-        BASIC_PARAM_TAG_RULE.addAttribute(paramNameAttr);
-        BASIC_PARAM_TAG_RULE.addAttribute(paramValueAttr);
-        
-        BASIC_PARAM_TAG_RULE.setAction(Policy.ACTION_VALIDATE);
+        Map<String, Attribute> attrs = new HashMap<String, Attribute>();
+        attrs.put(paramNameAttr.getName().toLowerCase(), paramNameAttr);
+        attrs.put(paramValueAttr.getName().toLowerCase(), paramValueAttr);
+        BASIC_PARAM_TAG_RULE = new Tag("param", attrs, Policy.ACTION_VALIDATE);
 
         defaultAllowedEmptyTags = new ArrayList<String>();
         defaultAllowedEmptyTags.addAll(Arrays.asList(allowedEmptyTags));

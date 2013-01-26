@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,6 +44,7 @@ import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
 
 /**
@@ -75,7 +77,7 @@ public class AntiSamyTest extends TestCase {
     };
 
     private AntiSamy as = new AntiSamy();
-    private Policy policy = null;
+    private TestPolicy policy = null;
 
     public AntiSamyTest(String s) {
         super(s);
@@ -90,11 +92,11 @@ public class AntiSamyTest extends TestCase {
 
         //get Policy instance from a stream to make sure includes fail nicely
         URL is = getClass().getResource("/antisamy.xml");
-        policy = Policy.getInstance(is);
+        policy = TestPolicy.getInstance(is);
 
         //get Policy instance from a URL.
         URL url = getClass().getResource("/antisamy.xml");
-        policy = Policy.getInstance(url);
+        policy = TestPolicy.getInstance(url);
     }
 
     protected void tearDown() throws Exception {
@@ -509,14 +511,15 @@ public class AntiSamyTest extends TestCase {
             s = as.scan(test, revised, AntiSamy.SAX).getCleanHTML();
             assertFalse(!s.contains("&lt;g&gt;"));
 
-            policy.getTagByName("b").setAction("encode");
+        Tag tag = policy.getTagByName("b").mutateAction("encode");
+        Policy policy1 = policy.mutateTag(tag);
 
-            cr = as.scan(test, revised, AntiSamy.DOM);
+        cr = as.scan(test, policy1, AntiSamy.DOM);
             s = cr.getCleanHTML();
 
             assertFalse(!s.contains("&lt;b&gt;"));
 
-            cr = as.scan(test, revised, AntiSamy.SAX);
+            cr = as.scan(test, policy1, AntiSamy.SAX);
             s = cr.getCleanHTML();
 
             assertFalse(!s.contains("&lt;b&gt;"));
@@ -922,8 +925,8 @@ public class AntiSamyTest extends TestCase {
     }
 
     public void testIssue112() throws ScanException, PolicyException {
-        Policy revised = policy.changeDirective(Policy.PRESERVE_COMMENTS, "true").changeDirective(Policy.PRESERVE_SPACE, "true").changeDirective(Policy.FORMAT_OUTPUT, "false");
-        StringBuilder sb = new StringBuilder();
+        TestPolicy revised = policy.changeDirective(Policy.PRESERVE_COMMENTS, "true").changeDirective(Policy.PRESERVE_SPACE, "true").changeDirective(Policy.FORMAT_OUTPUT, "false");
+        StringBuilder sb;
 
 
         /*
@@ -1004,9 +1007,7 @@ public class AntiSamyTest extends TestCase {
 
         Policy revised;
 
-        Tag tag = new Tag("iframe");
-        tag.setAction(Policy.ACTION_VALIDATE);
-        tag.setAllowedAttributes(new HashMap());
+        Tag tag = new Tag("iframe", Collections.<String,Attribute>emptyMap(), Policy.ACTION_VALIDATE);
         revised = policy.addTagRule(tag);
 
         String crDom = as.scan(html, revised, AntiSamy.DOM).getCleanHTML();
