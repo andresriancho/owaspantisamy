@@ -58,9 +58,6 @@ import org.w3c.css.sac.SimpleSelector;
  */
 public class CssValidator {
 
-	/**
-	 * The policy file to use for validation
-	 */
 	private final Policy policy;
 
 	/**

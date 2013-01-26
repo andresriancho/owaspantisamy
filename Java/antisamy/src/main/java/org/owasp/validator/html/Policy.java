@@ -26,7 +26,6 @@ package org.owasp.validator.html;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -45,7 +44,6 @@ import org.owasp.validator.html.scan.Constants;
 import org.owasp.validator.html.util.URIUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -94,16 +92,14 @@ public class Policy {
     private final Map<String, Property> cssRules;
     protected final Map<String, String> directives;
     private final Map<String, Attribute> globalAttributes;
-    private final Set<String> encodeTags;
 
-    private final List<String> tagNames;
     private final TagMatcher allowedEmptyTagsMatcher;
     private final TagMatcher requiresClosingTagsMatcher;
 
     /**
      * The path to the base policy file, used to resolve relative paths when reading included files
      */
-    protected static URL baseUrl = null;
+    protected static URL baseUrl = null; // Todo: Make not static
 
     /**
      * Retrieves a Tag from the Policy.
@@ -124,8 +120,6 @@ public class Policy {
         Map<String, Property> cssRules = new HashMap<String, Property>();
         Map<String, String> directives = new HashMap<String, String>();
         Map<String, Attribute> globalAttributes = new HashMap<String, Attribute>();
-        Set<String> encodeTags = new HashSet<String>();
-        List<String> tagNames = new ArrayList<String>();
 
         List<String> allowedEmptyTags = new ArrayList<String>();
         List<String> requireClosingTags = new ArrayList<String>();
@@ -144,9 +138,7 @@ public class Policy {
      * @return The CSS Property associated with the name specified, or null if none is found.
      */
     public Property getPropertyByName(String propertyName) {
-
         return cssRules.get(propertyName.toLowerCase());
-
     }
 
     /**
@@ -201,44 +193,7 @@ public class Policy {
     public static Policy getInstance(URL url) throws PolicyException {
 
         if (baseUrl == null) setBaseURL(url);
-        return new Policy(url);
-    }
-
-    /**
-     * This retrieves a Policy based on the InputStream object passed in
-     *
-     * @param inputStream An InputStream which contains thhe XML policy information.
-     * @return A populated Policy object based on the XML policy file pointed to by the inputStream parameter.
-     * @throws PolicyException If there is a problem parsing the input stream.
-     * @deprecated This method does not properly load included policy files. Use getInstance(URL) instead.
-     */
-    public static Policy getInstance(InputStream inputStream) throws PolicyException {
-
-        //noinspection deprecation
-        return new Policy(inputStream);
-
-    }
-
-    /**
-     * Load the policy from a URL.
-     *
-     * @param url Load a policy from the url specified.
-     * @throws PolicyException
-     */
-    protected Policy(URL url) throws PolicyException {
-        this(getParseContext(getTopLevelElement(url)));
-
-    }
-
-    /**
-     * Load the policy from an XML file.
-     *
-     * @param is Load a policy from the inpustream specified.
-     * @throws PolicyException
-     * @deprecated This constructor does not properly load included policy files. Use Policy(URL) instead.
-     */
-    protected Policy(InputStream is) throws PolicyException {
-        this(getSimpleParseContext(getTopLevelElement(is)));
+        return new Policy(getParseContext(getTopLevelElement(url)));
     }
 
 
@@ -250,8 +205,6 @@ public class Policy {
         this.cssRules = Collections.unmodifiableMap(parseContext.cssRules);
         this.directives = Collections.unmodifiableMap(parseContext.directives);
         this.globalAttributes = Collections.unmodifiableMap(parseContext.globalAttributes);
-        this.encodeTags = Collections.unmodifiableSet(parseContext.encodeTags);
-        this.tagNames = Collections.unmodifiableList(parseContext.tagNames);
     }
 
     protected Policy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
@@ -262,11 +215,9 @@ public class Policy {
         this.cssRules = old.cssRules;
         this.directives = directives;
         this.globalAttributes = old.globalAttributes;
-        this.encodeTags = old.encodeTags;
-        this.tagNames = old.tagNames;
     }
 
-    private static ParseContext getSimpleParseContext(Element topLevelElement) throws PolicyException {
+    protected static ParseContext getSimpleParseContext(Element topLevelElement) throws PolicyException {
         ParseContext parseContext = new ParseContext();
         /**
          * Parse the top level element itself
@@ -275,7 +226,7 @@ public class Policy {
         return parseContext;
     }
 
-    private static ParseContext getParseContext(Element topLevelElement) throws PolicyException {
+    protected static ParseContext getParseContext(Element topLevelElement) throws PolicyException {
         ParseContext parseContext = new ParseContext();
 
         /**
@@ -296,26 +247,9 @@ public class Policy {
         return parseContext;
     }
 
-    private static Element getTopLevelElement(InputStream is) throws PolicyException {
+
+    protected static Element getTopLevelElement(URL url) throws PolicyException {
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document dom = db.parse(is);
-            return dom.getDocumentElement();
-        } catch (SAXException e) {
-            throw new PolicyException(e);
-        } catch (ParserConfigurationException e) {
-            throw new PolicyException(e);
-        } catch (IOException e) {
-            throw new PolicyException(e);
-        }
-    }
-
-    private static Element getTopLevelElement(URL url) throws PolicyException {
-
-
-        try {
-
             InputSource source = resolveEntity(url.toExternalForm());
             if (source == null) {
                 source = new InputSource(url.toExternalForm());
@@ -349,8 +283,7 @@ public class Policy {
         parseDirectives(getFirstChild(topLevelElement, "directives"), parseContext.directives);
         parseCommonAttributes(getFirstChild(topLevelElement, "common-attributes"), parseContext.commonAttributes, parseContext.commonRegularExpressions);
         parseGlobalAttributes(getFirstChild(topLevelElement, "global-tag-attributes"), parseContext.globalAttributes, parseContext.commonAttributes);
-        parseTagsToEncode(getFirstChild(topLevelElement, "tags-to-encode"), parseContext.encodeTags);
-        parseTagRules(getFirstChild(topLevelElement, "tag-rules"), parseContext.tagNames, parseContext.commonAttributes, parseContext.commonRegularExpressions, parseContext.tagRules);
+        parseTagRules(getFirstChild(topLevelElement, "tag-rules"), parseContext.commonAttributes, parseContext.commonRegularExpressions, parseContext.tagRules);
         parseCSSRules(getFirstChild(topLevelElement, "css-rules"), parseContext.cssRules, parseContext.commonRegularExpressions);
 
         parseAllowedEmptyTags(getFirstChild(topLevelElement, "allowed-empty-tags"), parseContext.allowedEmptyTags);
@@ -484,22 +417,6 @@ public class Policy {
             }
         } else {
             requiresClosingTags.addAll(Constants.defaultRequiresClosingTags);
-        }
-    }
-
-    /**
-     * Go through <tags-to-encode> section of the policy file.
-     *
-     * @param root        Top level of <tags-to-encode>
-     * @param encodeTags1 The set of tags to be encoded when encountered
-     * @throws PolicyException
-     */
-    private static void parseTagsToEncode(Element root, Set<String> encodeTags1) throws PolicyException {
-        for (Element ele : getByTagName(root, "tag")) {
-            if (ele.getFirstChild() != null && ele.getFirstChild().getNodeType() == Node.TEXT_NODE) {
-                encodeTags1.add(ele.getFirstChild().getNodeValue());
-            }
-
         }
     }
 
@@ -646,7 +563,7 @@ public class Policy {
 
 
 
-    private static void parseTagRules(Element root, List<String> tagNames1, Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, Map<String, Tag> tagRules1) throws PolicyException {
+    private static void parseTagRules(Element root, Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, Map<String, Tag> tagRules1) throws PolicyException {
 
         if (root == null) return;
 
@@ -658,8 +575,6 @@ public class Policy {
             NodeList attributeList = tagNode.getElementsByTagName("attribute");
             Map<String, Attribute> tagAttributes = getTagAttributes(commonAttributes1, commonRegularExpressions1, attributeList, name);
             Tag tag = new Tag(name, tagAttributes, action);
-
-            tagNames1.add(name);
 
             tagRules1.put(name.toLowerCase(), tag);
         }
@@ -765,7 +680,6 @@ public class Policy {
      * @return An Attribute associated with the global-attribute lookup name specified.
      */
     public Attribute getGlobalAttributeByName(String name) {
-
         return globalAttributes.get(name.toLowerCase());
 
     }

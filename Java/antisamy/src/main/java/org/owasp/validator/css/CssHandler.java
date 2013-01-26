@@ -216,8 +216,7 @@ public class CssHandler implements DocumentHandler {
 	public void importStyle(String uri, SACMediaList media,
 			String defaultNamespaceURI) throws CSSException {
 
-		if (!Boolean.valueOf(policy.getDirective("embedStyleSheets"))
-				.booleanValue()) {
+		if (!Boolean.valueOf(policy.getDirective("embedStyleSheets"))) {
 			errorMessages.add(ErrorMessageUtil.getMessage(
 					messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_DISABLED,

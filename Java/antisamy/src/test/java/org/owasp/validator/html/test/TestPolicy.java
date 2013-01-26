@@ -27,7 +27,13 @@ package org.owasp.validator.html.test;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.model.Tag;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,10 +47,6 @@ import java.util.Map;
  * @author Kristian Rosenvold
  */
 public class TestPolicy extends Policy {
-    protected TestPolicy(InputStream is) throws PolicyException {
-        //noinspection deprecation
-        super(is);
-    }
 
     protected TestPolicy(Policy.ParseContext parseContext) throws PolicyException {
         super(parseContext);
@@ -52,10 +54,6 @@ public class TestPolicy extends Policy {
 
     protected TestPolicy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
         super(old, directives, tagRules);
-    }
-
-    protected TestPolicy(URL url) throws PolicyException {
-        super(url);
     }
 
     public static TestPolicy getInstance() throws PolicyException {
@@ -77,9 +75,8 @@ public class TestPolicy extends Policy {
     }
 
     public static TestPolicy getInstance(URL url) throws PolicyException {
-
         if (baseUrl == null) setBaseURL(url);
-        return new TestPolicy(url);
+        return new TestPolicy(getParseContext(getTopLevelElement(url)));
     }
 
     public TestPolicy changeDirective(String name, String value) {
@@ -99,6 +96,36 @@ public class TestPolicy extends Policy {
         Map<String, Tag> newRUles = new HashMap<String, Tag>(this.tagRules);
         newRUles.put( tag.getName().toLowerCase(), tag);
         return new TestPolicy(this, this.directives, newRUles);
+    }
+
+    /**
+     * This retrieves a Policy based on the InputStream object passed in
+     *
+     * @param inputStream An InputStream which contains thhe XML policy information.
+     * @return A populated Policy object based on the XML policy file pointed to by the inputStream parameter.
+     * @throws PolicyException If there is a problem parsing the input stream.
+     * @deprecated This method does not properly load included policy files. Use getInstance(URL) instead.
+     */
+    public static TestPolicy getInstance(InputStream inputStream) throws PolicyException {
+
+        //noinspection deprecation
+        return new TestPolicy(getSimpleParseContext(getTopLevelElement(inputStream)));
+
+    }
+
+    private static Element getTopLevelElement(InputStream is) throws PolicyException {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document dom = db.parse(is);
+            return dom.getDocumentElement();
+        } catch (SAXException e) {
+            throw new PolicyException(e);
+        } catch (ParserConfigurationException e) {
+            throw new PolicyException(e);
+        } catch (IOException e) {
+            throw new PolicyException(e);
+        }
     }
 
 }

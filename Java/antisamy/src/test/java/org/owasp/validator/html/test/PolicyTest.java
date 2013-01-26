@@ -46,7 +46,7 @@ public class PolicyTest extends TestCase {
                                          "</allowed-empty-tags>\n";
         String policyFile = assembleFile(allowedEmptyTagsSection);
 
-        policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
+        policy = TestPolicy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
 
         TagMatcher actualTags = policy.getAllowedEmptyTags();
@@ -62,7 +62,7 @@ public class PolicyTest extends TestCase {
                                          "</allowed-empty-tags>\n";
         String policyFile = assembleFile(allowedEmptyTagsSection);
 
-        policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
+        policy = TestPolicy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
         assertEquals(0, policy.getAllowedEmptyTags().size());
     }
@@ -72,7 +72,7 @@ public class PolicyTest extends TestCase {
                                          "</allowed-empty-tags>\n";
         String policyFile = assembleFile(allowedEmptyTagsSection);
 
-        policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
+        policy = TestPolicy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
         assertEquals(0, policy.getAllowedEmptyTags().size());
     }
@@ -82,7 +82,7 @@ public class PolicyTest extends TestCase {
 
         String policyFile = assembleFile(allowedEmptyTagsSection);
 
-        policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
+        policy = TestPolicy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
         assertTrue(policy.getAllowedEmptyTags().size() == Constants.defaultAllowedEmptyTags.size());
 
