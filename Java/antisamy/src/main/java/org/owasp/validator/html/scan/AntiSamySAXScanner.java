@@ -114,7 +114,8 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
 			String cleanHtml = trim(html, out.getBuffer().toString());
 
-			errorMessages = sanitizingFilter.getErrorMessages();
+			errorMessages.clear();
+            errorMessages.addAll(sanitizingFilter.getErrorMessages());
 			return new CleanResults(start, end, cleanHtml, null, errorMessages);
 
 		} catch (Exception e) {

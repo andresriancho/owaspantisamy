@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Arshan Dabirsiaghi, Jason Li
+ * Copyright (c) 2007-2013, Arshan Dabirsiaghi, Jason Li, Kristian Rosenvold
  *
  * All rights reserved.
  *
@@ -115,11 +115,6 @@ public class Policy {
         return tagRules.get(tagName.toLowerCase());
     }
 
-    public Policy mutateTag(Tag tag) {
-        Map<String, Tag> newRUles = new HashMap<String, Tag>(this.tagRules);
-        newRUles.put( tag.getName().toLowerCase(), tag);
-        return new Policy(this, this.directives, newRUles);
-    }
 
 
     protected static class ParseContext {
@@ -593,9 +588,6 @@ public class Policy {
             String value = getAttributeValue(regExpNode, "value");
 
             if (regExpName != null && regExpName.length() > 0) {
-                /*
-                * Get the common regular expression.
-                */
                 allowedRegExp.add(commonRegularExpressions1.get(regExpName).getPattern());
             } else {
                 allowedRegExp.add(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
@@ -620,12 +612,9 @@ public class Policy {
             if (regExpName != null && regExpName.length() > 0) {
 
                 AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
-
                 if (pattern != null) {
-
                     allowedRegexps.add(pattern.getPattern());
                 } else {
-
                     throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + tagName + "', but does not exist in <common-regexp>");
                 }
 
@@ -635,6 +624,26 @@ public class Policy {
         }
         return allowedRegexps;
     }
+
+    private static List<Pattern> getAllowedRegexp3(Map<String, AntiSamyPattern> commonRegularExpressions1, Element ele, String name) throws PolicyException {
+        List<Pattern> allowedRegExp = new ArrayList<Pattern>();
+        for (Element regExpNode : getGrandChildrenByTagName(ele, "regexp-list", "regexp")) {
+            String regExpName = getAttributeValue(regExpNode, "name");
+            String value = getAttributeValue(regExpNode, "value");
+
+            AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
+
+            if (pattern != null) {
+                allowedRegExp.add(pattern.getPattern());
+            } else if (value != null) {
+                allowedRegExp.add(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
+            } else {
+                throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + name + "', but does not exist in <common-regexp>");
+            }
+        }
+        return allowedRegExp;
+    }
+
 
 
     private static void parseTagRules(Element root, List<String> tagNames1, Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, Map<String, Tag> tagRules1) throws PolicyException {
@@ -718,47 +727,29 @@ public class Policy {
             String name = getAttributeValue(ele, "name");
             String description = getAttributeValue(ele, "description");
 
-            Property property = new Property(name);
-            property.setDescription(description);
+
+            List<Pattern> allowedRegexp3 = getAllowedRegexp3(commonRegularExpressions1, ele, name);
+
+            List<String> allowedValue = new ArrayList<String>();
+            for (Element literalNode : getGrandChildrenByTagName(ele, "literal-list", "literal")) {
+                allowedValue.add(getAttributeValue(literalNode, "value"));
+            }
+
+            List<String> shortHandRefs = new ArrayList<String>();
+            for (Element shorthandNode : getGrandChildrenByTagName(ele, "shorthand-list", "shorthand")) {
+                shortHandRefs.add(getAttributeValue(shorthandNode, "name"));
+            }
 
             String onInvalid = getAttributeValue(ele, "onInvalid");
-
+            final String onInvalidStr;
             if (onInvalid != null && onInvalid.length() > 0) {
-                property.setOnInvalid(onInvalid);
+                onInvalidStr = onInvalid;
             } else {
-                property.setOnInvalid(DEFAULT_ONINVALID);
+                onInvalidStr = DEFAULT_ONINVALID;
             }
+            Property property = new Property(name,allowedRegexp3, allowedValue, shortHandRefs, description, onInvalidStr );
 
-            /*
-            * First go through the allowed regular expressions.
-            */
-            for (Element regExpNode : getGrandChildrenByTagName(ele, "regexp-list", "regexp")) {
 
-                String regExpName = getAttributeValue(regExpNode, "name");
-                String value = getAttributeValue(regExpNode, "value");
-
-                AntiSamyPattern pattern = commonRegularExpressions1.get(regExpName);
-
-                if (pattern != null) {
-
-                    property.addAllowedRegExp(pattern.getPattern());
-                } else if (value != null) {
-                    property.addAllowedRegExp(Pattern.compile(REGEXP_BEGIN + value + REGEXP_END));
-
-                } else {
-
-                    throw new PolicyException("Regular expression '" + regExpName + "' was referenced as a common regexp in definition of '" + property.getName() + "', but does not exist in <common-regexp>");
-                }
-
-            }
-
-            for (Element literalNode : getGrandChildrenByTagName(ele, "literal-list", "literal")) {
-                property.addAllowedValue(getAttributeValue(literalNode, "value"));
-            }
-
-            for (Element shorthandNode : getGrandChildrenByTagName(ele, "shorthand-list", "shorthand")) {
-                property.addShorthandRef(getAttributeValue(shorthandNode, "name"));
-            }
 
             cssRules1.put(name.toLowerCase(), property);
 

@@ -29,6 +29,7 @@
 package org.owasp.validator.html.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -42,91 +43,42 @@ import java.util.regex.Pattern;
 public class Property {
 	private final String name;
 
-	private String onInvalid;
+    private final List<String> allowedValues;
 
-	private String description;
+	private final List<Pattern> allowedRegExp;
 
-	private List allowedValues = new ArrayList();
+	private final List<String> shorthandRefs;
 
-	private List allowedRegExp = new ArrayList();
+    public Property(String name, List<Pattern> allowedRegexp3, List<String> allowedValue, List<String> shortHandRefs, String description, String onInvalidStr) {
+        this.name = name;
+        this.allowedRegExp  = Collections.unmodifiableList(allowedRegexp3);
+        this.allowedValues = Collections.unmodifiableList(allowedValue);
+        this.shorthandRefs = Collections.unmodifiableList(shortHandRefs);
+    }
 
-	private List shorthandRefs = new ArrayList();
-
-	public Property(String name) {
-		this.name = name;
-	}
-	
-	/**
-	 * Add the specified value to the allowed list of valid values.
-	 * @param safeValue The new valid value to add to the list.
-	 */
-	public void addAllowedValue(String safeValue) {
-		this.allowedValues.add(safeValue);
-	}
-	
-	/**
-	 * Add the specified value to the allowed list of valid regular expressions.
-	 * @param safeRegExpValue The new valid regular expression to add to the list.
-	 */
-	public void addAllowedRegExp(Pattern safeRegExpValue) {
-		this.allowedRegExp.add(safeRegExpValue);
-	}
-	
-	/**
-	 * Add the specified value to the allowed list of valid shorthand values.
-	 * @param shorthandValue The new valid shorthand value to add to the list.
-	 */
-	public void addShorthandRef(String shorthandValue) {
-		this.shorthandRefs.add(shorthandValue);
-	}
-
-	/**
+    /**
 	 * Return a <code>List</code> of allowed regular expressions
 	 * @return A <code>List</code> of allowed regular expressions.
 	 */
 	public List getAllowedRegExp() {
 		return allowedRegExp;
 	}
-	
-	/**
-	 * Set a new <code>List</code> of allowed regular expressions.
-	 * @param allowedRegExp The new <code>List</code> of allowed regular expressions.
-	 */
-	public void setAllowedRegExp(List allowedRegExp) {
-		this.allowedRegExp = allowedRegExp;
-	}
 
-	/**
+    /**
 	 * @return A <code>List</code> of allowed literal values.
 	 */
 	public List getAllowedValues() {
 		return allowedValues;
 	}
 
-	/**
-	 * Set a new <code>List</code> of allowed literal values.
-	 * @param allowedValues The new <code>List</code> of allowed literal values.
-	 */
-	public void setAllowedValues(List allowedValues) {
-		this.allowedValues = allowedValues;
-	}
-
-	/**
+    /**
 	 * @return A <code>List</code> of allowed shorthand references.
 	 */
 	public List getShorthandRefs() {
 		return shorthandRefs;
 	}
 
-	/**
-	 * Set a new <code>List</code> of allowed shorthand references.
-	 * @param shorthandRefs The new <code>List</code> of allowed shorthand references.
-	 */
-	public void setShorthandRefs(List shorthandRefs) {
-		this.shorthandRefs = shorthandRefs;
-	}
-	
-	/**
+    /**
 	 * 
 	 * @return The name of the property.
 	 */
@@ -134,35 +86,4 @@ public class Property {
 		return name;
 	}
 
-	/**
-	 * 
-	 * @return The <code>onInvalid</code> action associated with the Property.
-	 */
-	public String getOnInvalid() {
-		return onInvalid;
-	}
-
-	/**
-	 * 
-	 * @param onInvalid The new <code>onInvalid</code> action to define for this property.
-	 */
-	public void setOnInvalid(String onInvalid) {
-		this.onInvalid = onInvalid;
-	}
-
-	/**
-	 * 
-	 * @return The description associated with this Property.
-	 */
-	public String getDescription() {
-		return description;
-	}
-
-	/**
-	 * 
-	 * @param description The new description of this Property.
-	 */
-	public void setDescription(String description) {
-		this.description = description;
-	}
 }

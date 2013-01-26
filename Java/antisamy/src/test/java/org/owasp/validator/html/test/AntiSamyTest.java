@@ -24,28 +24,21 @@
 
 package org.owasp.validator.html.test;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.apache.commons.codec.binary.Base64;
+import org.owasp.validator.html.*;
+import org.owasp.validator.html.model.Attribute;
+import org.owasp.validator.html.model.Tag;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import org.apache.commons.codec.binary.Base64;
-import org.owasp.validator.html.AntiSamy;
-import org.owasp.validator.html.CleanResults;
-import org.owasp.validator.html.Policy;
-import org.owasp.validator.html.PolicyException;
-import org.owasp.validator.html.ScanException;
-import org.owasp.validator.html.model.Attribute;
-import org.owasp.validator.html.model.Tag;
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which
@@ -372,11 +365,11 @@ public class AntiSamyTest extends TestCase {
       */
     public void testIllegalXML() {
 
-        for (int i = 0; i < BASE64_BAD_XML_STRINGS.length; i++) {
+        for (String BASE64_BAD_XML_STRING : BASE64_BAD_XML_STRINGS) {
 
             try {
 
-                String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRINGS[i].getBytes()));
+                String testStr = new String(Base64.decodeBase64(BASE64_BAD_XML_STRING.getBytes()));
                 as.scan(testStr, policy, AntiSamy.DOM);
                 as.scan(testStr, policy, AntiSamy.SAX);
 

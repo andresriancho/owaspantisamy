@@ -329,8 +329,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         boolean masqueradingParam = false;
         Tag embedTag = policy.getTagByName("embed");
         if (tag == null && isValidateParamAsEmbed && "param".equals(tagName.toLowerCase())) {
-            Tag embedPolicy = embedTag;
-            if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
+            if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
                 tag = Constants.BASIC_PARAM_TAG_RULE;
                 masqueradingParam = true;
             }

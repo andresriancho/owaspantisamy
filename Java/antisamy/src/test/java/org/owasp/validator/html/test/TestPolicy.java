@@ -95,5 +95,10 @@ public class TestPolicy extends Policy {
 
     }
 
+    public TestPolicy mutateTag(Tag tag) {
+        Map<String, Tag> newRUles = new HashMap<String, Tag>(this.tagRules);
+        newRUles.put( tag.getName().toLowerCase(), tag);
+        return new TestPolicy(this, this.directives, newRUles);
+    }
 
 }

@@ -36,11 +36,11 @@ import org.owasp.validator.html.util.ErrorMessageUtil;
 
 public abstract class AbstractAntiSamyScanner {
 
-	protected Policy policy;
-	protected List<String> errorMessages = new ArrayList<String>();
+	protected final Policy policy;
+	protected final List<String> errorMessages = new ArrayList<String>();
 
 	protected ResourceBundle messages;
-	protected Locale locale = Locale.getDefault();
+	protected final Locale locale = Locale.getDefault();
 
 	protected boolean isNofollowAnchors = false;
 	protected boolean isValidateParamAsEmbed = false;
