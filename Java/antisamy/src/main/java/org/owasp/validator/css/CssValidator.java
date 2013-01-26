@@ -183,8 +183,9 @@ public class CssValidator {
 		// NOTE: intentionally using non-short-circuited AND operator to
 		// generate all relevant error messages
 
-        return policy.getCommonRegularExpressions("cssElementSelector").matches(selector.toString().toLowerCase())
-				& !policy.getCommonRegularExpressions("cssElementExclusion").matches(selector.toString().toLowerCase());
+        String selectorLowerCase = selector.toString().toLowerCase();
+        return policy.getCommonRegularExpressions("cssElementSelector").matches(selectorLowerCase)
+				& !policy.getCommonRegularExpressions("cssElementExclusion").matches(selectorLowerCase);
 	}
 
 	/**
@@ -270,8 +271,8 @@ public class CssValidator {
 		// not match exclusion pattern
 		// NOTE: intentionally using non-short-circuited AND operator to
 		// generate all relevant error messages
-		return pattern.matches(condition.toString().toLowerCase())
-				& !exclusionPattern.matches(condition.toString().toLowerCase());
+        String otherLower = condition.toString().toLowerCase();
+        return pattern.matches(otherLower) & !exclusionPattern.matches(otherLower);
 	}
 
 	/**

@@ -25,6 +25,7 @@
 package org.owasp.validator.html.model;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -57,9 +58,19 @@ public class Attribute  {
 	 *  
 	 * @return A <code>List</code> of regular expressions that an attribute can be validated from.
 	 */
-	public List getAllowedRegExp() {
+	public List<Pattern> getAllowedRegExp() {
 		return allowedRegExp;
 	}
+
+    public boolean matchesAllowedExpression(String value){
+        String input = value.toLowerCase();
+        for (Pattern pattern : allowedRegExp) {
+            if (pattern != null && pattern.matcher(input).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
 	 * 

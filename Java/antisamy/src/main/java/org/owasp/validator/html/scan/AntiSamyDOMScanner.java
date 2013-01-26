@@ -318,8 +318,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          */
 
         String tagName = ele.getNodeName();
-
-        Tag tag = policy.getTagByName(tagName.toLowerCase());
+        String tagNameLowerCase = tagName.toLowerCase();
+        Tag tag = policy.getTagByName(tagNameLowerCase);
 
         /*
          * If <param> and no policy and isValidateParamAsEmbed and policy in
@@ -328,7 +328,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          */
         boolean masqueradingParam = false;
         Tag embedTag = policy.getTagByName("embed");
-        if (tag == null && isValidateParamAsEmbed && "param".equals(tagName.toLowerCase())) {
+        if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
             if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
                 tag = Constants.BASIC_PARAM_TAG_RULE;
                 masqueradingParam = true;
@@ -434,7 +434,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * parser.
              */
 
-            if ("style".equals(tagName.toLowerCase()) && policy.getTagByName("style") != null) {
+            if ("style".equals(tagNameLowerCase) && policy.getTagByName("style") != null) {
 
                 /*
                  * Invoke the css parser on this element.
@@ -597,16 +597,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                             }
                         }
 
-                        Iterator allowedRegexps = attr.getAllowedRegExp().iterator();
-
-                        while (allowedRegexps.hasNext() && !isAttributeValid) {
-
-                            Pattern pattern = (Pattern) allowedRegexps.next();
-
-                            if (pattern != null && pattern.matcher(value.toLowerCase()).matches()) {
-                                isAttributeValid = true;
-                            }
-                        }
+                        if (attr.matchesAllowedExpression(value)){
+                            isAttributeValid = true;
+                        };
 
                         if (!isAttributeValid) {
 
@@ -721,7 +714,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
             } // loop through each attribute
 
-            if (isNofollowAnchors && "a".equals(tagName.toLowerCase())) {
+            if (isNofollowAnchors && "a".equals(tagNameLowerCase)) {
                 ele.setAttribute("rel", "nofollow");
             }
 

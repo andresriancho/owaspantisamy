@@ -65,14 +65,21 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	private boolean isNofollowAnchors;
 	private boolean isValidateParamAsEmbed;
 	private boolean inCdata = false;
-	
-	public MagicSAXFilter(Policy instance, ResourceBundle messages) {
+    // From policy
+    private final String directive;
+    private final int maxInputSize;
+    private final boolean externalCssScanner;
+
+    public MagicSAXFilter(Policy instance, ResourceBundle messages) {
 		this.policy = instance;
 		this.messages = messages;
 		
 		isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
 		isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
-	}
+        directive = policy.getDirective(Policy.PRESERVE_COMMENTS);
+        maxInputSize = policy.getMaxInputSize();
+        externalCssScanner = "true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS));
+    }
 
 	public void characters(XMLString text, Augmentations augs) throws XNIException {
 		if (!operations.empty() && "remove".equals(operations.peek())) {
@@ -95,7 +102,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
 
     public void comment(XMLString text, Augmentations augs) throws XNIException {
-		String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
+		String preserveComments = directive;
 
 		if ("true".equals(preserveComments)) {
 			String value = text.toString();
@@ -129,7 +136,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// now scan the CSS.
 			CssScanner cssScanner = makeCssScanner();
 			try {
-				CleanResults results = cssScanner.scanStyleSheet(cssContent.toString(), policy.getMaxInputSize());
+				CleanResults results = cssScanner.scanStyleSheet(cssContent.toString(), maxInputSize);
 				// report all errors found
 				errorMessages.addAll(results.getErrorMessages());
 				/*
@@ -174,11 +181,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	private CssScanner makeCssScanner() {
 		if (cssScanner == null) {
-        	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
-        		cssScanner = new ExternalCssScanner(policy, messages);
-        	}else{
-        		cssScanner = new CssScanner(policy, messages);
-        	}
+            cssScanner = externalCssScanner ? new ExternalCssScanner(policy, messages) : new CssScanner(policy, messages);
 		}
 		return cssScanner;
 	}
@@ -258,16 +261,17 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 				for (int i = 0; i < attributes.getLength(); i++) {
 					String name = attributes.getQName(i);
 					String value = attributes.getValue(i);
-					Attribute attribute = tag.getAttributeByName(name.toLowerCase());
+					String nameLower = name.toLowerCase();
+					Attribute attribute = tag.getAttributeByName(nameLower);
 					if (attribute == null) {
 						// no policy defined, perhaps it is a global attribute
-						attribute = policy.getGlobalAttributeByName(name.toLowerCase());
+						attribute = policy.getGlobalAttributeByName(nameLower);
 					}
 					// boolean isAttributeValid = false;
 					if ("style".equalsIgnoreCase(name)) {
 						CssScanner styleScanner = makeCssScanner();
 						try {
-							CleanResults cr = styleScanner.scanInlineStyle(value, element.localpart, policy.getMaxInputSize());
+							CleanResults cr = styleScanner.scanInlineStyle(value, element.localpart, maxInputSize);
 							attributes.setValue(i, cr.getCleanHTML());
 							validattributes.addAttribute(makeSimpleQname(name), "CDATA", cr.getCleanHTML());
 							errorMessages.addAll(cr.getErrorMessages());
@@ -287,17 +291,16 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
                                 break;
                             }
                         }
-						Iterator allowedRexexps = attribute.getAllowedRegExp().iterator();
-						while (!isValid && allowedRexexps.hasNext()) {
-							Pattern pattern = (Pattern) allowedRexexps.next();
-							if (pattern != null && pattern.matcher(value.toLowerCase()).matches()) {
-								validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
-								isValid = true;
-								break;
-							}
-						}
-						
-						// if value or regexp matched, attribute is already
+
+                        if (!isValid) {
+                            isValid = attribute.matchesAllowedExpression(value);
+                            if (isValid) {
+                                validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
+                            }
+                        }
+
+
+                        // if value or regexp matched, attribute is already
 						// copied, but what happens if not
 						if (!isValid && "removeTag".equals(attribute.getOnInvalid())) {
 							

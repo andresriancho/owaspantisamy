@@ -51,8 +51,8 @@ import org.w3c.css.sac.InputSource;
  * desired policy and call either <code>scanInlineSheet()</code> or
  * <code>scanStyleSheet</code> as appropriate.
  * 
- * @see #scanInlineStyle(String, String)
- * @see #scanStyleSheet(String)
+ * @see #scanInlineStyle(String, String, int)
+ * @see #scanStyleSheet(String, int)
  * 
  * @author Jason Li
  */
@@ -76,7 +76,8 @@ public class CssScanner {
      * The message bundled to pull error messages from.
      */
     protected final ResourceBundle messages;
-    
+    private static final Pattern p = Pattern.compile(CDATA, Pattern.DOTALL);
+
     /**
      * Constructs a scanner based on the given policy.
      * 
@@ -114,8 +115,7 @@ public class CssScanner {
 	 * and end with ]]>(\s)*.
 	 */
 
-	Pattern p = Pattern.compile(CDATA, Pattern.DOTALL);
-	Matcher m = p.matcher(taintedCss);
+    Matcher m = p.matcher(taintedCss);
 	
 	boolean isCdata = m.matches();
 	
