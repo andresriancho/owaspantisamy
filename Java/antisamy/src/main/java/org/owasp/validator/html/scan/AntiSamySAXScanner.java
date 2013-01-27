@@ -48,20 +48,22 @@ import org.xml.sax.SAXNotSupportedException;
 
 public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
-    private static final ThreadLocal<SAXParser> saxParser = new ThreadLocal<SAXParser>(){
+    private static final ThreadLocal<CachedItem> cache = new ThreadLocal<CachedItem>(){
         @Override
-        protected SAXParser initialValue() {
-            return getParser();
+        protected CachedItem initialValue() {
+            return new CachedItem(getTransformer(), getParser());
         }
     };
 
-    private static final ThreadLocal<Transformer> transformers = new ThreadLocal<Transformer>(){
-        @Override
-        protected Transformer initialValue() {
-            return getTransformer();
-        }
-    };
+    static class CachedItem {
+        private final Transformer transformer;
+        private final SAXParser saxParser;
 
+        CachedItem(Transformer transformer, SAXParser saxParser) {
+            this.transformer = transformer;
+            this.saxParser = saxParser;
+        }
+    }
     public AntiSamySAXScanner(Policy policy) {
 		super(policy);
 	}
@@ -90,14 +92,15 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			MagicSAXFilter sanitizingFilter = new MagicSAXFilter(policy, messages);
 			XMLDocumentFilter[] filters = { sanitizingFilter };
 
-            SAXParser parser = saxParser.get();
+            CachedItem cachedItem = cache.get();
+            SAXParser parser = cachedItem.saxParser;
             parser.setProperty("http://cyberneko.org/html/properties/filters", filters);
 
             Date start = new Date();
 
 			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
 			
-            Transformer transformer = transformers.get();
+            Transformer transformer = cachedItem.transformer;
             boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
             boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
             boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
