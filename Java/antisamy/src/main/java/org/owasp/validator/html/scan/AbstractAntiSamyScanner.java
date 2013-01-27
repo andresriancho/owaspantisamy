@@ -39,7 +39,7 @@ public abstract class AbstractAntiSamyScanner {
 	protected final Policy policy;
 	protected final List<String> errorMessages = new ArrayList<String>();
 
-	protected ResourceBundle messages;
+	protected static final ResourceBundle messages = getResourceBundle();
 	protected final Locale locale = Locale.getDefault();
 
 	protected boolean isNofollowAnchors = false;
@@ -52,23 +52,21 @@ public abstract class AbstractAntiSamyScanner {
 
 	public AbstractAntiSamyScanner(Policy policy) {
 		this.policy = policy;
-		initializeErrors();
 	}
 
 	public AbstractAntiSamyScanner() throws PolicyException {
 		policy = Policy.getInstance();
-		initializeErrors();
 	}
 
-	protected void initializeErrors() {
-		try {
-			messages = ResourceBundle.getBundle("AntiSamy", locale);
-		} catch (MissingResourceException mre) {
-			messages = ResourceBundle.getBundle("AntiSamy", new Locale(Constants.DEFAULT_LOCALE_LANG, Constants.DEFAULT_LOCALE_LOC));
-		}
-	}
+    private static ResourceBundle getResourceBundle() {
+        try {
+            return ResourceBundle.getBundle("AntiSamy", Locale.getDefault());
+        } catch (MissingResourceException mre) {
+            return  ResourceBundle.getBundle("AntiSamy", new Locale(Constants.DEFAULT_LOCALE_LANG, Constants.DEFAULT_LOCALE_LOC));
+        }
+    }
 
-	protected void addError(String errorKey, Object[] objs) {
+    protected void addError(String errorKey, Object[] objs) {
 		errorMessages.add(ErrorMessageUtil.getMessage(messages, errorKey, objs));
 	}
 	
