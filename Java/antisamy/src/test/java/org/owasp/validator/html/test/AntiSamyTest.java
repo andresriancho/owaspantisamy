@@ -773,7 +773,7 @@ public class AntiSamyTest extends TestCase {
 
         /* issue #69 - char attribute should allow single char or entity ref */
 
-        String s = "<td char='.'>test</td>";
+        String s = "<table><tr><td char='.'>test</td></tr></table>";
         CleanResults crDom = as.scan(s, policy, AntiSamy.DOM);
         CleanResults crSax = as.scan(s, policy, AntiSamy.SAX);
         String domValue = crDom.getCleanHTML();
@@ -781,19 +781,19 @@ public class AntiSamyTest extends TestCase {
         assertTrue(domValue.contains("char"));
         assertTrue(saxValue.contains("char"));
 
-        s = "<td char='..'>test</td>";
+        s = "<table><tr><td char='..'>test</td></tr></table>";
         assertTrue(!as.scan(s, policy, AntiSamy.DOM).getCleanHTML().contains("char"));
         assertTrue(!as.scan(s, policy, AntiSamy.SAX).getCleanHTML().contains("char"));
 
-        s = "<td char='&quot;'>test</td>";
+        s = "<table><tr><td char='&quot;'>test</td></tr></table>";
         assertTrue(as.scan(s, policy, AntiSamy.DOM).getCleanHTML().contains("char"));
         assertTrue(as.scan(s, policy, AntiSamy.SAX).getCleanHTML().contains("char"));
 
-        s = "<td char='&quot;a'>test</td>";
+        s = "<table><tr><td char='&quot;a'>test</td></tr></table>";
         assertTrue(!as.scan(s, policy, AntiSamy.DOM).getCleanHTML().contains("char"));
         assertTrue(!as.scan(s, policy, AntiSamy.SAX).getCleanHTML().contains("char"));
 
-        s = "<td char='&quot;&amp;'>test</td>";
+        s = "<table><tr><td char='&quot;&amp;'>test</td></tr></table>";
         assertTrue(!as.scan(s, policy, AntiSamy.DOM).getCleanHTML().contains("char"));
         assertTrue(!as.scan(s, policy, AntiSamy.SAX).getCleanHTML().contains("char"));
     }
