@@ -83,10 +83,6 @@ public class AntiSamyTest extends TestCase {
            * file for your environment.
            */
 
-        //get Policy instance from a stream to make sure includes fail nicely
-        URL is = getClass().getResource("/antisamy.xml");
-        policy = TestPolicy.getInstance(is);
-
         //get Policy instance from a URL.
         URL url = getClass().getResource("/antisamy.xml");
         policy = TestPolicy.getInstance(url);
