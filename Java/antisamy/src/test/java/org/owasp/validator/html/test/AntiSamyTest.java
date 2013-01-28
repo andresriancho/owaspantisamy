@@ -1095,63 +1095,6 @@ public class AntiSamyTest extends TestCase {
             // System.out.println("Received: " + cr.getCleanHTML());
     }
 
-    public void testCompareSpeeds() throws IOException, ScanException, PolicyException {
-
-        URL[] urls = {
-                this.getClass().getResource("/s/slashdot.org.htm"),
-                this.getClass().getResource("/s/fark.com"),
-                this.getClass().getResource("/s/cnn.com"),
-                this.getClass().getResource("/s/google.com.html"),
-                this.getClass().getResource("/s/microsoft.com"),
-        };
-
-        double totalDomTime = 0;
-        double totalSaxTime = 0;
-
-        int testReps = 15;
-
-        for (URL url : urls) {
-            URLConnection conn = url.openConnection();
-            InputStreamReader in = new InputStreamReader(conn.getInputStream());
-            StringBuilder out = new StringBuilder();
-            char[] buffer = new char[5000];
-            int read = 0;
-            do {
-                read = in.read(buffer, 0, buffer.length);
-                if (read > 0) {
-                    out.append(buffer, 0, read);
-                }
-            } while (read >= 0);
-
-            in.close();
-
-            String html = out.toString();
-
-            System.out.println("About to scan: " + url + " size: " + html.length());
-            if (html.length() > policy.getMaxInputSize()) {
-                System.out.println("   -Maximum input size exceeded. SKIPPING.");
-                continue;
-            }
-
-            double domTime = 0;
-            double saxTime = 0;
-
-            for (int j = 0; j < testReps; j++) {
-                domTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
-                saxTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
-            }
-
-            domTime = domTime / testReps;
-            saxTime = saxTime / testReps;
-
-            totalDomTime += domTime;
-            totalSaxTime += saxTime;
-        }
-
-        System.out.println("Total DOM time: " + totalDomTime);
-        System.out.println("Total SAX time: " + totalSaxTime);
-    }
-
     public void testCompareSpeedsShortStrings() throws IOException, ScanException, PolicyException {
 
         double totalDomTime = 0;
@@ -1163,12 +1106,26 @@ public class AntiSamyTest extends TestCase {
 
         for (int j = 0; j < testReps; j++) {
             totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
-            ;
             totalSaxTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
         }
 
         System.out.println("Total DOM time short string: " + totalDomTime);
         System.out.println("Total SAX time short string: " + totalSaxTime);
+    }
+
+    public void testProfileDom() throws IOException, ScanException, PolicyException {
+
+        double totalDomTime = 0;
+
+        int testReps = 9999;
+
+        String html = "<body> hey you <img/> out there on your own </body>";
+
+        for (int j = 0; j < testReps; j++) {
+            totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
+        }
+
+        System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
     }
 
     public void testComparePatternSpeed() throws IOException, ScanException, PolicyException {
