@@ -40,6 +40,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpContentTooLargeException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.util.ErrorMessageUtil;
@@ -48,7 +49,7 @@ import org.w3c.css.sac.InputSource;
 
 public class ExternalCssScanner extends CssScanner {
 
-	public ExternalCssScanner(Policy policy, ResourceBundle messages) {
+	public ExternalCssScanner(InternalPolicy policy, ResourceBundle messages) {
 		super(policy, messages);
 	}
 

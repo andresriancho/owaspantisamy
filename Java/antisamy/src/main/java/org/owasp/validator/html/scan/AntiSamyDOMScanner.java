@@ -23,7 +23,25 @@
  */
 package org.owasp.validator.html.scan;
 
-import java.io.IOException;
+import org.apache.batik.css.parser.ParseException;
+import org.apache.xerces.dom.DocumentImpl;
+import org.apache.xml.serialize.OutputFormat;
+import org.cyberneko.html.parsers.DOMFragmentParser;
+import org.owasp.validator.css.CssScanner;
+import org.owasp.validator.css.ExternalCssScanner;
+import org.owasp.validator.html.CleanResults;
+import org.owasp.validator.html.Policy;
+import org.owasp.validator.html.PolicyException;
+import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.model.Attribute;
+import org.owasp.validator.html.model.Tag;
+import org.owasp.validator.html.util.ErrorMessageUtil;
+import org.owasp.validator.html.util.HTMLEntityEncoder;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -31,32 +49,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.batik.css.parser.ParseException;
-import org.apache.xerces.dom.DocumentImpl;
-import org.apache.xml.serialize.OutputFormat;
-import org.cyberneko.html.parsers.DOMFragmentParser;
-import org.owasp.validator.css.CssScanner;
-import org.owasp.validator.css.ExternalCssScanner;
-import org.owasp.validator.html.*;
-import org.owasp.validator.html.model.Attribute;
-import org.owasp.validator.html.model.Tag;
-import org.owasp.validator.html.util.ErrorMessageUtil;
-import org.owasp.validator.html.util.HTMLEntityEncoder;
-import org.w3c.dom.Comment;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.ProcessingInstruction;
-import org.w3c.dom.Text;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 
 /**
  * This is where the magic lives. All the scanning/filtration logic resides
@@ -115,8 +107,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             throw new ScanException(errorMessages.get(0));
         }
 
-        isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
-        isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
+        isNofollowAnchors = policy.isNofollowAnchors();
+        isValidateParamAsEmbed = policy.isValidateParamAsEmbed();
 
         Date start = new Date();
 

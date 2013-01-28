@@ -3,6 +3,7 @@ package org.owasp.validator.html.scan;
 import org.apache.xml.serialize.ElementState;
 import org.apache.xml.serialize.HTMLdtd;
 import org.apache.xml.serialize.OutputFormat;
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 
 import java.io.IOException;
@@ -13,9 +14,9 @@ public class ASHTMLSerializer extends org.apache.xml.serialize.HTMLSerializer {
 
 	private boolean encodeAllPossibleEntities;
 
-    public ASHTMLSerializer(Writer w, OutputFormat format, Policy policy) {
+    public ASHTMLSerializer(Writer w, OutputFormat format, InternalPolicy policy) {
 		super(w, format);
-		this.encodeAllPossibleEntities = "true".equals(policy.getDirective(Policy.ENTITY_ENCODE_INTL_CHARS));
+		this.encodeAllPossibleEntities = policy.isEntityEncodeIntlCharacters();
 	}
 	
 	protected String getEntityRef(int charToPrint) {

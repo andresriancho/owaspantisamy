@@ -97,7 +97,7 @@ public class AntiSamyPerformanceTest {
             String html = out.toString();
 
             System.out.println("About to scan: " + url + " size: " + html.length());
-            if (html.length() > policy.getMaxInputSize()) {
+            if (html.length() > policy.determineMaxInputSize()) {
                 System.out.println("   -Maximum input size exceeded. SKIPPING.");
                 continue;
             }

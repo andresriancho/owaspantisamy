@@ -28,15 +28,12 @@ import java.io.Writer;
 import java.util.*;
 
 import org.apache.xml.serialize.OutputFormat;
-import org.owasp.validator.html.CleanResults;
-import org.owasp.validator.html.Policy;
-import org.owasp.validator.html.PolicyException;
-import org.owasp.validator.html.ScanException;
+import org.owasp.validator.html.*;
 import org.owasp.validator.html.util.ErrorMessageUtil;
 
 public abstract class AbstractAntiSamyScanner {
 
-	protected final Policy policy;
+	protected final InternalPolicy policy;
 	protected final List<String> errorMessages = new ArrayList<String>();
 
 	protected static final ResourceBundle messages = getResourceBundle();
@@ -51,11 +48,11 @@ public abstract class AbstractAntiSamyScanner {
     public abstract CleanResults getResults();
 
 	public AbstractAntiSamyScanner(Policy policy) {
-		this.policy = policy;
+		this.policy = (InternalPolicy) policy;
 	}
 
 	public AbstractAntiSamyScanner() throws PolicyException {
-		policy = Policy.getInstance();
+		policy = (InternalPolicy) Policy.getInstance();
 	}
 
     private static ResourceBundle getResourceBundle() {
@@ -72,18 +69,15 @@ public abstract class AbstractAntiSamyScanner {
 	
 	
 	protected OutputFormat getOutputFormat(String encoding) {
-		
-		 boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
-         boolean preserveSpace = "true".equals(policy.getDirective(Policy.PRESERVE_SPACE));
-         
-		OutputFormat format = new OutputFormat();
+
+        OutputFormat format = new OutputFormat();
         format.setEncoding(encoding);
-        format.setOmitXMLDeclaration("true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION)));
-        format.setOmitDocumentType("true".equals(policy.getDirective(Policy.OMIT_DOCTYPE_DECLARATION)));
+        format.setOmitXMLDeclaration(policy.isOmitXmlDeclaration());
+        format.setOmitDocumentType(policy.isOmitDoctypeDeclaration());
         format.setPreserveEmptyAttributes(true);
-        format.setPreserveSpace(preserveSpace);
+        format.setPreserveSpace(policy.isPreserveSpace());
         
-        if (formatOutput) {
+        if (policy.isFormatOutput()) {
             format.setLineWidth(80);
             format.setIndenting(true);
             format.setIndent(2);

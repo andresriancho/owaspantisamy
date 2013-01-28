@@ -110,9 +110,9 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
 			
             Transformer transformer = cachedItem.transformer;
-            boolean formatOutput = "true".equals(policy.getDirective(Policy.FORMAT_OUTPUT));
-            boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
-            boolean omitXml = "true".equals(policy.getDirective(Policy.OMIT_XML_DECLARATION));
+            boolean formatOutput = policy.isFormatOutput();
+            boolean useXhtml = policy.isUseXhtml();
+            boolean omitXml = policy.isOmitXmlDeclaration();
 
             transformer.setOutputProperty(OutputKeys.INDENT, formatOutput ? "yes" : "no");
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");

@@ -30,17 +30,14 @@ package org.owasp.validator.css;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.batik.css.parser.ParseException;
 import org.apache.batik.css.parser.Parser;
 import org.owasp.validator.html.CleanResults;
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.w3c.css.sac.InputSource;
@@ -70,7 +67,7 @@ public class CssScanner {
     /**
      * The policy file to be used in any scanning
      */
-    protected final Policy policy;
+    protected final InternalPolicy policy;
 
     /**
      * The message bundled to pull error messages from.
@@ -84,7 +81,7 @@ public class CssScanner {
      * @param policy
      *                the policy to follow when scanning
      */
-    public CssScanner(Policy policy, ResourceBundle messages) {
+    public CssScanner(InternalPolicy policy, ResourceBundle messages) {
     	this.policy = policy;
     	this.messages = messages;
     }
@@ -109,7 +106,7 @@ public class CssScanner {
 	    throws ScanException {
 
 	Date startOfScan = new Date();
-	ArrayList errorMessages = new ArrayList();
+	List<String> errorMessages = new ArrayList<String>();
 
 	/* Check to see if the text starts with (\s)*<![CDATA[
 	 * and end with ]]>(\s)*.
@@ -233,7 +230,7 @@ public class CssScanner {
 	 *                 if an error occurs during scanning
 	 */
 	protected void parseImportedStylesheets(LinkedList stylesheets, CssHandler handler,
-			ArrayList errorMessages, int sizeLimit) throws ScanException {
+			List<String> errorMessages, int sizeLimit) throws ScanException {
 		// Implemented in ExternalCssScanner.java
 	}
 
@@ -247,9 +244,9 @@ public class CssScanner {
      *                 if any error occurs
      */
     public static void main(String[] args) throws Exception {
-	Policy policy = Policy.getInstance("resources/antisamy-1.2.xml");
+	InternalPolicy policy = (InternalPolicy) Policy.getInstance("resources/antisamy-1.2.xml");
 	
-	CssScanner scanner = null;
+	CssScanner scanner;
 	
 	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
 		scanner = new ExternalCssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));

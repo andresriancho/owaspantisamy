@@ -2,6 +2,7 @@ package org.owasp.validator.html.scan;
 
 import org.apache.xml.serialize.ElementState;
 import org.apache.xml.serialize.OutputFormat;
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.TagMatcher;
 
@@ -20,11 +21,11 @@ public class ASXHTMLSerializer extends org.apache.xml.serialize.XHTMLSerializer 
 	private final TagMatcher allowedEmptyTags;
 	private final TagMatcher requireClosingTags;
 	
-	public ASXHTMLSerializer(Writer w, OutputFormat format, Policy policy) {
+	public ASXHTMLSerializer(Writer w, OutputFormat format, InternalPolicy policy) {
 		super(w, format);
 		this.allowedEmptyTags = policy.getAllowedEmptyTags();
 		this.requireClosingTags = policy.getRequiresClosingTags();
-		this.encodeAllPossibleEntities = "true".equals(policy.getDirective(Policy.ENTITY_ENCODE_INTL_CHARS));
+		this.encodeAllPossibleEntities = policy.isEntityEncodeIntlCharacters();
 	}
 	
 	protected String getEntityRef(int charToPrint) {

@@ -24,6 +24,7 @@
 
 package org.owasp.validator.html.test;
 
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.model.Tag;
@@ -46,7 +47,7 @@ import java.util.Map;
 /**
  * @author Kristian Rosenvold
  */
-public class TestPolicy extends Policy {
+public class TestPolicy extends InternalPolicy {
 
     protected TestPolicy(Policy.ParseContext parseContext) throws PolicyException {
         super(parseContext);

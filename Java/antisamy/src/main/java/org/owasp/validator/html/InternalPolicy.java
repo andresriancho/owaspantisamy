@@ -1,0 +1,109 @@
+package org.owasp.validator.html;
+
+import org.owasp.validator.html.model.Tag;
+
+import java.util.Map;
+
+/**
+ * Contains a bunch of optimized lookups over the regular Policy Class. For internal use only.
+ *
+ * Not part of any public api and may explode or self destruct at any given moment, preferably both.
+ *
+ * @author Kristian Rosenvold
+ */
+public class InternalPolicy extends Policy {
+    private final int maxInputSize;
+    private final boolean isNofollowAnchors;
+    private final boolean isValidateParamAsEmbed;
+    private final boolean formatOutput;
+    private final boolean preserveSpace;
+    private final boolean omitXmlDeclaration;
+    private final boolean omitDoctypeDeclaration;
+    private final boolean entityEncodeIntlCharacters;
+    private final boolean useXhtml;
+
+
+    protected InternalPolicy(ParseContext parseContext) throws PolicyException {
+        super(parseContext);
+        this.maxInputSize = determineMaxInputSize();
+        this.isNofollowAnchors = isTrue(Policy.ANCHORS_NOFOLLOW);
+        this.isValidateParamAsEmbed = isTrue(Policy.VALIDATE_PARAM_AS_EMBED);
+        this.formatOutput = isTrue(Policy.FORMAT_OUTPUT);
+        this.preserveSpace = isTrue(Policy.PRESERVE_SPACE);
+        this.omitXmlDeclaration = isTrue(Policy.OMIT_XML_DECLARATION);
+        this.omitDoctypeDeclaration = isTrue(Policy.OMIT_DOCTYPE_DECLARATION);
+        this.entityEncodeIntlCharacters = isTrue(Policy.ENTITY_ENCODE_INTL_CHARS);
+        useXhtml = isTrue(Policy.USE_XHTML);
+
+    }
+
+    protected InternalPolicy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
+        super(old, directives, tagRules);
+        this.maxInputSize = determineMaxInputSize();
+        this.isNofollowAnchors = isTrue(Policy.ANCHORS_NOFOLLOW);
+        this.isValidateParamAsEmbed = isTrue(Policy.VALIDATE_PARAM_AS_EMBED);
+        this.formatOutput = isTrue(Policy.FORMAT_OUTPUT);
+        this.preserveSpace = isTrue(Policy.PRESERVE_SPACE);
+        this.omitXmlDeclaration = isTrue(Policy.OMIT_XML_DECLARATION);
+        this.omitDoctypeDeclaration = isTrue(Policy.OMIT_DOCTYPE_DECLARATION);
+        this.entityEncodeIntlCharacters = isTrue(Policy.ENTITY_ENCODE_INTL_CHARS);
+        useXhtml = isTrue(Policy.USE_XHTML);
+    }
+
+    public int getMaxInputSize() {
+        return maxInputSize;
+    }
+
+    public boolean isEntityEncodeIntlCharacters() {
+        return entityEncodeIntlCharacters;
+    }
+
+    public boolean isNofollowAnchors() {
+        return isNofollowAnchors;
+    }
+
+    public boolean isValidateParamAsEmbed() {
+        return isValidateParamAsEmbed;
+    }
+
+    public boolean isFormatOutput() {
+        return formatOutput;
+    }
+
+    public boolean isPreserveSpace() {
+        return preserveSpace;
+    }
+
+    public boolean isOmitXmlDeclaration() {
+        return omitXmlDeclaration;
+    }
+
+    public boolean isUseXhtml() {
+        return useXhtml;
+    }
+
+    public boolean isOmitDoctypeDeclaration() {
+        return omitDoctypeDeclaration;
+    }
+
+    private boolean isTrue(String anchorsNofollow) {
+        return "true".equals(getDirective(anchorsNofollow));
+    }
+
+    /**
+     * Returns the maximum input size. If this value is not specified by
+     * the policy, the <code>DEFAULT_MAX_INPUT_SIZE</code> is used.
+     *
+     * @return the maximium input size.
+     */
+    public int determineMaxInputSize() {
+        int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
+
+        try {
+            maxInputSize = Integer.parseInt(getDirective("maxInputSize"));
+        } catch (NumberFormatException ignore) {
+        }
+
+        return maxInputSize;
+    }
+}

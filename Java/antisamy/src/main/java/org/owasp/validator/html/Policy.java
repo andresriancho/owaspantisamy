@@ -111,8 +111,6 @@ public class Policy {
         return tagRules.get(tagName.toLowerCase());
     }
 
-
-
     protected static class ParseContext {
         Map<String, AntiSamyPattern> commonRegularExpressions = new HashMap<String, AntiSamyPattern>();
         Map<String, Attribute> commonAttributes = new HashMap<String, Attribute>();
@@ -193,7 +191,7 @@ public class Policy {
     public static Policy getInstance(URL url) throws PolicyException {
 
         if (baseUrl == null) setBaseURL(url);
-        return new Policy(getParseContext(getTopLevelElement(url)));
+        return new InternalPolicy(getParseContext(getTopLevelElement(url)));
     }
 
 
@@ -712,22 +710,7 @@ public class Policy {
     }
 
 
-    /**
-     * Returns the maximum input size. If this value is not specified by
-     * the policy, the <code>DEFAULT_MAX_INPUT_SIZE</code> is used.
-     *
-     * @return the maximium input size.
-     */
-    public int getMaxInputSize() {
-        int maxInputSize = Policy.DEFAULT_MAX_INPUT_SIZE;
 
-        try {
-            maxInputSize = Integer.parseInt(getDirective("maxInputSize"));
-        } catch (NumberFormatException ignore) {
-        }
-
-        return maxInputSize;
-    }
 
     /**
      * Set the base directory to use to resolve relative file paths when including other policy files.

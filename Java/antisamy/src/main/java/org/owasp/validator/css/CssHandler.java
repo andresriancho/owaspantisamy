@@ -30,10 +30,7 @@ package org.owasp.validator.css;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
@@ -123,7 +120,7 @@ public class CssHandler implements DocumentHandler {
 	 *            the queue of stylesheets imported
 	 */
 	public CssHandler(Policy policy, LinkedList embeddedStyleSheets,
-		ArrayList errorMessages, ResourceBundle messages) {
+		List<String> errorMessages, ResourceBundle messages) {
 		this(policy, embeddedStyleSheets, errorMessages, null, messages);
 	}
 
@@ -139,7 +136,7 @@ public class CssHandler implements DocumentHandler {
 	 *            the associated tag name with this inline style
 	 */
 	public CssHandler(Policy policy, LinkedList embeddedStyleSheets,
-			ArrayList errorMessages, String tagName, ResourceBundle messages) {
+			List<String> errorMessages, String tagName, ResourceBundle messages) {
 		this.policy = policy;
 		this.errorMessages = errorMessages;
 		this.messages = messages;

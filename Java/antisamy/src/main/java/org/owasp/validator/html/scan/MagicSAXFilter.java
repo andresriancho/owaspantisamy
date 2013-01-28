@@ -40,6 +40,7 @@ import org.cyberneko.html.filters.DefaultFilter;
 import org.owasp.validator.css.CssScanner;
 import org.owasp.validator.css.ExternalCssScanner;
 import org.owasp.validator.html.CleanResults;
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.model.Attribute;
@@ -59,7 +60,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	private StringBuffer cssContent = null;
 	private XMLAttributes cssAttributes = null;
 	private CssScanner cssScanner = null;
-	private Policy policy;
+	private InternalPolicy policy;
 	private ResourceBundle messages;
 
 	private boolean isNofollowAnchors;
@@ -74,7 +75,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		this.messages = messages;
     }
 
-    public void reset(Policy instance){
+    public void reset(InternalPolicy instance){
         this.policy = instance;
         isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
         isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
