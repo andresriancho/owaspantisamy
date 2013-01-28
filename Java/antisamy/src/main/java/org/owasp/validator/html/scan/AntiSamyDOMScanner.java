@@ -163,9 +163,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * Call the work horse.
              */
 
-            for (int i = 0; i < dom.getChildNodes().getLength(); i++) {
+            NodeList childNodes = dom.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
 
-                Node tmp = dom.getChildNodes().item(i);
+                Node tmp = childNodes.item(i);
 
                 recursiveValidateTag(tmp);
 
@@ -340,9 +341,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * children.
              */
 
-            for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
 
-                tmp = node.getChildNodes().item(i);
+                tmp = childNodes.item(i);
 
                 recursiveValidateTag(tmp);
 
@@ -379,9 +381,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * children.
              */
 
-            for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
 
-                tmp = node.getChildNodes().item(i);
+                tmp = childNodes.item(i);
 
                 recursiveValidateTag(tmp);
 
@@ -521,9 +524,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
             Node attribute;
 
-            for (int currentAttributeIndex = 0; currentAttributeIndex < ele.getAttributes().getLength(); currentAttributeIndex++) {
+            NamedNodeMap attributes = ele.getAttributes();
+            for (int currentAttributeIndex = 0; currentAttributeIndex < attributes.getLength(); currentAttributeIndex++) {
 
-                attribute = ele.getAttributes().item(currentAttributeIndex);
+                attribute = attributes.item(currentAttributeIndex);
 
                 String name = attribute.getNodeName();
                 String value = attribute.getNodeValue();
@@ -626,9 +630,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                                  * tag.
                                  */
 
-                                for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+                                NodeList childNodes = node.getChildNodes();
+                                for (int i = 0; i < childNodes.getLength(); i++) {
 
-                                    tmp = node.getChildNodes().item(i);
+                                    tmp = childNodes.item(i);
 
                                     recursiveValidateTag(tmp);
 
@@ -652,9 +657,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                                  * tag.
                                  */
 
-                                for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+                                NodeList childNodes = node.getChildNodes();
+                                for (int i = 0; i < childNodes.getLength(); i++) {
 
-                                    tmp = node.getChildNodes().item(i);
+                                    tmp = childNodes.item(i);
 
                                     recursiveValidateTag(tmp);
 
@@ -713,9 +719,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 ele.setAttribute("rel", "nofollow");
             }
 
-            for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
 
-                tmp = node.getChildNodes().item(i);
+                tmp = childNodes.item(i);
 
                 recursiveValidateTag(tmp);
 
