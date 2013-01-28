@@ -312,14 +312,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         Node parentNode = ele.getParentNode();
         Node tmp;
 
-        /*
-         * See if we have a policy for this tag. If we do, getTagByName() will
-         * retrieve its object representation.
-         */
-
         String tagName = ele.getNodeName();
         String tagNameLowerCase = tagName.toLowerCase();
-        Tag tag = policy.getTagByName(tagNameLowerCase);
+        Tag tag = policy.getTagByLowercaseName(tagNameLowerCase);
 
         /*
          * If <param> and no policy and isValidateParamAsEmbed and policy in

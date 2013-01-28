@@ -489,7 +489,7 @@ public class AntiSamyTest extends TestCase {
 
     public void testIsssue31() throws ScanException, PolicyException {
 
-        String toDoOnBoldTags = policy.getTagByName("b").getAction();
+        String toDoOnBoldTags = policy.getTagByLowercaseName("b").getAction();
 
             String test = "<b><u><g>foo";
 
@@ -500,7 +500,7 @@ public class AntiSamyTest extends TestCase {
             s = as.scan(test, revised, AntiSamy.SAX).getCleanHTML();
             assertFalse(!s.contains("&lt;g&gt;"));
 
-        Tag tag = policy.getTagByName("b").mutateAction("encode");
+        Tag tag = policy.getTagByLowercaseName("b").mutateAction("encode");
         Policy policy1 = policy.mutateTag(tag);
 
         cr = as.scan(test, policy1, AntiSamy.DOM);

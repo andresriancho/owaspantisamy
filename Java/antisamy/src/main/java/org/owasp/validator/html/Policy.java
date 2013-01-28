@@ -101,14 +101,8 @@ public class Policy {
      */
     protected static URL baseUrl = null; // Todo: Make not static
 
-    /**
-     * Retrieves a Tag from the Policy.
-     *
-     * @param tagName The name of the Tag to look up.
-     * @return The Tag associated with the name specified, or null if none is found.
-     */
-    public Tag getTagByName(String tagName) {
-        return tagRules.get(tagName.toLowerCase());
+    public Tag getTagByLowercaseName(String tagName) {
+        return tagRules.get(tagName);
     }
 
     protected static class ParseContext {

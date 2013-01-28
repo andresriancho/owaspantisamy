@@ -211,7 +211,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	public void startElement(QName element, XMLAttributes attributes, Augmentations augs) throws XNIException {
 		// see if we have a policy for this tag.
-		Tag tag = policy.getTagByName(element.localpart);
+		Tag tag = policy.getTagByLowercaseName(element.localpart.toLowerCase());
 
 		/*
 		 * Handle the automatic translation of <param> to nested <embed> for IE.
@@ -221,7 +221,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		String embedName = null;
 		String embedValue = null;
 		if (tag == null && isValidateParamAsEmbed && "param".equals(element.localpart.toLowerCase())) {
-			Tag embedPolicy = policy.getTagByName("embed");
+			Tag embedPolicy = policy.getEmbedTag();
 			if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
 				tag = embedPolicy;// Constants.BASIC_PARAM_TAG_RULE;
 				masqueradingParam = true;
