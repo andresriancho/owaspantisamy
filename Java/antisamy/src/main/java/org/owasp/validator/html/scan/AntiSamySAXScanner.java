@@ -51,17 +51,28 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
     private static final ThreadLocal<CachedItem> cache = new ThreadLocal<CachedItem>(){
         @Override
         protected CachedItem initialValue() {
-            return new CachedItem(getTransformer(), getParser());
+            return new CachedItem(getTransformer(), getParser(), new MagicSAXFilter(messages));
         }
     };
 
     static class CachedItem {
         private final Transformer transformer;
         private final SAXParser saxParser;
+        private final MagicSAXFilter magicSAXFilter;
 
-        CachedItem(Transformer transformer, SAXParser saxParser) {
+        CachedItem(Transformer transformer, SAXParser saxParser, MagicSAXFilter magicSAXFilter)  {
             this.transformer = transformer;
             this.saxParser = saxParser;
+            this.magicSAXFilter = magicSAXFilter;
+            XMLDocumentFilter[] filters = { magicSAXFilter };
+            try {
+                saxParser.setProperty("http://cyberneko.org/html/properties/filters", filters);
+            } catch (SAXNotRecognizedException e) {
+                throw new RuntimeException(e);
+            } catch (SAXNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
+
         }
     }
     public AntiSamySAXScanner(Policy policy) {
@@ -88,13 +99,11 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 		try {
 			
 			StringWriter out = new StringWriter();
-			
-			MagicSAXFilter sanitizingFilter = new MagicSAXFilter(policy, messages);
-			XMLDocumentFilter[] filters = { sanitizingFilter };
 
             CachedItem cachedItem = cache.get();
+
             SAXParser parser = cachedItem.saxParser;
-            parser.setProperty("http://cyberneko.org/html/properties/filters", filters);
+            cachedItem.magicSAXFilter.reset(policy);
 
             Date start = new Date();
 
@@ -118,7 +127,7 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			String cleanHtml = trim(html, out.getBuffer().toString());
 
 			errorMessages.clear();
-            errorMessages.addAll(sanitizingFilter.getErrorMessages());
+            errorMessages.addAll(cachedItem.magicSAXFilter.getErrorMessages());
 			return new CleanResults(start, end, cleanHtml, null, errorMessages);
 
 		} catch (Exception e) {

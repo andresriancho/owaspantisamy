@@ -77,6 +77,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     private static final Pattern conditionalDirectives =
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
     private int currentStackDepth;
+    private static final ThreadLocal parsers = new ThreadLocal(){
+        protected Object initialValue() {
+            return new HashMap();
+        }
+    };
 
     public AntiSamyDOMScanner(Policy policy) {
         super(policy);
@@ -199,11 +204,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     }
 
-    private static final ThreadLocal parsers = new ThreadLocal(){
-        protected Object initialValue() {
-            return new HashMap();
-        }
-    };
 
     DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
         if (inputEncoding == null) {
@@ -604,7 +604,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                         if (attr.matchesAllowedExpression(value)){
                             isAttributeValid = true;
-                        };
+                        }
 
                         if (!isAttributeValid) {
 

@@ -66,19 +66,28 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	private boolean isValidateParamAsEmbed;
 	private boolean inCdata = false;
     // From policy
-    private final String directive;
-    private final int maxInputSize;
-    private final boolean externalCssScanner;
+    private String directive;
+    private int maxInputSize;
+    private boolean externalCssScanner;
 
-    public MagicSAXFilter(Policy instance, ResourceBundle messages) {
-		this.policy = instance;
+    public MagicSAXFilter(ResourceBundle messages) {
 		this.messages = messages;
-		
-		isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
-		isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
+    }
+
+    public void reset(Policy instance){
+        this.policy = instance;
+        isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
+        isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
         directive = policy.getDirective(Policy.PRESERVE_COMMENTS);
         maxInputSize = policy.getMaxInputSize();
         externalCssScanner = "true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS));
+        operations.clear();
+        errorMessages.clear();
+        cssContent = null;
+        cssAttributes = null;
+        cssScanner = null;
+        inCdata = false;
+
     }
 
 	public void characters(XMLString text, Augmentations augs) throws XNIException {
