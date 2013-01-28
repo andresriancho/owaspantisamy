@@ -77,6 +77,6 @@ public class ASXHTMLSerializer extends org.apache.xml.serialize.XHTMLSerializer 
 	}
 
 	private boolean isAllowedEmptyTag(String tagName) {
-        return  allowedEmptyTags.matches( tagName);
+        return "head".equals(tagName) || allowedEmptyTags.matches( tagName);
 	}
 }

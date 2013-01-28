@@ -815,7 +815,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 	}
 
 	private boolean isAllowedEmptyTag(String tagName) {
-        return policy.getAllowedEmptyTags().matches(tagName);
+        return "head".equals(tagName ) || policy.getAllowedEmptyTags().matches(tagName);
 	}
 
     public static void main(String[] args) throws PolicyException {
