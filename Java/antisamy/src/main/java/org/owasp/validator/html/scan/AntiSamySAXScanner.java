@@ -51,9 +51,11 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
     private static final ThreadLocal<CachedItem> cache = new ThreadLocal<CachedItem>(){
         @Override
         protected CachedItem initialValue() {
-            return new CachedItem(getTransformer(), getParser(), new MagicSAXFilter(messages));
+            return new CachedItem(getNewTransformer(), getParser(), new MagicSAXFilter(messages));
         }
     };
+
+    private static final TransformerFactory sTransformerFactory = TransformerFactory.newInstance();
 
     static class CachedItem {
         private final Transformer transformer;
@@ -136,13 +138,20 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
 	}
 
-    private static Transformer getTransformer()  {
-        try {
-            return TransformerFactory.newInstance().newTransformer();
-        } catch (TransformerConfigurationException e) {
-            throw new RuntimeException( e);
-        }
-    }
+     /**
+      * Return a new Transformer instance. This is wrapped in a synchronized method because there is
+      * no guarantee that the TransformerFactory is thread-safe
+      *
+      * @return a new Transformer instance.
+      */
+     private static synchronized Transformer getNewTransformer()  {
+         try {
+             return sTransformerFactory.newTransformer();
+         } catch (TransformerConfigurationException e) {
+             throw new RuntimeException(e);
+         }
+     }
+
     private static SAXParser getParser()  {
         try {
             SAXParser parser = new SAXParser();
