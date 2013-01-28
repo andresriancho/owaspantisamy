@@ -723,7 +723,12 @@ http://www.w3.org/TR/html401/struct/global.html
 		<tag name="pre" action="validate"/>
 		<tag name="code" action="validate"/>
 		<tag name="cite" action="validate"/>
-		<tag name="samp" action="validate"/>
+        <tag name="acronym" action="validate"/>
+        <tag name="abbr" action="validate"/>
+        <tag name="var" action="validate"/>
+        <tag name="kbd" action="validate"/>
+        <tag name="dfn" action="validate"/>
+        <tag name="samp" action="validate"/>
 		<tag name="sub" action="validate"/>
 		<tag name="sup" action="validate"/>
 		<tag name="strike" action="validate"/>
