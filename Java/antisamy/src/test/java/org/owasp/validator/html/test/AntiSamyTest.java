@@ -1158,4 +1158,10 @@ public class AntiSamyTest extends TestCase {
         System.out.println("match then replace: " + total2);
     }
 
+    public void testIssue147() throws ScanException, PolicyException {
+        URL url = getClass().getResource("/antisamy-tinymce.xml");
+
+        Policy pol = Policy.getInstance(url);
+        as.scan("<table><tr><td></td></tr></table>", pol, AntiSamy.DOM);
+    }
 }

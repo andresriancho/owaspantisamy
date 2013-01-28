@@ -836,7 +836,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             parent.insertBefore(node, ele);
         }
 
-        removeNode(ele);
+        if (parent != null){
+           removeNode(ele);
+        }
     }
 
     /**
