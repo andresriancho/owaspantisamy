@@ -67,7 +67,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	private boolean isValidateParamAsEmbed;
 	private boolean inCdata = false;
     // From policy
-    private String directive;
+    private boolean preserveComments;
     private int maxInputSize;
     private boolean externalCssScanner;
 
@@ -77,11 +77,11 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
     public void reset(InternalPolicy instance){
         this.policy = instance;
-        isNofollowAnchors = "true".equals(policy.getDirective(Policy.ANCHORS_NOFOLLOW));
-        isValidateParamAsEmbed = "true".equals(policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED));
-        directive = policy.getDirective(Policy.PRESERVE_COMMENTS);
+        isNofollowAnchors = policy.isNofollowAnchors();
+        isValidateParamAsEmbed = policy.isValidateParamAsEmbed();
+        preserveComments = policy.isPreserveComments();
         maxInputSize = policy.getMaxInputSize();
-        externalCssScanner = "true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS));
+        externalCssScanner = policy.isEmbedStyleSheets();
         operations.clear();
         errorMessages.clear();
         cssContent = null;
@@ -112,9 +112,8 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
 
     public void comment(XMLString text, Augmentations augs) throws XNIException {
-		String preserveComments = directive;
 
-		if ("true".equals(preserveComments)) {
+		if (preserveComments) {
 			String value = text.toString();
 			// Strip conditional directives regardless of the
 			// PRESERVE_COMMENTS setting.

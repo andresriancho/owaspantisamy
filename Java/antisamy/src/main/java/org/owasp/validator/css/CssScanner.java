@@ -151,7 +151,7 @@ public class CssScanner {
 
 	String cleaned = handler.getCleanStylesheet();
 	
-	if ( isCdata && ! "true".equals(policy.getDirective(Policy.USE_XHTML)) ) {
+	if ( isCdata && !policy.isUseXhtml()) {
 		cleaned = "<![CDATA[[" + cleaned + "]]>";
 	}
 	
@@ -248,7 +248,7 @@ public class CssScanner {
 	
 	CssScanner scanner;
 	
-	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
+	if(policy.isEmbedStyleSheets()) {
 		scanner = new ExternalCssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
 	}else{
 		scanner = new CssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));

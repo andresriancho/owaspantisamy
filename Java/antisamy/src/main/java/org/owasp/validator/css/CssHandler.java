@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import org.owasp.validator.html.InternalPolicy;
 import org.owasp.validator.html.Policy;
 import org.owasp.validator.html.ScanException;
 import org.owasp.validator.html.util.ErrorMessageUtil;
@@ -74,7 +75,7 @@ public class CssHandler implements DocumentHandler {
 	/**
 	 * The policy file to use in validation
 	 */
-	private final Policy policy;
+	private final InternalPolicy policy;
 
 	/**
 	 * The encaspulated results including the error messages
@@ -137,7 +138,7 @@ public class CssHandler implements DocumentHandler {
 	 */
 	public CssHandler(Policy policy, LinkedList embeddedStyleSheets,
 			List<String> errorMessages, String tagName, ResourceBundle messages) {
-		this.policy = policy;
+		this.policy = (InternalPolicy) policy;
 		this.errorMessages = errorMessages;
 		this.messages = messages;
 		this.validator = new CssValidator(policy);
@@ -213,7 +214,7 @@ public class CssHandler implements DocumentHandler {
 	public void importStyle(String uri, SACMediaList media,
 			String defaultNamespaceURI) throws CSSException {
 
-		if (!Boolean.valueOf(policy.getDirective("embedStyleSheets"))) {
+		if (!policy.isEmbedStyleSheets()) {
 			errorMessages.add(ErrorMessageUtil.getMessage(
 					messages,
 					ErrorMessageUtil.ERROR_CSS_IMPORT_DISABLED,
