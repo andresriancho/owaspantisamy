@@ -69,11 +69,29 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     private static final Pattern conditionalDirectives =
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
     private int currentStackDepth;
-    private static final ThreadLocal parsers = new ThreadLocal(){
-        protected Object initialValue() {
-            return new HashMap();
+    private static final ThreadLocal<CachedItem> parsers = new ThreadLocal<CachedItem>(){
+        protected CachedItem initialValue() {
+            return new CachedItem();
         }
     };
+
+    static class CachedItem {
+        private final Map<String,DOMFragmentParser> parsers = new HashMap<String, DOMFragmentParser>();
+        private final Matcher matcher = invalidXmlCharacters.matcher("");
+
+        DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
+            if (inputEncoding == null) {
+                inputEncoding = "DEFAULT-ENC";
+            }
+            @SuppressWarnings("unchecked")
+            DOMFragmentParser parser = parsers.get(inputEncoding);
+            if (parser == null){
+                parser = getDomParser( inputEncoding);
+                parsers.put( inputEncoding, parser);
+            }
+            return parser;
+        }
+    }
 
     public AntiSamyDOMScanner(Policy policy) {
         super(policy);
@@ -112,6 +130,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         Date start = new Date();
 
+        CachedItem cachedItem = parsers.get();
+
         try {
 
             /*
@@ -119,7 +139,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * from breaking when it gets passed encodings like %21.
              */
 
-            html = stripNonValidXMLCharacters(html);
+            html = stripNonValidXMLCharacters(html, cachedItem.matcher);
 
             /*
              * First thing we do is call the HTML cleaner ("NekoHTML") on it
@@ -128,7 +148,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * W3C.
              */
 
-          DOMFragmentParser parser = getThreadLocalDomParser(inputEncoding);
+
+            DOMFragmentParser parser = cachedItem.getThreadLocalDomParser(inputEncoding);
 
             try {
                 parser.parse(new InputSource(new StringReader(html)), dom);
@@ -196,23 +217,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     }
 
-
-    DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
-        if (inputEncoding == null) {
-            inputEncoding = "DEFAULT-ENC";
-        }
-        @SuppressWarnings("unchecked")
-        Map<String,DOMFragmentParser> byEncoding = (Map<String,DOMFragmentParser>) parsers.get();
-        DOMFragmentParser parser = byEncoding.get(inputEncoding);
-        if (parser == null){
-            parser = getDomParser( inputEncoding);
-            byEncoding.put( inputEncoding, parser);
-        }
-        return parser;
-    }
-
-
-    DOMFragmentParser getDomParser(String inputEncoding)
+    static DOMFragmentParser getDomParser(String inputEncoding)
             throws SAXNotRecognizedException, SAXNotSupportedException {
         DOMFragmentParser parser = new DOMFragmentParser();
         parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
@@ -844,16 +849,18 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      * standard</a>. This method will return an empty String if the input is
      * null or empty.
      *
+     *
      * @param in
      *            The String whose non-valid characters we want to remove.
+     * @param matcher
      * @return The in String, stripped of non-valid characters.
      */
-    private String stripNonValidXMLCharacters(String in) {
+    private String stripNonValidXMLCharacters(String in, Matcher matcher) {
 
         if (in == null || ("".equals(in))) {
             return ""; // vacancy test.
         }
-        Matcher matcher = invalidXmlCharacters.matcher(in);
+        matcher.reset(in);
         return matcher.matches() ? matcher.replaceAll("") : in;
     }
 

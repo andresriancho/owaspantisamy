@@ -118,26 +118,7 @@ public class CleanResults {
 		return errorMessages;
 	}
 
-	/**
-	 * Return the time when scan finished.
-	 * 
-	 * @return A Date object indicating the moment the scan finished.
-	 */
-	public Date getEndOfScan() {
-
-		return endOfScan;
-	}
-
-	/**
-	 * Return the time when scan started.
-	 * 
-	 * @return A Date object indicating the moment the scan started.
-	 */
-	public Date getStartOfScan() {
-		return startOfScan;
-	}
-
-	/**
+    /**
 	 * Return the time elapsed during the scan.
 	 * 
 	 * @return A double primitive indicating the amount of time elapsed between
