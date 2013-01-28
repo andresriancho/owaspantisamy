@@ -27,6 +27,7 @@ package org.owasp.validator.html;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.w3c.dom.DocumentFragment;
 
@@ -44,7 +45,7 @@ import org.w3c.dom.DocumentFragment;
 public class CleanResults {
 
 	private List<String> errorMessages = new ArrayList<String>();
-	private String cleanHTML;
+	private Callable<String> cleanHTML;
 	private Date startOfScan;
 	private Date endOfScan;
 
@@ -57,16 +58,29 @@ public class CleanResults {
 
 	}
 
-	public CleanResults(Date startOfScan, Date endOfScan, String cleanHTML,
+	public CleanResults(Date startOfScan, Date endOfScan, final String cleanHTML,
 			DocumentFragment XMLDocumentFragment, List<String> errorMessages) {
 		this.startOfScan = startOfScan;
 		this.endOfScan = endOfScan;
 		this.cleanXMLDocumentFragment = XMLDocumentFragment;
-		this.cleanHTML = cleanHTML;
+		this.cleanHTML = new Callable<String>() {
+            public String call() throws Exception {
+                return cleanHTML;
+            }
+        };
 		this.errorMessages = errorMessages;
 	}
 
-	/**
+    public CleanResults(Date startOfScan, Date endOfScan, Callable<String> cleanHTML,
+                        DocumentFragment XMLDocumentFragment, List<String> errorMessages) {
+        this.startOfScan = startOfScan;
+        this.endOfScan = endOfScan;
+        this.cleanXMLDocumentFragment = XMLDocumentFragment;
+        this.cleanHTML = cleanHTML;
+        this.errorMessages = errorMessages;
+    }
+
+    /**
 	 * This is called at the beginning of the scan to initialize the start time
 	 * and create a new CleanResults object.
 	 * 
@@ -81,18 +95,18 @@ public class CleanResults {
 		return cleanXMLDocumentFragment;
 	}
 
-	public void setCleanHTML(String cleanHTML) {
-		this.cleanHTML = cleanHTML;
-	}
-
-	/**
+    /**
 	 * Return the filtered HTML as a String.
 	 * 
 	 * @return A String object which contains the serialized, safe HTML.
 	 */
 	public String getCleanHTML() {
-		return cleanHTML;
-	}
+        try {
+            return cleanHTML.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 	/**
 	 * Return a list of error messages.
@@ -131,18 +145,6 @@ public class CleanResults {
 	 */
 	public double getScanTime() {
 		return (endOfScan.getTime() - startOfScan.getTime()) / 1000D;
-	}
-
-	/**
-	 * Add an error message to the aggregate list of error messages during
-	 * filtering.
-	 * 
-	 * @param msg
-	 *            An error message to append to the list of aggregate error
-	 *            messages during filtering.
-	 */
-	public void addErrorMessage(String msg) {
-		errorMessages.add(msg);
 	}
 
 	/**

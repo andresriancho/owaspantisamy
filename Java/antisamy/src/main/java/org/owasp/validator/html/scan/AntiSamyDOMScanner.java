@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -96,7 +97,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      *         representation, as well as some scan statistics.
      * @throws ScanException
      */
-    public CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException {
+    public CleanResults scan(String html, String inputEncoding, final String outputEncoding) throws ScanException {
 
         if (html == null) {
             throw new ScanException(new NullPointerException("Null input"));
@@ -165,19 +166,25 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * its string representation.
              */
 
-            StringWriter out = new StringWriter();
 
-            OutputFormat format = getOutputFormat(outputEncoding);
+            final String trimmedHtml = html;
+            Callable<String> cleanHtml = new Callable<String>() {
+                public String call() throws Exception {
+                    StringWriter out = new StringWriter();
 
-            //noinspection deprecation
-            org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
-            serializer.serialize(dom);
-            
-            /*
-             * Get the String out of the StringWriter and rip out the XML
-             * declaration if the Policy says we should.
-             */
-            String cleanHtml = trim(html, out.getBuffer().toString());
+                    OutputFormat format = getOutputFormat(outputEncoding);
+
+                    //noinspection deprecation
+                    org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
+                    serializer.serialize(dom);
+
+                    /*
+                    * Get the String out of the StringWriter and rip out the XML
+                    * declaration if the Policy says we should.
+                    */
+                    return trim(trimmedHtml, out.getBuffer().toString());
+                }
+            };
 
             /**
              * Return the DOM object as well as string HTML.
@@ -187,8 +194,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             return results;
 
         } catch (SAXException e) {
-            throw new ScanException(e);
-        } catch (IOException e) {
             throw new ScanException(e);
         }
 
