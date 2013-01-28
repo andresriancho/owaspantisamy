@@ -21,6 +21,11 @@ public class InternalPolicy extends Policy {
     private final boolean omitDoctypeDeclaration;
     private final boolean entityEncodeIntlCharacters;
     private final boolean useXhtml;
+    private final Tag embedTag;
+    private final Tag styleTag;
+    private final String onUnknownTag;
+    private final boolean preserveComments;
+    private final boolean embedStyleSheets;
 
 
     protected InternalPolicy(ParseContext parseContext) throws PolicyException {
@@ -34,7 +39,11 @@ public class InternalPolicy extends Policy {
         this.omitDoctypeDeclaration = isTrue(Policy.OMIT_DOCTYPE_DECLARATION);
         this.entityEncodeIntlCharacters = isTrue(Policy.ENTITY_ENCODE_INTL_CHARS);
         useXhtml = isTrue(Policy.USE_XHTML);
-
+        embedTag = getTagByName("embed");
+        this.onUnknownTag = getDirective("onUnknownTag");
+        this.preserveComments = isTrue(Policy.PRESERVE_COMMENTS);
+        this.styleTag = getTagByName("style");
+        this.embedStyleSheets = isTrue(Policy.EMBED_STYLESHEETS);
     }
 
     protected InternalPolicy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
@@ -48,6 +57,27 @@ public class InternalPolicy extends Policy {
         this.omitDoctypeDeclaration = isTrue(Policy.OMIT_DOCTYPE_DECLARATION);
         this.entityEncodeIntlCharacters = isTrue(Policy.ENTITY_ENCODE_INTL_CHARS);
         useXhtml = isTrue(Policy.USE_XHTML);
+        embedTag = getTagByName("embed");
+        this.onUnknownTag = getDirective("onUnknownTag");
+        this.preserveComments = isTrue(Policy.PRESERVE_COMMENTS);
+        this.styleTag = getTagByName("style");
+        this.embedStyleSheets = isTrue(Policy.EMBED_STYLESHEETS);
+    }
+
+    public Tag getEmbedTag() {
+        return embedTag;
+    }
+
+    public Tag getStyleTag() {
+        return styleTag;
+    }
+
+    public boolean isEmbedStyleSheets() {
+        return embedStyleSheets;
+    }
+
+    public boolean isPreserveComments() {
+        return preserveComments;
     }
 
     public int getMaxInputSize() {
@@ -88,6 +118,11 @@ public class InternalPolicy extends Policy {
 
     private boolean isTrue(String anchorsNofollow) {
         return "true".equals(getDirective(anchorsNofollow));
+    }
+
+
+    public String getOnUnknownTag() {
+        return onUnknownTag;
     }
 
     /**

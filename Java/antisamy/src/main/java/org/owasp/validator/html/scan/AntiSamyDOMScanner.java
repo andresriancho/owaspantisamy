@@ -253,9 +253,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         if (node instanceof Comment) {
 
-            String preserveComments = policy.getDirective(Policy.PRESERVE_COMMENTS);
-
-            if (preserveComments == null || !"true".equals(preserveComments)) {
+            if (!policy.isPreserveComments()) {
                 node.getParentNode().removeChild(node);
             } else {
                 String value = ((Comment) node).getData();
@@ -329,7 +327,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          * policy to get the tag through to the validator.
          */
         boolean masqueradingParam = false;
-        Tag embedTag = policy.getTagByName("embed");
+        Tag embedTag = policy.getEmbedTag();
         if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
             if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
                 tag = Constants.BASIC_PARAM_TAG_RULE;
@@ -337,7 +335,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             }
         }
 
-        if ((tag == null && "encode".equals(policy.getDirective("onUnknownTag"))) || (tag != null && "encode".equals(tag.getAction()))) {
+        if ((tag == null && "encode".equals(policy.getOnUnknownTag())) || (tag != null && "encode".equals(tag.getAction()))) {
 
             addError(ErrorMessageUtil.ERROR_TAG_ENCODED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
 
@@ -436,14 +434,14 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * parser.
              */
 
-            if ("style".equals(tagNameLowerCase) && policy.getTagByName("style") != null) {
+            if ("style".equals(tagNameLowerCase) && policy.getStyleTag() != null) {
 
                 /*
                  * Invoke the css parser on this element.
                  */
             	CssScanner styleScanner;
             	
-            	if("true".equals(policy.getDirective(Policy.EMBED_STYLESHEETS))) {
+            	if(policy.isEmbedStyleSheets()) {
             		styleScanner = new ExternalCssScanner(policy, messages);
             	}else{
             		styleScanner = new CssScanner(policy, messages);
