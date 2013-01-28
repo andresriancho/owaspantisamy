@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <name>OWASP AntiSamy Project</name>
     <description>The OWASP AntiSamy project is a collection of APIs for safely allowing users to supply their own HTML
         and CSS without exposing the site to XSS vulnerabilities.
@@ -9,7 +8,7 @@
     <groupId>org.owasp.antisamy</groupId>
     <artifactId>antisamy-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.5</version>
     <developers>
         <developer>
             <name>Arshan Dabirsiaghi</name>
@@ -53,7 +52,8 @@
         <url>http://http://code.google.com/p/owaspantisamy</url>
         <connection>scm:git:https://code.google.com/p/owaspantisamy/</connection>
         <developerConnection>scm:git:https://code.google.com/p/owaspantisamy/</developerConnection>
-    </scm>
+      <tag>antisamy-project-1.5</tag>
+  </scm>
     <licenses>
         <license>
             <name>BSD License</name>
