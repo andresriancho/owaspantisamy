@@ -1164,4 +1164,21 @@ public class AntiSamyTest extends TestCase {
         Policy pol = Policy.getInstance(url);
         as.scan("<table><tr><td></td></tr></table>", pol, AntiSamy.DOM);
     }
+
+    public void testIssue75() throws ScanException, PolicyException {
+        URL url = getClass().getResource("/antisamy-tinymce.xml");
+
+        Policy pol = Policy.getInstance(url);
+        as.scan("<script src=\"<. \">\"></script>", policy, AntiSamy.DOM);
+        as.scan("<script src=\"<. \">\"></script>", policy, AntiSamy.SAX);
+    }
+
+
+    public void testIssue144() throws ScanException, PolicyException {
+        String pinata = "pi\u00f1ata";
+        System.out.println(pinata);
+        CleanResults results = as.scan(pinata, policy,  AntiSamy.DOM);
+        String cleanHTML = results.getCleanHTML();
+        assertEquals( pinata, cleanHTML);
+    }
 }
