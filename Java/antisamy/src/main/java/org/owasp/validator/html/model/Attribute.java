@@ -25,8 +25,9 @@
 package org.owasp.validator.html.model;
 
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -45,11 +46,17 @@ public class Attribute  {
 	private final String onInvalid;
 	private final List<String> allowedValues;
 	private final List<Pattern> allowedRegExp;
-	
+    private final Set<String> allowedValuesLower;
+
     public Attribute(String name, List<Pattern> allowedRegexps, List<String> allowedValues, String onInvalidStr, String description) {
         this.name = name;
         this.allowedRegExp = Collections.unmodifiableList(allowedRegexps);
         this.allowedValues = Collections.unmodifiableList( allowedValues);
+        Set<String> allowedValuesLower = new HashSet<String>();
+        for (String allowedValue : allowedValues) {
+            allowedValuesLower.add( allowedValue.toLowerCase());
+        }
+        this.allowedValuesLower = allowedValuesLower;
         this.onInvalid = onInvalidStr;
         this.description = description;
     }
@@ -76,10 +83,13 @@ public class Attribute  {
 	 * 
 	 * @return A <code>List</code> of literal values that an attribute could have, according to the Policy.
 	 */
-	public List getAllowedValues() {
+	public List<String> getAllowedValues() {
 		return allowedValues;
 	}
 
+    public boolean containsAllowedValue(String valueInLowerCase){
+        return allowedValuesLower.contains(valueInLowerCase);
+    }
     /**
 	 * 
 	 * @return The name of an Attribute object.

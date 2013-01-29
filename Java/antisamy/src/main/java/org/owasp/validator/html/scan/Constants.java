@@ -66,4 +66,12 @@ public class Constants {
     public static final String DEFAULT_LOCALE_LOC = "US";
     
     public static final String big5CharsToEncode = "<>\"'&";
+    public static final Set<Integer> big5CharsToEncodeSet = new HashSet<Integer>(){
+        {
+            for (int i = 0; i <big5CharsToEncode.length(); i++){
+                add((int) big5CharsToEncode.charAt(i));
+            }
+        }
+    };
+
 }

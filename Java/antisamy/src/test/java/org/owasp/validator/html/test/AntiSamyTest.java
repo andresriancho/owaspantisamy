@@ -1128,6 +1128,21 @@ public class AntiSamyTest extends TestCase {
         System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
     }
 
+    public void testProfileSax() throws IOException, ScanException, PolicyException {
+
+        double totalDomTime = 0;
+
+        int testReps = 9999;
+
+        String html = "<body> hey you <img/> out there on your own </body>";
+
+        for (int j = 0; j < testReps; j++) {
+            totalDomTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
+        }
+
+        System.out.println("Total SAX time 9999 reps short string: " + totalDomTime);
+    }
+
     public void testComparePatternSpeed() throws IOException, ScanException, PolicyException {
 
         final Pattern invalidXmlCharacters =

@@ -211,7 +211,8 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	public void startElement(QName element, XMLAttributes attributes, Augmentations augs) throws XNIException {
 		// see if we have a policy for this tag.
-		Tag tag = policy.getTagByLowercaseName(element.localpart.toLowerCase());
+        String tagNameLowerCase = element.localpart.toLowerCase();
+        Tag tag = policy.getTagByLowercaseName(tagNameLowerCase);
 
 		/*
 		 * Handle the automatic translation of <param> to nested <embed> for IE.
@@ -220,7 +221,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		boolean masqueradingParam = false;
 		String embedName = null;
 		String embedValue = null;
-		if (tag == null && isValidateParamAsEmbed && "param".equals(element.localpart.toLowerCase())) {
+		if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
 			Tag embedPolicy = policy.getEmbedTag();
 			if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
 				tag = embedPolicy;// Constants.BASIC_PARAM_TAG_RULE;
@@ -240,7 +241,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// we are in removal-mode, so remove this tag as well
 			// we also remove all child elements of a style element
 			this.operations.push("remove");
-		} else if ((tag == null && "encode".equals(policy.getDirective("onUnknownTag"))) || (tag != null && "encode".equals(tag.getAction()))) {
+		} else if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && "encode".equals(tag.getAction()))) {
 			String name = "<" + element.localpart + ">";
 			super.characters(new XMLString(name.toCharArray(), 0, name.length()), augs);
 			this.operations.push("filter");
@@ -292,14 +293,11 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 					} else if (attribute != null) {
 						// validate the values against the policy
 						boolean isValid = false;
-                        for (Object o : attribute.getAllowedValues()) {
-                            String allowedValue = (String) o;
-                            if (allowedValue != null && allowedValue.equalsIgnoreCase(value)) {
-                                validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
-                                isValid = true;
-                                break;
-                            }
+                        if (attribute.containsAllowedValue(value.toLowerCase())) {
+                            validattributes.addAttribute(makeSimpleQname(name), "CDATA", value);
+                            isValid = true;
                         }
+
 
                         if (!isValid) {
                             isValid = attribute.matchesAllowedExpression(value);

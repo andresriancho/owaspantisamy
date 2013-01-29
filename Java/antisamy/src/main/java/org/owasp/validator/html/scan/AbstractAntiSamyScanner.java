@@ -88,9 +88,8 @@ public abstract class AbstractAntiSamyScanner {
 	
 	/** @noinspection deprecation*/
     protected org.apache.xml.serialize.HTMLSerializer getHTMLSerializer(Writer w, OutputFormat format) {
-		boolean useXhtml = "true".equals(policy.getDirective(Policy.USE_XHTML));
-       	
-        if(useXhtml) {
+
+        if(policy.isUseXhtml()) {
         	return new ASXHTMLSerializer(w, format, policy);
         }
         
