@@ -447,170 +447,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * attribute.
              */
 
-            Node attribute;
-
-            NamedNodeMap attributes = ele.getAttributes();
-            for (int currentAttributeIndex = 0; currentAttributeIndex < attributes.getLength(); currentAttributeIndex++) {
-
-                attribute = attributes.item(currentAttributeIndex);
-
-                String name = attribute.getNodeName();
-                String value = attribute.getNodeValue();
-
-                Attribute attr = tag.getAttributeByName(name.toLowerCase());
-
-                /**
-                 * If we there isn't an attribute by that name in our policy
-                 * check to see if it's a globally defined attribute. Validate
-                 * against that if so.
-                 */
-                if (attr == null) {
-                    attr = policy.getGlobalAttributeByName(name);
-                }
-
-                boolean isAttributeValid = false;
-
-                /*
-                 * We have to special case the "style" attribute since it's
-                 * validated quite differently.
-                 */
-                if ("style".equals(name.toLowerCase()) && attr != null) {
-
-                    /*
-                     * Invoke the CSS parser on this element.
-                     */
-                    CssScanner styleScanner = new CssScanner(policy, messages);
-
-                    try {
-
-                        CleanResults cr = styleScanner.scanInlineStyle(value, tagName, policy.getMaxInputSize());
-
-                        attribute.setNodeValue(cr.getCleanHTML());
-
-                        List<String> cssScanErrorMessages = cr.getErrorMessages();
-
-                        errorMessages.addAll(cssScanErrorMessages);
-
-                    } catch (DOMException e) {
-
-                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
-
-                        ele.removeAttribute(attribute.getNodeName());
-                        currentAttributeIndex--;
-
-                    } catch (ScanException e) {
-
-                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
-
-                        ele.removeAttribute(attribute.getNodeName());
-                        currentAttributeIndex--;
-                    }
-
-                } else {
-
-                    if (attr != null) {
-
-                        Iterator allowedValues = attr.getAllowedValues().iterator();
-
-                        while (allowedValues.hasNext() && !isAttributeValid) {
-
-                            String allowedValue = (String) allowedValues.next();
-
-                            if (allowedValue != null && allowedValue.toLowerCase().equals(value.toLowerCase())) {
-                                isAttributeValid = true;
-                            }
-                        }
-
-                        if (attr.matchesAllowedExpression(value)){
-                            isAttributeValid = true;
-                        }
-
-                        if (!isAttributeValid) {
-
-                            /*
-                             * Document transgression and perform the
-                             * "onInvalid" action. The default action is to
-                             * strip the attribute and leave the rest intact.
-                             */
-
-                            String onInvalidAction = attr.getOnInvalid();
-
-                            if ("removeTag".equals(onInvalidAction)) {
-
-                                /*
-                                 * Remove the tag and its contents.
-                                 */
-
-                                removeNode(ele);
-                            	
-                                addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
-                                        new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-                                currentStackDepth--;
-                                return;
-
-                            } else if ("filterTag".equals(onInvalidAction)) {
-
-                                /*
-                                 * Remove the attribute and keep the rest of the
-                                 * tag.
-                                 */
-
-                                processChildren(ele);
-
-                                promoteChildren(ele);
-
-                                addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-
-                            } else if ("encodeTag".equals(onInvalidAction)) {
-
-                                /*
-                                 * Remove the attribute and keep the rest of the
-                                 * tag.
-                                 */
-
-                                processChildren(ele);
-
-                                encodeAndPromoteChildren(ele);
-
-                                addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_ENCODE, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-
-                            } else {
-
-                                /*
-                                 * onInvalidAction = "removeAttribute"
-                                 */
-
-                                ele.removeAttribute(attribute.getNodeName());
-
-                                currentAttributeIndex--;
-
-                                addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-
-                                if ("removeTag".equals(onInvalidAction) || "filterTag".equals(onInvalidAction)) {
-                                    return; // can't process any more if we
-                                    // remove/filter the tag
-                                }
-
-                            }
-
-                        }
-
-                    } else { /*
-                         * the attribute they specified isn't in our policy
-                         * - remove it (whitelisting!)
-                         */
-
-                        addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-
-                        ele.removeAttribute(attribute.getNodeName());
-
-                        currentAttributeIndex--;
-
-                    } // end if attribute is or is not found in policy file
-
-                } // end while loop through attributes
-
-            } // loop through each attribute
+            if (processAttributes(ele, tagName, tag)) return; // can't process any more if we
 
             if (isNofollowAnchors && "a".equals(tagNameLowerCase)) {
                 ele.setAttribute("rel", "nofollow");
@@ -682,6 +519,174 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         }
 
         currentStackDepth--;
+    }
+
+    private boolean processAttributes(Element ele, String tagName, Tag tag) throws ScanException {
+        Node attribute;
+
+        NamedNodeMap attributes = ele.getAttributes();
+        for (int currentAttributeIndex = 0; currentAttributeIndex < attributes.getLength(); currentAttributeIndex++) {
+
+            attribute = attributes.item(currentAttributeIndex);
+
+            String name = attribute.getNodeName();
+            String value = attribute.getNodeValue();
+
+            Attribute attr = tag.getAttributeByName(name.toLowerCase());
+
+            /**
+             * If we there isn't an attribute by that name in our policy
+             * check to see if it's a globally defined attribute. Validate
+             * against that if so.
+             */
+            if (attr == null) {
+                attr = policy.getGlobalAttributeByName(name);
+            }
+
+            boolean isAttributeValid = false;
+
+            /*
+             * We have to special case the "style" attribute since it's
+             * validated quite differently.
+             */
+            if ("style".equals(name.toLowerCase()) && attr != null) {
+
+                /*
+                 * Invoke the CSS parser on this element.
+                 */
+                CssScanner styleScanner = new CssScanner(policy, messages);
+
+                try {
+
+                    CleanResults cr = styleScanner.scanInlineStyle(value, tagName, policy.getMaxInputSize());
+
+                    attribute.setNodeValue(cr.getCleanHTML());
+
+                    List<String> cssScanErrorMessages = cr.getErrorMessages();
+
+                    errorMessages.addAll(cssScanErrorMessages);
+
+                } catch (DOMException e) {
+
+                    addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
+
+                    ele.removeAttribute(attribute.getNodeName());
+                    currentAttributeIndex--;
+
+                } catch (ScanException e) {
+
+                    addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
+
+                    ele.removeAttribute(attribute.getNodeName());
+                    currentAttributeIndex--;
+                }
+
+            } else {
+
+                if (attr != null) {
+
+                    Iterator allowedValues = attr.getAllowedValues().iterator();
+
+                    while (allowedValues.hasNext() && !isAttributeValid) {
+
+                        String allowedValue = (String) allowedValues.next();
+
+                        if (allowedValue != null && allowedValue.toLowerCase().equals(value.toLowerCase())) {
+                            isAttributeValid = true;
+                        }
+                    }
+
+                    if (attr.matchesAllowedExpression(value)){
+                        isAttributeValid = true;
+                    }
+
+                    if (!isAttributeValid) {
+
+                        /*
+                         * Document transgression and perform the
+                         * "onInvalid" action. The default action is to
+                         * strip the attribute and leave the rest intact.
+                         */
+
+                        String onInvalidAction = attr.getOnInvalid();
+
+                        if ("removeTag".equals(onInvalidAction)) {
+
+                            /*
+                             * Remove the tag and its contents.
+                             */
+
+                            removeNode(ele);
+
+                            addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
+                                    new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
+                            currentStackDepth--;
+                            return true;
+
+                        } else if ("filterTag".equals(onInvalidAction)) {
+
+                            /*
+                             * Remove the attribute and keep the rest of the
+                             * tag.
+                             */
+
+                            processChildren(ele);
+
+                            promoteChildren(ele);
+
+                            addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_FILTER, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
+
+                        } else if ("encodeTag".equals(onInvalidAction)) {
+
+                            /*
+                             * Remove the attribute and keep the rest of the
+                             * tag.
+                             */
+
+                            processChildren(ele);
+
+                            encodeAndPromoteChildren(ele);
+
+                            addError(ErrorMessageUtil.ERROR_ATTRIBUTE_CAUSE_ENCODE, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
+
+                        } else {
+
+                            /*
+                             * onInvalidAction = "removeAttribute"
+                             */
+
+                            ele.removeAttribute(attribute.getNodeName());
+
+                            currentAttributeIndex--;
+
+                            addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
+
+                            if ("removeTag".equals(onInvalidAction) || "filterTag".equals(onInvalidAction)) {
+                                return true;
+                                // remove/filter the tag
+                            }
+
+                        }
+
+                    }
+
+                } else { /*
+                     * the attribute they specified isn't in our policy
+                     * - remove it (whitelisting!)
+                     */
+
+                    addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
+
+                    ele.removeAttribute(attribute.getNodeName());
+
+                    currentAttributeIndex--;
+
+                } // end if attribute is or is not found in policy file
+
+            } // end while loop through attributes
+
+        } // loop through each attribute
+        return false;
     }
 
     private void processChildren(Node ele) throws ScanException {
