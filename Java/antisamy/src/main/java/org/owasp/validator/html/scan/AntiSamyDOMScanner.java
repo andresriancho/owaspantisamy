@@ -25,7 +25,6 @@ package org.owasp.validator.html.scan;
 
 import org.apache.batik.css.parser.ParseException;
 import org.apache.xerces.dom.DocumentImpl;
-import org.apache.xml.serialize.OutputFormat;
 import org.cyberneko.html.parsers.DOMFragmentParser;
 import org.owasp.validator.css.CssScanner;
 import org.owasp.validator.css.ExternalCssScanner;
@@ -68,7 +67,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
     private static final Pattern conditionalDirectives =
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
-    private int currentStackDepth;
     private static final ThreadLocal<CachedItem> parsers = new ThreadLocal<CachedItem>(){
         protected CachedItem initialValue() {
             return new CachedItem();
@@ -157,9 +155,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 throw new ScanException(e);
             }
 
-            currentStackDepth = 0;
-
-            processChildren(dom);
+            processChildren(dom, 0);
 
             /*
              * Serialize the output and then return the resulting DOM object and
@@ -172,7 +168,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 public String call() throws Exception {
                     StringWriter out = new StringWriter();
 
-                    OutputFormat format = getOutputFormat(outputEncoding);
+                    @SuppressWarnings("deprecation")
+                    org.apache.xml.serialize.OutputFormat format = getOutputFormat(outputEncoding);
 
                     //noinspection deprecation
                     org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
@@ -225,7 +222,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      * @param node
      *            The node to validate.
      */
-    private void recursiveValidateTag(final Node node) throws ScanException {
+    private void recursiveValidateTag(final Node node, int currentStackDepth) throws ScanException {
 
         currentStackDepth++;
 
@@ -235,20 +232,18 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         if (node instanceof Comment) {
             processCommentNode(node);
-            currentStackDepth--;
             return;
         }
 
-        if (node instanceof Element && node.getChildNodes().getLength() == 0) {
+        boolean isElement = node instanceof Element;
+        if (isElement && node.getChildNodes().getLength() == 0) {
             if (removeDisallowedEmpty(node)){
-                currentStackDepth--;
                 return;
             }
         }
 
         if (node instanceof Text && Node.CDATA_SECTION_NODE == node.getNodeType()) {
             stripCData(node);
-            currentStackDepth--;
             return;
         }
 
@@ -256,8 +251,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             removePI(node);
         }
 
-        if (!(node instanceof Element)) {
-            currentStackDepth--;
+        if (!isElement) {
             return;
         }
 
@@ -273,255 +267,235 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          * place for <embed> and <embed> policy is to validate, use custom
          * policy to get the tag through to the validator.
          */
-        boolean masqueradingParam = false;
         Tag embedTag = policy.getEmbedTag();
-        if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
-            if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
-                tag = Constants.BASIC_PARAM_TAG_RULE;
-                masqueradingParam = true;
-            }
+        boolean masqueradingParam = isMasqueradingParam(tag, embedTag, tagNameLowerCase);
+        if (masqueradingParam){
+            tag = Constants.BASIC_PARAM_TAG_RULE;
         }
 
-        if ((tag == null && "encode".equals(policy.getOnUnknownTag())) || (tag != null && "encode".equals(tag.getAction()))) {
-
-            addError(ErrorMessageUtil.ERROR_TAG_ENCODED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
-
-            /*
-             * We have to filter out the tags only. This means the content
-             * should remain. First step is to validate before promoting its
-             * children.
-             */
-
-            processChildren(ele);
-
-            /*
-             * Transform the tag to text, HTML-encode it and promote the
-             * children. The tag will be kept in the fragment as one or two text
-             * Nodes located before and after the children; representing how the
-             * tag used to wrap them.
-             */
-
-            encodeAndPromoteChildren(ele);
-            currentStackDepth--;
-            return;
-
+        if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && "encode".equals(tag.getAction()))) {
+            encodeTag(currentStackDepth, ele, tagName);
         } else if (tag == null || Policy.ACTION_FILTER.equals(tag.getAction())) {
-
-            if (tag == null) {
-                addError(ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
-            } else {
-                addError(ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
-            }
-
-            /*
-             * We have to filter out the tags only. This means the content
-             * should remain. First step is to validate before promoting its
-             * children.
-             */
-
-            processChildren(ele);
-
-            /*
-             * Loop through and add the children node to the parent before
-             * removing the current node from the parent.
-             *
-             * We must get a fresh copy of the children nodes because validating
-             * the children may have resulted in us getting less or more
-             * children.
-             */
-
-            promoteChildren(ele);
-            currentStackDepth--;
-            return;
-
+            actionFilter(currentStackDepth, ele, tagName, tag);
         } else if (Policy.ACTION_VALIDATE.equals(tag.getAction())) {
-
-            /*
-             * If doing <param> as <embed>, now is the time to convert it.
-             */
-            String nameValue = null;
-            if (masqueradingParam) {
-                nameValue = ele.getAttribute("name");
-                if (nameValue != null && !"".equals(nameValue)) {
-                    String valueValue = ele.getAttribute("value");
-                    ele.setAttribute(nameValue, valueValue);
-                    ele.removeAttribute("name");
-                    ele.removeAttribute("value");
-                    tag = embedTag;
-                }
-            }
-
-            /*
-             * Check to see if it's a <style> tag. We have to special case this
-             * tag so we can hand it off to the custom style sheet validating
-             * parser.
-             */
-
-            if ("style".equals(tagNameLowerCase) && policy.getStyleTag() != null) {
-
-                /*
-                 * Invoke the css parser on this element.
-                 */
-            	CssScanner styleScanner;
-            	
-            	if(policy.isEmbedStyleSheets()) {
-            		styleScanner = new ExternalCssScanner(policy, messages);
-            	}else{
-            		styleScanner = new CssScanner(policy, messages);
-            	}
-
-                try {
-
-                    if (ele.getFirstChild() != null) {
-
-                        String toScan = ele.getFirstChild().getNodeValue();
-
-                        CleanResults cr = styleScanner.scanStyleSheet(toScan, policy.getMaxInputSize());
-
-                        errorMessages.addAll(cr.getErrorMessages());
-
-                        /*
-                         * If IE gets an empty style tag, i.e. <style/> it will
-                         * break all CSS on the page. I wish I was kidding. So,
-                         * if after validation no CSS properties are left, we
-                         * would normally be left with an empty style tag and
-                         * break all CSS. To prevent that, we have this check.
-                         */
-
-                        final String cleanHTML = cr.getCleanHTML();
-
-                        if (cleanHTML == null || cleanHTML.equals("")) {
-
-                            ele.getFirstChild().setNodeValue("/* */");
-
-                        } else {
-
-                            ele.getFirstChild().setNodeValue(cleanHTML);
-
-                        }
-
-                    }
-
-                } catch (DOMException e) {
-
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(ele);
-                    currentStackDepth--;
-                    return;
-
-                } catch (ScanException e) {
-
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(ele);
-                    currentStackDepth--;
-                    return;
-
-                    /*
-                     * This shouldn't be reachable anymore, but we'll leave it
-                     * here because I'm hilariously dumb sometimes.
-                     */
-                } catch (ParseException e) {
-
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(ele);
-                    currentStackDepth--;
-                    return;
-
-                    /*
-                     * Batik can throw NumberFormatExceptions (see bug #48).
-                     */
-                } catch (NumberFormatException e) {
-
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(ele);
-                    currentStackDepth--;
-                    return;
-                }
-            }
-
-            /*
-             * Go through the attributes in the tainted tag and validate them
-             * against the values we have for them.
-             *
-             * If we don't have a rule for the attribute we remove the
-             * attribute.
-             */
-
-            if (processAttributes(ele, tagName, tag)) return; // can't process any more if we
-
-            if (isNofollowAnchors && "a".equals(tagNameLowerCase)) {
-                ele.setAttribute("rel", "nofollow");
-            }
-
-            processChildren(ele);
-
-            /*
-             * If we have been dealing with a <param> that has been converted to
-             * an <embed>, convert it back
-             */
-            if (masqueradingParam && nameValue != null && !"".equals(nameValue)) {
-                String valueValue = ele.getAttribute(nameValue);
-                ele.setAttribute("name", nameValue);
-                ele.setAttribute("value", valueValue);
-                ele.removeAttribute(nameValue);
-            }
-
-            currentStackDepth--;
-            return;
-
+            actionValidate(currentStackDepth, ele, parentNode, tagName, tagNameLowerCase, tag, masqueradingParam, embedTag);
         } else if (Policy.ACTION_TRUNCATE.equals(tag.getAction())) {
-
-            /*
-             * Remove all attributes. This is for tags like i, b, u, etc. Purely
-             * formatting without any need for attributes. It also removes any
-             * children.
-             */
-
-            NamedNodeMap nnmap = ele.getAttributes();
-
-            while (nnmap.getLength() > 0) {
-
-                addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(nnmap.item(0).getNodeName())});
-
-                ele.removeAttribute(nnmap.item(0).getNodeName());
-
-            }
-
-            NodeList cList = ele.getChildNodes();
-
-            int i = 0;
-            int j = 0;
-            int length = cList.getLength();
-
-            while (i < length) {
-
-                Node nodeToRemove = cList.item(j);
-
-                if (nodeToRemove.getNodeType() != Node.TEXT_NODE) {
-                    ele.removeChild(nodeToRemove);
-                } else {
-                    j++;
-                }
-
-                i++;
-            }
-
+            actionTruncate(ele, tagName);
         } else {
-
             /*
              * If we reached this that means that the tag's action is "remove",
              * which means to remove the tag (including its contents).
              */
-
             addError(ErrorMessageUtil.ERROR_TAG_DISALLOWED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
             removeNode(ele);
+        }
+    }
+
+    private boolean isMasqueradingParam(Tag tag, Tag embedTag, String tagNameLowerCase){
+        if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
+            if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void encodeTag(int currentStackDepth, Element ele, String tagName) throws ScanException {
+        addError(ErrorMessageUtil.ERROR_TAG_ENCODED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
+        processChildren(ele, currentStackDepth);
+
+        /*
+    * Transform the tag to text, HTML-encode it and promote the
+    * children. The tag will be kept in the fragment as one or two text
+    * Nodes located before and after the children; representing how the
+    * tag used to wrap them.
+    */
+
+        encodeAndPromoteChildren(ele);
+    }
+
+    private void actionFilter(int currentStackDepth, Element ele, String tagName, Tag tag) throws ScanException {
+        if (tag == null) {
+            addError(ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
+        } else {
+            addError(ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
+        }
+
+        processChildren(ele, currentStackDepth);
+        promoteChildren(ele);
+    }
+
+    private void actionValidate(int currentStackDepth, Element ele, Node parentNode, String tagName, String tagNameLowerCase, Tag tag, boolean masqueradingParam, Tag embedTag) throws ScanException {
+        /*
+    * If doing <param> as <embed>, now is the time to convert it.
+    */
+        String nameValue = null;
+        if (masqueradingParam) {
+            nameValue = ele.getAttribute("name");
+            if (nameValue != null && !"".equals(nameValue)) {
+                String valueValue = ele.getAttribute("value");
+                ele.setAttribute(nameValue, valueValue);
+                ele.removeAttribute("name");
+                ele.removeAttribute("value");
+                tag = embedTag;
+            }
+        }
+
+        /*
+    * Check to see if it's a <style> tag. We have to special case this
+    * tag so we can hand it off to the custom style sheet validating
+    * parser.
+    */
+
+        if ("style".equals(tagNameLowerCase) && policy.getStyleTag() != null) {
+            if (processStyleTag(ele, parentNode)) return;
+        }
+
+        /*
+    * Go through the attributes in the tainted tag and validate them
+    * against the values we have for them.
+    *
+    * If we don't have a rule for the attribute we remove the
+    * attribute.
+    */
+
+        if (processAttributes(ele, tagName, tag, currentStackDepth)) return; // can't process any more if we
+
+        if (isNofollowAnchors && "a".equals(tagNameLowerCase)) {
+            ele.setAttribute("rel", "nofollow");
+        }
+
+        processChildren(ele, currentStackDepth);
+
+        /*
+    * If we have been dealing with a <param> that has been converted to
+    * an <embed>, convert it back
+    */
+        if (masqueradingParam && nameValue != null && !"".equals(nameValue)) {
+            String valueValue = ele.getAttribute(nameValue);
+            ele.setAttribute("name", nameValue);
+            ele.setAttribute("value", valueValue);
+            ele.removeAttribute(nameValue);
+        }
+    }
+
+    private boolean processStyleTag(Element ele, Node parentNode) {
+        /*
+* Invoke the css parser on this element.
+*/
+        CssScanner styleScanner;
+
+        if(policy.isEmbedStyleSheets()) {
+            styleScanner = new ExternalCssScanner(policy, messages);
+        }else{
+            styleScanner = new CssScanner(policy, messages);
+        }
+
+        try {
+
+            Node firstChild = ele.getFirstChild();
+            if (firstChild != null) {
+
+                String toScan = firstChild.getNodeValue();
+
+                CleanResults cr = styleScanner.scanStyleSheet(toScan, policy.getMaxInputSize());
+
+                errorMessages.addAll(cr.getErrorMessages());
+
+                /*
+                 * If IE gets an empty style tag, i.e. <style/> it will
+                 * break all CSS on the page. I wish I was kidding. So,
+                 * if after validation no CSS properties are left, we
+                 * would normally be left with an empty style tag and
+                 * break all CSS. To prevent that, we have this check.
+                 */
+
+                final String cleanHTML = cr.getCleanHTML();
+
+                if (cleanHTML == null || cleanHTML.equals("")) {
+
+                    firstChild.setNodeValue("/* */");
+
+                } else {
+
+                    firstChild.setNodeValue(cleanHTML);
+
+                }
+
+            }
+
+        } catch (DOMException e) {
+
+            addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+            parentNode.removeChild(ele);
+            return true;
+
+        } catch (ScanException e) {
+
+            addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+            parentNode.removeChild(ele);
+            return true;
+
+            /*
+             * This shouldn't be reachable anymore, but we'll leave it
+             * here because I'm hilariously dumb sometimes.
+             */
+        } catch (ParseException e) {
+
+            addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+            parentNode.removeChild(ele);
+            return true;
+
+            /*
+             * Batik can throw NumberFormatExceptions (see bug #48).
+             */
+        } catch (NumberFormatException e) {
+
+            addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+            parentNode.removeChild(ele);
+            return true;
+        }
+        return false;
+    }
+
+    private void actionTruncate(Element ele, String tagName) {
+        /*
+    * Remove all attributes. This is for tags like i, b, u, etc. Purely
+    * formatting without any need for attributes. It also removes any
+    * children.
+    */
+
+        NamedNodeMap nnmap = ele.getAttributes();
+
+        while (nnmap.getLength() > 0) {
+
+            addError(ErrorMessageUtil.ERROR_ATTRIBUTE_NOT_IN_POLICY, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(nnmap.item(0).getNodeName())});
+
+            ele.removeAttribute(nnmap.item(0).getNodeName());
 
         }
 
-        currentStackDepth--;
+        NodeList cList = ele.getChildNodes();
+
+        int i = 0;
+        int j = 0;
+        int length = cList.getLength();
+
+        while (i < length) {
+
+            Node nodeToRemove = cList.item(j);
+
+            if (nodeToRemove.getNodeType() != Node.TEXT_NODE) {
+                ele.removeChild(nodeToRemove);
+            } else {
+                j++;
+            }
+
+            i++;
+        }
     }
 
-    private boolean processAttributes(Element ele, String tagName, Tag tag) throws ScanException {
+    private boolean processAttributes(Element ele, String tagName, Tag tag, int currentStackDepth) throws ScanException {
         Node attribute;
 
         NamedNodeMap attributes = ele.getAttributes();
@@ -620,7 +594,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                             addError(ErrorMessageUtil.ERROR_ATTRIBUTE_INVALID_REMOVED,
                                     new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(name), HTMLEntityEncoder.htmlEntityEncode(value)});
-                            currentStackDepth--;
                             return true;
 
                         } else if ("filterTag".equals(onInvalidAction)) {
@@ -630,7 +603,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                              * tag.
                              */
 
-                            processChildren(ele);
+                            processChildren(ele, currentStackDepth);
 
                             promoteChildren(ele);
 
@@ -643,7 +616,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                              * tag.
                              */
 
-                            processChildren(ele);
+                            processChildren(ele, currentStackDepth);
 
                             encodeAndPromoteChildren(ele);
 
@@ -689,14 +662,14 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         return false;
     }
 
-    private void processChildren(Node ele) throws ScanException {
+    private void processChildren(Node ele, int currentStackDepth) throws ScanException {
         Node tmp;NodeList childNodes = ele.getChildNodes();
         int length = childNodes.getLength();
         for (int i = 0; i < length; i++) {
 
             tmp = childNodes.item(i);
 
-            recursiveValidateTag(tmp);
+            recursiveValidateTag(tmp, currentStackDepth);
 
             /*
              * This indicates the node was removed/failed validation.

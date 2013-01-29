@@ -26,6 +26,7 @@ public class InternalPolicy extends Policy {
     private final String onUnknownTag;
     private final boolean preserveComments;
     private final boolean embedStyleSheets;
+    private final boolean isEncodeUnknownTag;
 
 
     protected InternalPolicy(ParseContext parseContext) throws PolicyException {
@@ -41,6 +42,7 @@ public class InternalPolicy extends Policy {
         useXhtml = isTrue(Policy.USE_XHTML);
         embedTag = getTagByLowercaseName("embed");
         this.onUnknownTag = getDirective("onUnknownTag");
+        this.isEncodeUnknownTag = "encode".equals(onUnknownTag);
         this.preserveComments = isTrue(Policy.PRESERVE_COMMENTS);
         this.styleTag = getTagByLowercaseName("style");
         this.embedStyleSheets = isTrue(Policy.EMBED_STYLESHEETS);
@@ -59,6 +61,7 @@ public class InternalPolicy extends Policy {
         useXhtml = isTrue(Policy.USE_XHTML);
         embedTag = getTagByLowercaseName("embed");
         this.onUnknownTag = getDirective("onUnknownTag");
+        this.isEncodeUnknownTag = "encode".equals(onUnknownTag);
         this.preserveComments = isTrue(Policy.PRESERVE_COMMENTS);
         this.styleTag = getTagByLowercaseName("style");
         this.embedStyleSheets = isTrue(Policy.EMBED_STYLESHEETS);
@@ -123,6 +126,10 @@ public class InternalPolicy extends Policy {
 
     public String getOnUnknownTag() {
         return onUnknownTag;
+    }
+
+    public boolean isEncodeUnknownTag() {
+        return isEncodeUnknownTag;
     }
 
     /**
