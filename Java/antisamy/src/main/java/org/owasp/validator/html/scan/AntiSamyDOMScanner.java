@@ -77,7 +77,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     static class CachedItem {
         private final Map<String,DOMFragmentParser> parsers = new HashMap<String, DOMFragmentParser>();
-        private final Matcher matcher = invalidXmlCharacters.matcher("");
+        private final Matcher invalidXmlCharMatcher = invalidXmlCharacters.matcher("");
 
         DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
             if (inputEncoding == null) {
@@ -139,7 +139,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * from breaking when it gets passed encodings like %21.
              */
 
-            html = stripNonValidXMLCharacters(html, cachedItem.matcher);
+            html = stripNonValidXMLCharacters(html, cachedItem.invalidXmlCharMatcher);
 
             /*
              * First thing we do is call the HTML cleaner ("NekoHTML") on it
@@ -159,26 +159,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
             currentStackDepth = 0;
 
-            /*
-             * Call the work horse.
-             */
-
-            NodeList childNodes = dom.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-
-                Node tmp = childNodes.item(i);
-
-                recursiveValidateTag(tmp);
-
-                /*
-                 * This check indicates if the node that was just scanned was
-                 * removed/failed validation.
-                 */
-                if (tmp.getParentNode() == null) {
-                    i--;
-                }
-
-            }
+            processChildren(dom);
 
             /*
              * Serialize the output and then return the resulting DOM object and
@@ -244,7 +225,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      * @param node
      *            The node to validate.
      */
-    private void recursiveValidateTag(Node node) throws ScanException {
+    private void recursiveValidateTag(final Node node) throws ScanException {
 
         currentStackDepth++;
 
@@ -253,55 +234,26 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         }
 
         if (node instanceof Comment) {
-
-            if (!policy.isPreserveComments()) {
-                node.getParentNode().removeChild(node);
-            } else {
-                String value = ((Comment) node).getData();
-                // Strip conditional directives regardless of the
-                // PRESERVE_COMMENTS setting.
-                if (value != null) {
-                    ((Comment) node).setData(conditionalDirectives.matcher(value).replaceAll(""));
-                }
-            }
-
+            processCommentNode(node);
             currentStackDepth--;
             return;
         }
 
         if (node instanceof Element && node.getChildNodes().getLength() == 0) {
-
-        	String tagName = node.getNodeName();
-
-            if (!isAllowedEmptyTag(tagName)) {
-                /*
-                 * Wasn't in the list of allowed elements, so we'll nuke it.
-                 */
-                addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getNodeName())});
-                removeNode(node);
+            if (removeDisallowedEmpty(node)){
                 currentStackDepth--;
                 return;
             }
         }
 
         if (node instanceof Text && Node.CDATA_SECTION_NODE == node.getNodeType()) {
-
-            addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())});
-
-            //String encoded = HTMLEntityEncoder.htmlEntityEncode(node.getTextContent());
-
-            Node text = document.createTextNode(node.getTextContent());
-            node.getParentNode().insertBefore(text, node);
-            node.getParentNode().removeChild(node);
-    
+            stripCData(node);
             currentStackDepth--;
             return;
         }
 
         if (node instanceof ProcessingInstruction) {
-            addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())});
-            removeNode(node);
-            node.getParentNode().removeChild(node);
+            removePI(node);
         }
 
         if (!(node instanceof Element)) {
@@ -309,12 +261,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             return;
         }
 
-        Element ele = (Element) node;
-        Node parentNode = ele.getParentNode();
-        Node tmp;
+        final Element ele = (Element) node;
+        final Node parentNode = ele.getParentNode();
 
-        String tagName = ele.getNodeName();
-        String tagNameLowerCase = tagName.toLowerCase();
+        final String tagName = ele.getNodeName();
+        final String tagNameLowerCase = tagName.toLowerCase();
         Tag tag = policy.getTagByLowercaseName(tagNameLowerCase);
 
         /*
@@ -341,20 +292,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * children.
              */
 
-            NodeList childNodes = node.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-
-                tmp = childNodes.item(i);
-
-                recursiveValidateTag(tmp);
-
-                /*
-                 * This indicates the node was removed/failed validation.
-                 */
-                if (tmp.getParentNode() == null) {
-                    i--;
-                }
-            }
+            processChildren(ele);
 
             /*
              * Transform the tag to text, HTML-encode it and promote the
@@ -381,20 +319,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              * children.
              */
 
-            NodeList childNodes = node.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-
-                tmp = childNodes.item(i);
-
-                recursiveValidateTag(tmp);
-
-                /*
-                 * This indicates the node was removed/failed validation.
-                 */
-                if (tmp.getParentNode() == null) {
-                    i--;
-                }
-            }
+            processChildren(ele);
 
             /*
              * Loop through and add the children node to the parent before
@@ -447,9 +372,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                 try {
 
-                    if (node.getFirstChild() != null) {
+                    if (ele.getFirstChild() != null) {
 
-                        String toScan = node.getFirstChild().getNodeValue();
+                        String toScan = ele.getFirstChild().getNodeValue();
 
                         CleanResults cr = styleScanner.scanStyleSheet(toScan, policy.getMaxInputSize());
 
@@ -467,11 +392,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                         if (cleanHTML == null || cleanHTML.equals("")) {
 
-                            node.getFirstChild().setNodeValue("/* */");
+                            ele.getFirstChild().setNodeValue("/* */");
 
                         } else {
 
-                            node.getFirstChild().setNodeValue(cleanHTML);
+                            ele.getFirstChild().setNodeValue(cleanHTML);
 
                         }
 
@@ -479,15 +404,15 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                 } catch (DOMException e) {
 
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(node);
+                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+                    parentNode.removeChild(ele);
                     currentStackDepth--;
                     return;
 
                 } catch (ScanException e) {
 
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(node);
+                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+                    parentNode.removeChild(ele);
                     currentStackDepth--;
                     return;
 
@@ -497,8 +422,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                      */
                 } catch (ParseException e) {
 
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(node);
+                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+                    parentNode.removeChild(ele);
                     currentStackDepth--;
                     return;
 
@@ -507,8 +432,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                      */
                 } catch (NumberFormatException e) {
 
-                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getFirstChild().getNodeValue())});
-                    parentNode.removeChild(node);
+                    addError(ErrorMessageUtil.ERROR_CSS_TAG_MALFORMED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(ele.getFirstChild().getNodeValue())});
+                    parentNode.removeChild(ele);
                     currentStackDepth--;
                     return;
                 }
@@ -568,14 +493,14 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                     } catch (DOMException e) {
 
-                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())});
+                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
 
                         ele.removeAttribute(attribute.getNodeName());
                         currentAttributeIndex--;
 
                     } catch (ScanException e) {
 
-                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(node.getNodeValue())});
+                        addError(ErrorMessageUtil.ERROR_CSS_ATTRIBUTE_MALFORMED, new Object[]{tagName, HTMLEntityEncoder.htmlEntityEncode(ele.getNodeValue())});
 
                         ele.removeAttribute(attribute.getNodeName());
                         currentAttributeIndex--;
@@ -630,21 +555,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                                  * tag.
                                  */
 
-                                NodeList childNodes = node.getChildNodes();
-                                for (int i = 0; i < childNodes.getLength(); i++) {
-
-                                    tmp = childNodes.item(i);
-
-                                    recursiveValidateTag(tmp);
-
-                                    /*
-                                     * This indicates the node was
-                                     * removed/failed validation.
-                                     */
-                                    if (tmp.getParentNode() == null) {
-                                        i--;
-                                    }
-                                }
+                                processChildren(ele);
 
                                 promoteChildren(ele);
 
@@ -657,21 +568,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                                  * tag.
                                  */
 
-                                NodeList childNodes = node.getChildNodes();
-                                for (int i = 0; i < childNodes.getLength(); i++) {
-
-                                    tmp = childNodes.item(i);
-
-                                    recursiveValidateTag(tmp);
-
-                                    /*
-                                     * This indicates the node was
-                                     * removed/failed validation.
-                                     */
-                                    if (tmp.getParentNode() == null) {
-                                        i--;
-                                    }
-                                }
+                                processChildren(ele);
 
                                 encodeAndPromoteChildren(ele);
 
@@ -719,20 +616,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                 ele.setAttribute("rel", "nofollow");
             }
 
-            NodeList childNodes = node.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-
-                tmp = childNodes.item(i);
-
-                recursiveValidateTag(tmp);
-
-                /*
-                 * This indicates the node was removed/failed validation.
-                 */
-                if (tmp.getParentNode() == null) {
-                    i--;
-                }
-            }
+            processChildren(ele);
 
             /*
              * If we have been dealing with a <param> that has been converted to
@@ -800,6 +684,65 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         currentStackDepth--;
     }
 
+    private void processChildren(Node ele) throws ScanException {
+        Node tmp;NodeList childNodes = ele.getChildNodes();
+        int length = childNodes.getLength();
+        for (int i = 0; i < length; i++) {
+
+            tmp = childNodes.item(i);
+
+            recursiveValidateTag(tmp);
+
+            /*
+             * This indicates the node was removed/failed validation.
+             */
+            if (tmp.getParentNode() == null) {
+                i--;
+                length--;
+            }
+        }
+    }
+
+    private void removePI(Node node) {
+        addError(ErrorMessageUtil.ERROR_PI_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())});
+        removeNode(node);
+        node.getParentNode().removeChild(node);
+    }
+
+    private void stripCData(Node node) {
+        addError(ErrorMessageUtil.ERROR_CDATA_FOUND, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getTextContent())});
+        Node text = document.createTextNode(node.getTextContent());
+        node.getParentNode().insertBefore(text, node);
+        node.getParentNode().removeChild(node);
+    }
+
+    private void processCommentNode(Node node) {
+        if (!policy.isPreserveComments()) {
+            node.getParentNode().removeChild(node);
+        } else {
+            String value = ((Comment) node).getData();
+            // Strip conditional directives regardless of the
+            // PRESERVE_COMMENTS setting.
+            if (value != null) {
+                ((Comment) node).setData(conditionalDirectives.matcher(value).replaceAll(""));
+            }
+        }
+    }
+
+    private boolean removeDisallowedEmpty(Node node){
+        String tagName = node.getNodeName();
+
+        if (!isAllowedEmptyTag(tagName)) {
+            /*
+            * Wasn't in the list of allowed elements, so we'll nuke it.
+            */
+            addError(ErrorMessageUtil.ERROR_TAG_EMPTY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(node.getNodeName())});
+            removeNode(node);
+            return true;
+        }
+        return false;
+    }
+
     private void removeNode(Node node) {
 		Node parent = node.getParentNode();
 		parent.removeChild(node);
@@ -854,16 +797,16 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      *
      * @param in
      *            The String whose non-valid characters we want to remove.
-     * @param matcher
+     * @param invalidXmlCharsMatcher  The reusable regex matcher
      * @return The in String, stripped of non-valid characters.
      */
-    private String stripNonValidXMLCharacters(String in, Matcher matcher) {
+    private String stripNonValidXMLCharacters(String in, Matcher invalidXmlCharsMatcher) {
 
         if (in == null || ("".equals(in))) {
             return ""; // vacancy test.
         }
-        matcher.reset(in);
-        return matcher.matches() ? matcher.replaceAll("") : in;
+        invalidXmlCharsMatcher.reset(in);
+        return invalidXmlCharsMatcher.matches() ? invalidXmlCharsMatcher.replaceAll("") : in;
     }
 
     // private void debug(String s) { System.out.println(s); }
