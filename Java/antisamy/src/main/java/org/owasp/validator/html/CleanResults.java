@@ -46,8 +46,7 @@ public class CleanResults {
 
 	private List<String> errorMessages = new ArrayList<String>();
 	private Callable<String> cleanHTML;
-	private Date startOfScan;
-	private Date endOfScan;
+	private long elapsedScan;
 
 	private DocumentFragment cleanXMLDocumentFragment;
 
@@ -58,10 +57,9 @@ public class CleanResults {
 
 	}
 
-	public CleanResults(Date startOfScan, Date endOfScan, final String cleanHTML,
+	public CleanResults(long startOfScan, final String cleanHTML,
 			DocumentFragment XMLDocumentFragment, List<String> errorMessages) {
-		this.startOfScan = startOfScan;
-		this.endOfScan = endOfScan;
+		this.elapsedScan = System.currentTimeMillis() - startOfScan;
 		this.cleanXMLDocumentFragment = XMLDocumentFragment;
 		this.cleanHTML = new Callable<String>() {
             public String call() throws Exception {
@@ -71,25 +69,13 @@ public class CleanResults {
 		this.errorMessages = errorMessages;
 	}
 
-    public CleanResults(Date startOfScan, Date endOfScan, Callable<String> cleanHTML,
+    public CleanResults(long startOfScan, Callable<String> cleanHTML,
                         DocumentFragment XMLDocumentFragment, List<String> errorMessages) {
-        this.startOfScan = startOfScan;
-        this.endOfScan = endOfScan;
+        this.elapsedScan = System.currentTimeMillis() - startOfScan;
         this.cleanXMLDocumentFragment = XMLDocumentFragment;
         this.cleanHTML = cleanHTML;
         this.errorMessages = errorMessages;
     }
-
-    /**
-	 * This is called at the beginning of the scan to initialize the start time
-	 * and create a new CleanResults object.
-	 * 
-	 * @param date
-	 *            The begin time of the scan.
-	 */
-	public CleanResults(Date date) {
-		this.startOfScan = date;
-	}
 
 	public DocumentFragment getCleanXMLDocumentFragment() {
 		return cleanXMLDocumentFragment;
@@ -125,7 +111,7 @@ public class CleanResults {
 	 *         the beginning and end of the scan in seconds.
 	 */
 	public double getScanTime() {
-		return (endOfScan.getTime() - startOfScan.getTime()) / 1000D;
+		return (elapsedScan) / 1000D;
 	}
 
 	/**

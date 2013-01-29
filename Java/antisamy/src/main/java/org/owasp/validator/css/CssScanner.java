@@ -105,8 +105,8 @@ public class CssScanner {
     public CleanResults scanStyleSheet(String taintedCss, int sizeLimit)
 	    throws ScanException {
 
-	Date startOfScan = new Date();
-	List<String> errorMessages = new ArrayList<String>();
+        long startOfScan = System.currentTimeMillis();
+        List<String> errorMessages = new ArrayList<String>();
 
 	/* Check to see if the text starts with (\s)*<![CDATA[
 	 * and end with ]]>(\s)*.
@@ -155,9 +155,7 @@ public class CssScanner {
 		cleaned = "<![CDATA[[" + cleaned + "]]>";
 	}
 	
-	return new CleanResults(startOfScan, new Date(), 
-			cleaned, 
-			null, errorMessages);
+	return new CleanResults(startOfScan, cleaned, null, errorMessages);
     }
 
     /**
@@ -183,9 +181,9 @@ public class CssScanner {
     public CleanResults scanInlineStyle(String taintedCss, String tagName,
 	    int sizeLimit) throws ScanException {
 
-	Date startOfScan = new Date();
+	long startOfScan = System.currentTimeMillis();
 
-	ArrayList errorMessages = new ArrayList();
+	List<String> errorMessages = new ArrayList<String>();
 
 	// Create a queue of all style sheets that need to be validated to
 	// account for any sheets that may be imported by the current CSS
@@ -208,8 +206,7 @@ public class CssScanner {
 
 	parseImportedStylesheets(stylesheets, handler, errorMessages, sizeLimit);
 
-	return new CleanResults(startOfScan, new Date(), handler
-		.getCleanStylesheet(), null, errorMessages);
+	return new CleanResults(startOfScan, handler.getCleanStylesheet(), null, errorMessages);
     }
     
     /**
@@ -254,7 +251,7 @@ public class CssScanner {
 		scanner = new CssScanner(policy, ResourceBundle.getBundle("AntiSamy", Locale.getDefault()));
 	}
 
-	CleanResults results = null;
+	CleanResults results;
 
 	results = scanner
 		.scanStyleSheet(

@@ -126,7 +126,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         isNofollowAnchors = policy.isNofollowAnchors();
         isValidateParamAsEmbed = policy.isValidateParamAsEmbed();
 
-        Date start = new Date();
+        long startOfScan = System.currentTimeMillis();
 
         CachedItem cachedItem = parsers.get();
 
@@ -186,7 +186,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             /**
              * Return the DOM object as well as string HTML.
              */
-            results = new CleanResults(start, new Date(), cleanHtml, dom, errorMessages);
+            results = new CleanResults(startOfScan, cleanHtml, dom, errorMessages);
 
             return results;
 
@@ -236,7 +236,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         }
 
         boolean isElement = node instanceof Element;
-        if (isElement && node.getChildNodes().getLength() == 0) {
+        NodeList eleChildNodes = node.getChildNodes();
+        if (isElement && eleChildNodes.getLength() == 0) {
             if (removeDisallowedEmpty(node)){
                 return;
             }
@@ -260,7 +261,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         final String tagName = ele.getNodeName();
         final String tagNameLowerCase = tagName.toLowerCase();
-        Tag tag = policy.getTagByLowercaseName(tagNameLowerCase);
+        Tag tagRule = policy.getTagByLowercaseName(tagNameLowerCase);
 
         /*
          * If <param> and no policy and isValidateParamAsEmbed and policy in
@@ -268,19 +269,19 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
          * policy to get the tag through to the validator.
          */
         Tag embedTag = policy.getEmbedTag();
-        boolean masqueradingParam = isMasqueradingParam(tag, embedTag, tagNameLowerCase);
+        boolean masqueradingParam = isMasqueradingParam(tagRule, embedTag, tagNameLowerCase);
         if (masqueradingParam){
-            tag = Constants.BASIC_PARAM_TAG_RULE;
+            tagRule = Constants.BASIC_PARAM_TAG_RULE;
         }
 
-        if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && "encode".equals(tag.getAction()))) {
-            encodeTag(currentStackDepth, ele, tagName);
-        } else if (tag == null || Policy.ACTION_FILTER.equals(tag.getAction())) {
-            actionFilter(currentStackDepth, ele, tagName, tag);
-        } else if (Policy.ACTION_VALIDATE.equals(tag.getAction())) {
-            actionValidate(currentStackDepth, ele, parentNode, tagName, tagNameLowerCase, tag, masqueradingParam, embedTag);
-        } else if (Policy.ACTION_TRUNCATE.equals(tag.getAction())) {
-            actionTruncate(ele, tagName);
+        if ((tagRule == null && policy.isEncodeUnknownTag()) || (tagRule != null && "encode".equals(tagRule.getAction()))) {
+            encodeTag(currentStackDepth, ele, tagName, eleChildNodes);
+        } else if (tagRule == null || Policy.ACTION_FILTER.equals(tagRule.getAction())) {
+            actionFilter(currentStackDepth, ele, tagName, tagRule, eleChildNodes);
+        } else if (Policy.ACTION_VALIDATE.equals(tagRule.getAction())) {
+            actionValidate(currentStackDepth, ele, parentNode, tagName, tagNameLowerCase, tagRule, masqueradingParam, embedTag, eleChildNodes);
+        } else if (Policy.ACTION_TRUNCATE.equals(tagRule.getAction())) {
+            actionTruncate(ele, tagName, eleChildNodes);
         } else {
             /*
              * If we reached this that means that the tag's action is "remove",
@@ -291,8 +292,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         }
     }
 
-    private boolean isMasqueradingParam(Tag tag, Tag embedTag, String tagNameLowerCase){
-        if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
+    private boolean isMasqueradingParam(Tag tagRule, Tag embedTag, String tagNameLowerCase){
+        if (tagRule == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
             if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
                 return true;
             }
@@ -300,9 +301,9 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         return false;
     }
 
-    private void encodeTag(int currentStackDepth, Element ele, String tagName) throws ScanException {
+    private void encodeTag(int currentStackDepth, Element ele, String tagName, NodeList eleChildNodes) throws ScanException {
         addError(ErrorMessageUtil.ERROR_TAG_ENCODED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
-        processChildren(ele, currentStackDepth);
+        processChildren(eleChildNodes, currentStackDepth);
 
         /*
     * Transform the tag to text, HTML-encode it and promote the
@@ -314,18 +315,18 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         encodeAndPromoteChildren(ele);
     }
 
-    private void actionFilter(int currentStackDepth, Element ele, String tagName, Tag tag) throws ScanException {
+    private void actionFilter(int currentStackDepth, Element ele, String tagName, Tag tag, NodeList eleChildNodes) throws ScanException {
         if (tag == null) {
             addError(ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
         } else {
             addError(ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[]{HTMLEntityEncoder.htmlEntityEncode(tagName)});
         }
 
-        processChildren(ele, currentStackDepth);
+        processChildren(eleChildNodes, currentStackDepth);
         promoteChildren(ele);
     }
 
-    private void actionValidate(int currentStackDepth, Element ele, Node parentNode, String tagName, String tagNameLowerCase, Tag tag, boolean masqueradingParam, Tag embedTag) throws ScanException {
+    private void actionValidate(int currentStackDepth, Element ele, Node parentNode, String tagName, String tagNameLowerCase, Tag tag, boolean masqueradingParam, Tag embedTag, NodeList eleChildNodes) throws ScanException {
         /*
     * If doing <param> as <embed>, now is the time to convert it.
     */
@@ -365,7 +366,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             ele.setAttribute("rel", "nofollow");
         }
 
-        processChildren(ele, currentStackDepth);
+        processChildren(eleChildNodes, currentStackDepth);
 
         /*
     * If we have been dealing with a <param> that has been converted to
@@ -458,7 +459,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
         return false;
     }
 
-    private void actionTruncate(Element ele, String tagName) {
+    private void actionTruncate(Element ele, String tagName, NodeList eleChildNodes) {
         /*
     * Remove all attributes. This is for tags like i, b, u, etc. Purely
     * formatting without any need for attributes. It also removes any
@@ -475,15 +476,13 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         }
 
-        NodeList cList = ele.getChildNodes();
-
         int i = 0;
         int j = 0;
-        int length = cList.getLength();
+        int length = eleChildNodes.getLength();
 
         while (i < length) {
 
-            Node nodeToRemove = cList.item(j);
+            Node nodeToRemove = eleChildNodes.item(j);
 
             if (nodeToRemove.getNodeType() != Node.TEXT_NODE) {
                 ele.removeChild(nodeToRemove);
@@ -663,7 +662,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     }
 
     private void processChildren(Node ele, int currentStackDepth) throws ScanException {
-        Node tmp;NodeList childNodes = ele.getChildNodes();
+        processChildren(ele.getChildNodes(), currentStackDepth);
+    }
+
+    private void processChildren(NodeList childNodes, int currentStackDepth ) throws ScanException {
+        Node tmp;
         int length = childNodes.getLength();
         for (int i = 0; i < length; i++) {
 
@@ -748,17 +751,20 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      *            The Element we want to filter.
      */
     private void promoteChildren(Element ele) {
+        promoteChildren(ele, ele.getChildNodes());
+    }
 
-        NodeList nodeList = ele.getChildNodes();
+    private void promoteChildren(Element ele, NodeList eleChildNodes) {
+
         Node parent = ele.getParentNode();
 
-        while (nodeList.getLength() > 0) {
-            Node node = ele.removeChild(nodeList.item(0));
+        while (eleChildNodes.getLength() > 0) {
+            Node node = ele.removeChild(eleChildNodes.item(0));
             parent.insertBefore(node, ele);
         }
 
         if (parent != null){
-           removeNode(ele);
+            removeNode(ele);
         }
     }
 

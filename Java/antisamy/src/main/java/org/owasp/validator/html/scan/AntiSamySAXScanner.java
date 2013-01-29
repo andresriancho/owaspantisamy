@@ -26,7 +26,6 @@ package org.owasp.validator.html.scan;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Date;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -36,7 +35,6 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXSource;
 
 import org.apache.xerces.xni.parser.XMLDocumentFilter;
-import org.apache.xml.serialize.OutputFormat;
 import org.cyberneko.html.parsers.SAXParser;
 import org.owasp.validator.html.CleanResults;
 import org.owasp.validator.html.Policy;
@@ -107,9 +105,9 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
             SAXParser parser = cachedItem.saxParser;
             cachedItem.magicSAXFilter.reset(policy);
 
-            Date start = new Date();
+            long startOfScan = System.currentTimeMillis();
 
-			SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
+            SAXSource source = new SAXSource(parser, new InputSource(new StringReader(html)));
 			
             Transformer transformer = cachedItem.transformer;
             boolean formatOutput = policy.isFormatOutput();
@@ -120,17 +118,17 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, omitXml ? "yes" : "no");
             transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
 
-            OutputFormat format = getOutputFormat(outputEncoding);
+            //noinspection deprecation
+            org.apache.xml.serialize.OutputFormat format = getOutputFormat(outputEncoding);
             //noinspection deprecation
             org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
 			transformer.transform(source, new SAXResult(serializer));			
-			Date end = new Date();
 
 			String cleanHtml = trim(html, out.getBuffer().toString());
 
 			errorMessages.clear();
             errorMessages.addAll(cachedItem.magicSAXFilter.getErrorMessages());
-			return new CleanResults(start, end, cleanHtml, null, errorMessages);
+			return new CleanResults(startOfScan, cleanHtml, null, errorMessages);
 
 		} catch (Exception e) {
 			throw new ScanException(e);
