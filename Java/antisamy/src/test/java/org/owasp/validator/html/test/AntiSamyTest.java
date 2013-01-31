@@ -24,21 +24,20 @@
 
 package org.owasp.validator.html.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
+import org.junit.Before;
+import org.junit.Test;
 import org.owasp.validator.html.*;
 import org.owasp.validator.html.model.Attribute;
 import org.owasp.validator.html.model.Tag;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static org.junit.Assert.*;
+
 
 /**
  * This class tests AntiSamy functionality and the basic policy file which
@@ -47,7 +46,7 @@ import java.util.regex.Pattern;
  * @author Arshan Dabirsiaghi
  */
 
-public class AntiSamyTest extends TestCase {
+public class AntiSamyTest {
 
     private static final String[] BASE64_BAD_XML_STRINGS = new String[]{
             // first string is
@@ -72,11 +71,9 @@ public class AntiSamyTest extends TestCase {
     private AntiSamy as = new AntiSamy();
     private TestPolicy policy = null;
 
-    public AntiSamyTest(String s) {
-        super(s);
-    }
 
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         /*
            * Load the policy. You may have to change the path to find the Policy
@@ -88,17 +85,9 @@ public class AntiSamyTest extends TestCase {
         policy = TestPolicy.getInstance(url);
     }
 
-    protected void tearDown() throws Exception {
-    }
 
-    public static Test suite() {
-
-        return new TestSuite(AntiSamyTest.class);
-
-    }
-
-
-    public void testSAX() {
+    @Test
+    public void SAX() {
         try {
             CleanResults cr = as.scan("<b>test</i></b>test thsidfshidf<script>sdfsdf", policy, AntiSamy.SAX);
             assertTrue(cr != null && cr.getCleanXMLDocumentFragment() == null && cr.getCleanHTML().length() > 0);
@@ -113,7 +102,8 @@ public class AntiSamyTest extends TestCase {
       * Test basic XSS cases.
       */
 
-    public void testScriptAttacks() {
+    @Test
+    public void scriptAttacks() {
 
         try {
 
@@ -150,7 +140,8 @@ public class AntiSamyTest extends TestCase {
 
     }
 
-    public void testImgAttacks() {
+    @Test
+    public void imgAttacks() {
 
         try {
 
@@ -205,7 +196,8 @@ public class AntiSamyTest extends TestCase {
         }
     }
 
-    public void testHrefAttacks() {
+    @Test
+    public void hrefAttacks() {
 
         try {
 
@@ -334,7 +326,8 @@ public class AntiSamyTest extends TestCase {
       * Test CSS protections.
       */
 
-    public void testCssAttacks() {
+    @Test
+    public void cssAttacks() {
 
         try {
 
@@ -359,7 +352,8 @@ public class AntiSamyTest extends TestCase {
       * Test a bunch of strings that have tweaked the XML parsing capabilities of
       * NekoHTML.
       */
-    public void testIllegalXML() {
+    @Test
+    public void IllegalXML() {
 
         for (String BASE64_BAD_XML_STRING : BASE64_BAD_XML_STRINGS) {
 
@@ -406,7 +400,8 @@ public class AntiSamyTest extends TestCase {
         }
     }
 
-    public void testIssue12() throws ScanException, PolicyException {
+    @Test
+    public void issue12() throws ScanException, PolicyException {
 
         /*
            * issues 12 (and 36, which was similar). empty tags cause display
@@ -432,7 +427,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(s2.contains("<hr />") || s2.contains("<hr/>"));
     }
 
-    public void testIssue20() throws ScanException, PolicyException {
+    @Test
+    public void issue20() throws ScanException, PolicyException {
         String s = as.scan("<b><i>Some Text</b></i>", policy, AntiSamy.DOM).getCleanHTML();
         assertTrue(!s.contains("<i />"));
 
@@ -440,7 +436,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(!s.contains("<i />"));
     }
 
-    public void testIssue25() throws ScanException, PolicyException {
+    @Test
+    public void issue25() throws ScanException, PolicyException {
         String s = "<div style=\"margin: -5em\">Test</div>";
         String expected = "<div style=\"\">Test</div>";
 
@@ -451,29 +448,29 @@ public class AntiSamyTest extends TestCase {
     }
 
 
-    public void testIssue28() throws ScanException, PolicyException {
-
-
+    @Test
+    public void issue28() throws ScanException, PolicyException {
         String s1 = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">Test</div>", policy, AntiSamy.DOM).getCleanHTML();
         String s2 = as.scan("<div style=\"font-family: Geneva, Arial, courier new, sans-serif\">Test</div>", policy, AntiSamy.SAX).getCleanHTML();
         assertTrue(s1.contains("font-family"));
         assertTrue(s2.contains("font-family"));
     }
 
-    public void testIssue29() throws ScanException, PolicyException {
+    @Test
+    public void issue29() throws ScanException, PolicyException {
         /* issue #29 - missing quotes around properties with spaces */
         String s = "<style type=\"text/css\"><![CDATA[P {\n	font-family: \"Arial Unicode MS\";\n}\n]]></style>";
         CleanResults cr = as.scan(s, policy, AntiSamy.DOM);
         assertEquals(s, cr.getCleanHTML());
     }
 
-    public void testIssue30() throws ScanException, PolicyException {
+    @Test
+    public void issue30() throws ScanException, PolicyException {
 
         String s = "<style type=\"text/css\"><![CDATA[P { margin-bottom: 0.08in; } ]]></style>";
 
-        CleanResults cr = as.scan(s, policy, AntiSamy.DOM);
-
-        String oldValue = policy.getDirective(Policy.USE_XHTML);
+        as.scan(s, policy, AntiSamy.DOM);
+        CleanResults cr;
 
         /* followup - does the patch fix multiline CSS? */
         String s2 = "<style type=\"text/css\"><![CDATA[\r\nP {\r\n margin-bottom: 0.08in;\r\n}\r\n]]></style>";
@@ -487,12 +484,10 @@ public class AntiSamyTest extends TestCase {
         assertEquals("<style>P {\n\tmargin-bottom: 0.08in;\n}\n</style>\n", cr.getCleanHTML());
     }
 
-    public void testIsssue31() throws ScanException, PolicyException {
-
-        String toDoOnBoldTags = policy.getTagByLowercaseName("b").getAction();
+    @Test
+    public void isssue31() throws ScanException, PolicyException {
 
             String test = "<b><u><g>foo";
-
             Policy revised = policy.changeDirective("onUnknownTag", "encode");
             CleanResults cr = as.scan(test, revised, AntiSamy.DOM);
             String s = cr.getCleanHTML();
@@ -514,14 +509,16 @@ public class AntiSamyTest extends TestCase {
             assertFalse(!s.contains("&lt;b&gt;"));
     }
 
-    public void testIssue32() throws ScanException, PolicyException {
+    @Test
+    public void issue32() throws ScanException, PolicyException {
         /* issue #32 - nekos problem */
         String s = "<SCRIPT =\">\" SRC=\"\"></SCRIPT>";
         as.scan(s, policy, AntiSamy.DOM);
         as.scan(s, policy, AntiSamy.SAX);
     }
 
-    public void testIssue37() throws ScanException, PolicyException {
+    @Test
+    public void issue37() throws ScanException, PolicyException {
 
         String dirty = "<a onblur=\"try {parent.deselectBloggerImageGracefully();}" + "catch(e) {}\""
                 + "href=\"http://www.charityadvantage.com/ChildrensmuseumEaston/images/BookswithBill.jpg\"><img" + "style=\"FLOAT: right; MARGIN: 0px 0px 10px 10px; WIDTH: 150px; CURSOR:"
@@ -550,7 +547,8 @@ public class AntiSamyTest extends TestCase {
         assertNotNull(cr.getCleanHTML());
     }
 
-    public void testIssue38() throws ScanException, PolicyException {
+    @Test
+    public void issue38() throws ScanException, PolicyException {
 
         /* issue #38 - color problem/color combinations */
         String s = "<font color=\"#fff\">Test</font>";
@@ -610,7 +608,8 @@ public class AntiSamyTest extends TestCase {
 
     }
 
-    public void testIssue40() throws ScanException, PolicyException {
+    @Test
+    public void issue40() throws ScanException, PolicyException {
 
 
         /* issue #40 - handling <style> media attributes right */
@@ -629,12 +628,11 @@ public class AntiSamyTest extends TestCase {
 
     }
 
-    public void testIssue41() throws ScanException, PolicyException {
+    @Test
+    public void issue41() throws ScanException, PolicyException {
         /* issue #41 - comment handling */
 
         Policy revised = policy.changeDirective(Policy.PRESERVE_SPACE, "true");
-        String oldCommentsValue = policy.getDirective(Policy.PRESERVE_COMMENTS);
-        String oldSpaceValue = policy.getDirective(Policy.PRESERVE_SPACE);
 
         policy.changeDirective(Policy.PRESERVE_COMMENTS, "false");
 
@@ -704,21 +702,23 @@ public class AntiSamyTest extends TestCase {
 
     }
 
-    public void testIssue44() throws ScanException, PolicyException {
+    @Test
+    public void issue44() throws ScanException, PolicyException {
         /*
            * issue #44 - childless nodes of non-allowed elements won't cause an
            * error
            */
         String s = "<iframe src='http://foo.com/'></iframe>" + "<script src=''></script>" + "<link href='/foo.css'>";
-        CleanResults cr = as.scan(s, policy, AntiSamy.DOM);
+        as.scan(s, policy, AntiSamy.DOM);
         assertEquals(as.scan(s, policy, AntiSamy.DOM).getNumberOfErrors(), 3);
 
-        cr = as.scan(s, policy, AntiSamy.SAX);
+        CleanResults cr = as.scan(s, policy, AntiSamy.SAX);
 
         assertEquals(cr.getNumberOfErrors(), 3);
     }
 
-    public void testIssue51() throws ScanException, PolicyException {
+    @Test
+    public void issue51() throws ScanException, PolicyException {
         /* issue #51 - offsite urls with () are found to be invalid */
         String s = "<a href='http://subdomain.domain/(S(ke0lpq54bw0fvp53a10e1a45))/MyPage.aspx'>test</a>";
         CleanResults cr = as.scan(s, policy, AntiSamy.DOM);
@@ -730,7 +730,8 @@ public class AntiSamyTest extends TestCase {
         assertEquals(cr.getNumberOfErrors(), 0);
     }
 
-    public void testIsssue56() throws ScanException, PolicyException {
+    @Test
+    public void isssue56() throws ScanException, PolicyException {
         /* issue #56 - unnecessary spaces */
 
         String s = "<SPAN style='font-weight: bold;'>Hello World!</SPAN>";
@@ -747,7 +748,8 @@ public class AntiSamyTest extends TestCase {
         assertEquals(expected, s2);
     }
 
-    public void testIssue58() throws ScanException, PolicyException {
+    @Test
+    public void issue58() throws ScanException, PolicyException {
         /* issue #58 - input not in list of allowed-to-be-empty tags */
         String s = "tgdan <input/> g  h";
         CleanResults cr = as.scan(s, policy, AntiSamy.DOM);
@@ -757,7 +759,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(cr.getErrorMessages().size() == 0);
     }
 
-    public void testIssue61() throws ScanException, PolicyException {
+    @Test
+    public void issue61() throws ScanException, PolicyException {
         /* issue #61 - input has newline appended if ends with an accepted tag */
         String dirtyInput = "blah <b>blah</b>.";
         Policy revised = policy.changeDirective(Policy.FORMAT_OUTPUT, "false");
@@ -768,7 +771,8 @@ public class AntiSamyTest extends TestCase {
         assertEquals(dirtyInput, cr.getCleanHTML());
     }
 
-    public void testIssue69() throws ScanException, PolicyException {
+    @Test
+    public void issue69() throws ScanException, PolicyException {
 
 
         /* issue #69 - char attribute should allow single char or entity ref */
@@ -798,7 +802,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(!as.scan(s, policy, AntiSamy.SAX).getCleanHTML().contains("char"));
     }
 
-    public void testCDATAByPass() throws ScanException, PolicyException {
+    @Test
+    public void CDATAByPass() throws ScanException, PolicyException {
         String malInput = "<![CDATA[]><script>alert(1)</script>]]>";
         CleanResults crd = as.scan(malInput, policy, AntiSamy.DOM);
         CleanResults crs = as.scan(malInput, policy, AntiSamy.SAX);
@@ -813,7 +818,8 @@ public class AntiSamyTest extends TestCase {
 
     }
 
-    public void testLiteralLists() throws ScanException, PolicyException {
+    @Test
+    public void literalLists() throws ScanException, PolicyException {
 
         /* this test is for confirming literal-lists work as
            * advertised. it turned out to be an invalid / non-
@@ -841,7 +847,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(crDom.contains("left"));
     }
 
-    public void testStackExhaustion() throws ScanException, PolicyException {
+    @Test
+    public void stackExhaustion() throws ScanException, PolicyException {
         /*
         * Test Julian Cohen's stack exhaustion bug.
         */
@@ -854,7 +861,7 @@ public class AntiSamyTest extends TestCase {
         * First, make sure this attack is useless against the
         * SAX parser.
         */
-        CleanResults crs = as.scan(sb.toString(), policy, AntiSamy.SAX);
+        as.scan(sb.toString(), policy, AntiSamy.SAX);
 
         /*
         * Scan this really deep tree (depth=249, 1 less than the
@@ -872,14 +879,15 @@ public class AntiSamyTest extends TestCase {
         sb.append("<div><div>"); // this makes 251
 
         try {
-            crd = as.scan(sb.toString(), policy, AntiSamy.DOM);
+            as.scan(sb.toString(), policy, AntiSamy.DOM);
             fail("DOM depth exceeded max - should've errored");
         } catch (ScanException e) {
 
         }
     }
 
-    public void testIssue107() throws ScanException, PolicyException {
+    @Test
+    public void issue107() throws ScanException, PolicyException {
         StringBuilder sb = new StringBuilder();
 
 
@@ -913,7 +921,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(expectedLoc == actualLoc || expectedLoc == actualLoc + 1);
     }
 
-    public void testIssue112() throws ScanException, PolicyException {
+    @Test
+    public void issue112() throws ScanException, PolicyException {
         TestPolicy revised = policy.changeDirective(Policy.PRESERVE_COMMENTS, "true").changeDirective(Policy.PRESERVE_SPACE, "true").changeDirective(Policy.FORMAT_OUTPUT, "false");
         StringBuilder sb;
 
@@ -945,7 +954,8 @@ public class AntiSamyTest extends TestCase {
     }
 
 
-    public void testNestedCdataAttacks() throws ScanException, PolicyException {
+    @Test
+    public void nestedCdataAttacks() throws ScanException, PolicyException {
         /*
          * #112 - empty tag becomes self closing
          */
@@ -962,9 +972,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(!crSax.contains("<script>"));
     }
 
-    public void testIssue101InternationalCharacterSupport() throws ScanException, PolicyException {
-
-
+    @Test
+    public void issue101InternationalCharacterSupport() throws ScanException, PolicyException {
         Policy revised = policy.changeDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "false");
 
         String html = "<b>letter 'a' with umlaut: ä";
@@ -990,8 +999,8 @@ public class AntiSamyTest extends TestCase {
         assertTrue(crSax.contains("&auml;"));
     }
 
-    public void testIframeAsReportedByOndrej() throws ScanException, PolicyException {
-        String useXhtmlBefore = policy.getDirective(Policy.USE_XHTML);
+    @Test
+    public void iframeAsReportedByOndrej() throws ScanException, PolicyException {
         String html = "<iframe></iframe>";
 
         Policy revised;
@@ -1010,7 +1019,8 @@ public class AntiSamyTest extends TestCase {
 	 * Tests cases dealing with nofollowAnchors directive. Assumes anchor tags
 	 * have an action set to "validate" (may be implicit) in the policy file.
 	 */
-    public void testNofollowAnchors() {
+    @Test
+    public void nofollowAnchors() {
 
         try {
 
@@ -1052,12 +1062,9 @@ public class AntiSamyTest extends TestCase {
         }
     }
 
-    public void testValidateParamAsEmbed() throws ScanException, PolicyException {
+    @Test
+    public void validateParamAsEmbed() throws ScanException, PolicyException {
             // activate policy setting for this test
-            String isValidateParamAsEmbed = policy.getDirective(Policy.VALIDATE_PARAM_AS_EMBED);
-            String isFormatOutput = policy.getDirective(Policy.FORMAT_OUTPUT);
-            String isXhtml = policy.getDirective(Policy.USE_XHTML);
-
             Policy revised = policy.changeDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true").changeDirective(Policy.FORMAT_OUTPUT, "false").changeDirective(Policy.USE_XHTML, "true");
 
             // let's start with a YouTube embed
@@ -1089,13 +1096,12 @@ public class AntiSamyTest extends TestCase {
 
             cr = as.scan(input, revised, AntiSamy.DOM);
             assertTrue(cr.getCleanHTML().contains(expectedOutput));
-            cr = as.scan(input, revised, AntiSamy.SAX);
-
-            // System.out.println("Expected: " + saxExpectedOutput);
-            // System.out.println("Received: " + cr.getCleanHTML());
+        CleanResults scan = as.scan(input, revised, AntiSamy.SAX);
+        assertTrue( scan.getCleanHTML().equals(saxExpectedOutput));
     }
 
-    public void testCompareSpeedsShortStrings() throws IOException, ScanException, PolicyException {
+    @Test
+    public void compareSpeedsShortStrings() throws IOException, ScanException, PolicyException {
 
         double totalDomTime = 0;
         double totalSaxTime = 0;
@@ -1113,22 +1119,43 @@ public class AntiSamyTest extends TestCase {
         System.out.println("Total SAX time short string: " + totalSaxTime);
     }
 
-    public void testProfileDom() throws IOException, ScanException, PolicyException {
+    @Test
+    public void profileDom() throws IOException, ScanException, PolicyException {
 
-        double totalDomTime = 0;
+        double totalDomTime;
+
+        warmup();
 
         int testReps = 9999;
 
         String html = "<body> hey you <img/> out there on your own </body>";
 
-        for (int j = 0; j < testReps; j++) {
-            totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
+        for (int i = 0; i < 10; i++){
+            totalDomTime = 0;
+            for (int j = 0; j < testReps; j++) {
+                totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
+            }
+            System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
         }
 
-        System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
     }
 
-    public void testProfileSax() throws IOException, ScanException, PolicyException {
+    private void warmup() throws ScanException, PolicyException {
+        int warmupReps = 15000;
+
+        String html = "<body> hey you <img/> out there on your own </body>";
+
+        for (int j = 0; j < warmupReps; j++) {
+            as.scan(html, policy, AntiSamy.DOM).getScanTime();
+        }
+
+        for (int j = 0; j < warmupReps; j++) {
+            as.scan(html, policy, AntiSamy.SAX).getScanTime();
+        }
+    }
+
+    @Test
+    public void profileSax() throws IOException, ScanException, PolicyException {
 
         double totalDomTime = 0;
 
@@ -1143,7 +1170,8 @@ public class AntiSamyTest extends TestCase {
         System.out.println("Total SAX time 9999 reps short string: " + totalDomTime);
     }
 
-    public void testComparePatternSpeed() throws IOException, ScanException, PolicyException {
+    @Test
+    public void comparePatternSpeed() throws IOException, ScanException, PolicyException {
 
         final Pattern invalidXmlCharacters =
                 Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
@@ -1152,7 +1180,7 @@ public class AntiSamyTest extends TestCase {
 
         String html = "<body> hey you <img/> out there on your own </body>";
 
-        String s;
+        String s = null;
         long start = System.currentTimeMillis();
         for (int j = 0; j < testReps; j++) {
             s = invalidXmlCharacters.matcher(html).replaceAll("");
@@ -1169,27 +1197,30 @@ public class AntiSamyTest extends TestCase {
         }
         long total2 = System.currentTimeMillis() - start;
 
+        assertNotNull(s);
         System.out.println("replaceAllDirect " + total);
         System.out.println("match then replace: " + total2);
     }
 
-    public void testIssue147() throws ScanException, PolicyException {
+    @Test
+    public void issue147() throws ScanException, PolicyException {
         URL url = getClass().getResource("/antisamy-tinymce.xml");
 
         Policy pol = Policy.getInstance(url);
         as.scan("<table><tr><td></td></tr></table>", pol, AntiSamy.DOM);
     }
 
-    public void testIssue75() throws ScanException, PolicyException {
+    @Test
+    public void issue75() throws ScanException, PolicyException {
         URL url = getClass().getResource("/antisamy-tinymce.xml");
-
         Policy pol = Policy.getInstance(url);
-        as.scan("<script src=\"<. \">\"></script>", policy, AntiSamy.DOM);
-        as.scan("<script src=\"<. \">\"></script>", policy, AntiSamy.SAX);
+        as.scan("<script src=\"<. \">\"></script>", pol, AntiSamy.DOM);
+        as.scan("<script src=\"<. \">\"></script>", pol, AntiSamy.SAX);
     }
 
 
-    public void testIssue144() throws ScanException, PolicyException {
+    @Test
+    public void issue144() throws ScanException, PolicyException {
         String pinata = "pi\u00f1ata";
         System.out.println(pinata);
         CleanResults results = as.scan(pinata, policy,  AntiSamy.DOM);
