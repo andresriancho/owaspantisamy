@@ -1126,17 +1126,22 @@ public class AntiSamyTest {
 
         warmup();
 
-        int testReps = 9999;
+        int testReps = 99999;
 
         String html = "<body> hey you <img/> out there on your own </body>";
 
-        for (int i = 0; i < 10; i++){
+        Double each = 0D;
+        int repeats = 10;
+        for (int i = 0; i < repeats; i++){
             totalDomTime = 0;
             for (int j = 0; j < testReps; j++) {
                 totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
             }
+            each = each + totalDomTime;
             System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
         }
+        System.out.println("Average time: " + (each / repeats));
+
 
     }
 
