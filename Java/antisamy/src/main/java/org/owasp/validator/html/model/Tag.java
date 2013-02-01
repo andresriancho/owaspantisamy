@@ -73,11 +73,9 @@ public class Tag {
      * @return A regular expression for the tag, i.e., "^<b>$", or "<hr(\s)*(width='((\w){2,3}(\%)*)'>"
      */
 
-    @SuppressWarnings("UnusedDeclaration")
     public String getRegularExpression() {
 
         StringBuffer regExp;
-
         /*
            * For such tags as <b>, <i>, <u>
            */
@@ -87,60 +85,10 @@ public class Tag {
 
         regExp = new StringBuffer("<" + ANY_NORMAL_WHITESPACES + name + OPEN_TAG_ATTRIBUTES);
 
-        for (Attribute attr : allowedAttributes.values()) {
-
-        }
         Iterator<Attribute> attributes = allowedAttributes.values().iterator();
         while (attributes.hasNext()) {
-
             Attribute attr = attributes.next();
-            // <p (id=#([0-9.*{6})|sdf).*>
-
-            regExp.append(attr.getName()).append(ANY_NORMAL_WHITESPACES).append("=").append(ANY_NORMAL_WHITESPACES).append("\"").append(OPEN_ATTRIBUTE);
-
-
-            boolean hasRegExps = attr.getAllowedRegExp().size() > 0;
-
-            if (attr.getAllowedRegExp().size() + attr.getAllowedValues().size() > 0) {
-
-                /*
-                     * Go through and add static values to the regular expression.
-                     */
-                Iterator allowedValues = attr.getAllowedValues().iterator();
-                while (allowedValues.hasNext()) {
-                    String allowedValue = (String) allowedValues.next();
-
-                    regExp.append(escapeRegularExpressionCharacters(allowedValue));
-
-                    if (allowedValues.hasNext() || hasRegExps) {
-                        regExp.append(ATTRIBUTE_DIVIDER);
-                    }
-                }
-
-                /*
-                     * Add the regular expressions for this attribute value to the mother regular expression.
-                     */
-                Iterator allowedRegExps = attr.getAllowedRegExp().iterator();
-                while (allowedRegExps.hasNext()) {
-                    Pattern allowedRegExp = (Pattern) allowedRegExps.next();
-                    regExp.append(allowedRegExp.pattern());
-
-                    if (allowedRegExps.hasNext()) {
-                        regExp.append(ATTRIBUTE_DIVIDER);
-                    }
-                }
-
-                if (attr.getAllowedRegExp().size() + attr.getAllowedValues().size() > 0) {
-                    regExp.append(CLOSE_ATTRIBUTE);
-                }
-
-                regExp.append("\"" + ANY_NORMAL_WHITESPACES);
-
-                if (attributes.hasNext()) {
-                    regExp.append(ATTRIBUTE_DIVIDER);
-                }
-            }
-
+            regExp.append( attr.matcherRegEx(attributes.hasNext()));
         }
 
         regExp.append(CLOSE_TAG_ATTRIBUTES + ANY_NORMAL_WHITESPACES + ">");
@@ -148,7 +96,7 @@ public class Tag {
         return regExp.toString();
     }
 
-    private String escapeRegularExpressionCharacters(String allowedValue) {
+    static String escapeRegularExpressionCharacters(String allowedValue) {
 
         String toReturn = allowedValue;
 
@@ -166,10 +114,10 @@ public class Tag {
     /**
      * Begin Variables Needed For Generating Regular Expressions *
      */
-    private final static String ANY_NORMAL_WHITESPACES = "(\\s)*";
-    private final static String OPEN_ATTRIBUTE = "(";
-    private final static String ATTRIBUTE_DIVIDER = "|";
-    private final static String CLOSE_ATTRIBUTE = ")";
+    final static String ANY_NORMAL_WHITESPACES = "(\\s)*";
+    final static String OPEN_ATTRIBUTE = "(";
+    final static String ATTRIBUTE_DIVIDER = "|";
+    final static String CLOSE_ATTRIBUTE = ")";
     private final static String OPEN_TAG_ATTRIBUTES = ANY_NORMAL_WHITESPACES + OPEN_ATTRIBUTE;
     private final static String CLOSE_TAG_ATTRIBUTES = ")*";
     private final static String REGEXP_CHARACTERS = "\\(){}.*?$^-+";

@@ -558,15 +558,8 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
                 if (attr != null) {
 
-                    Iterator allowedValues = attr.getAllowedValues().iterator();
-
-                    while (allowedValues.hasNext() && !isAttributeValid) {
-
-                        String allowedValue = (String) allowedValues.next();
-
-                        if (allowedValue != null && allowedValue.toLowerCase().equals(value.toLowerCase())) {
-                            isAttributeValid = true;
-                        }
+                    if (attr.containsAllowedValue( value.toLowerCase())) {
+                        isAttributeValid = true;
                     }
 
                     if (attr.matchesAllowedExpression(value)){

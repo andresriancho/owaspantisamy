@@ -24,11 +24,12 @@
 
 package org.owasp.validator.html.model;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
+
+import static org.owasp.validator.html.model.Tag.ANY_NORMAL_WHITESPACES;
+import static org.owasp.validator.html.model.Tag.ATTRIBUTE_DIVIDER;
+import static org.owasp.validator.html.model.Tag.CLOSE_ATTRIBUTE;
 
 /**
  * A model for HTML attributes and the "rules" they must follow (either literals or regular expressions) in
@@ -44,34 +45,27 @@ public class Attribute  {
 	private final String name;
 	private final String description;
 	private final String onInvalid;
-	private final List<String> allowedValues;
-	private final List<Pattern> allowedRegExp;
+    private final List<String> allowedValues;
+    private final Pattern[] allowedRegExps;
     private final Set<String> allowedValuesLower;
 
     public Attribute(String name, List<Pattern> allowedRegexps, List<String> allowedValues, String onInvalidStr, String description) {
         this.name = name;
-        this.allowedRegExp = Collections.unmodifiableList(allowedRegexps);
+        this.allowedRegExps = allowedRegexps.toArray(new Pattern[ allowedRegexps.size()]);
         this.allowedValues = Collections.unmodifiableList( allowedValues);
         Set<String> allowedValuesLower = new HashSet<String>();
         for (String allowedValue : allowedValues) {
             allowedValuesLower.add( allowedValue.toLowerCase());
         }
+
         this.allowedValuesLower = allowedValuesLower;
         this.onInvalid = onInvalidStr;
         this.description = description;
     }
 
-    /**
-	 *  
-	 * @return A <code>List</code> of regular expressions that an attribute can be validated from.
-	 */
-	public List<Pattern> getAllowedRegExp() {
-		return allowedRegExp;
-	}
-
     public boolean matchesAllowedExpression(String value){
         String input = value.toLowerCase();
-        for (Pattern pattern : allowedRegExp) {
+        for (Pattern pattern : allowedRegExps) {
             if (pattern != null && pattern.matcher(input).matches()) {
                 return true;
             }
@@ -79,21 +73,10 @@ public class Attribute  {
         return false;
     }
 
-    /**
-	 * 
-	 * @return A <code>List</code> of literal values that an attribute could have, according to the Policy.
-	 */
-	public List<String> getAllowedValues() {
-		return allowedValues;
-	}
-
     public boolean containsAllowedValue(String valueInLowerCase){
         return allowedValuesLower.contains(valueInLowerCase);
     }
-    /**
-	 * 
-	 * @return The name of an Attribute object.
-	 */
+
 	public String getName() {
 		return name;
 	}
@@ -108,7 +91,58 @@ public class Attribute  {
 
 
     public Attribute mutate(String onInvalid, String description)  {
-        return new Attribute(name, allowedRegExp, allowedValues, onInvalid != null && onInvalid.length() != 0 ? onInvalid : this.onInvalid,
+        return new Attribute(name, Arrays.asList(allowedRegExps), allowedValues, onInvalid != null && onInvalid.length() != 0 ? onInvalid : this.onInvalid,
                 description != null && description.length() != 0 ? description : this.description);
+    }
+
+    public String matcherRegEx(boolean hasNext){
+        // <p (id=#([0-9.*{6})|sdf).*>
+
+        StringBuilder regExp = new StringBuilder();
+        regExp.append(this.getName()).append(ANY_NORMAL_WHITESPACES).append("=").append(ANY_NORMAL_WHITESPACES).append("\"").append(Tag.OPEN_ATTRIBUTE);
+
+        boolean hasRegExps = allowedRegExps.length > 0;
+
+        if (allowedRegExps.length + allowedValues.size() > 0) {
+
+            /*
+            * Go through and add static values to the regular expression.
+            */
+            Iterator allowedValues = this.allowedValues.iterator();
+            while (allowedValues.hasNext()) {
+                String allowedValue = (String) allowedValues.next();
+
+                regExp.append(Tag.escapeRegularExpressionCharacters(allowedValue));
+
+                if (allowedValues.hasNext() || hasRegExps) {
+                    regExp.append(ATTRIBUTE_DIVIDER);
+                }
+            }
+
+            /*
+            * Add the regular expressions for this attribute value to the mother regular expression.
+            */
+            Iterator allowedRegExps = Arrays.asList((Pattern[]) this.allowedRegExps).iterator();
+            while (allowedRegExps.hasNext()) {
+                Pattern allowedRegExp = (Pattern) allowedRegExps.next();
+                regExp.append(allowedRegExp.pattern());
+
+                if (allowedRegExps.hasNext()) {
+                    regExp.append(ATTRIBUTE_DIVIDER);
+                }
+            }
+
+            if (this.allowedRegExps.length + this.allowedValues.size() > 0) {
+                regExp.append(CLOSE_ATTRIBUTE);
+            }
+
+            regExp.append("\"" + ANY_NORMAL_WHITESPACES);
+
+            if (hasNext) {
+                regExp.append(ATTRIBUTE_DIVIDER);
+            }
+        }
+        return regExp.toString();
+
     }
 }
