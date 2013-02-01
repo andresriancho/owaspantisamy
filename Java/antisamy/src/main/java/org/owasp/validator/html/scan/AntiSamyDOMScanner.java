@@ -74,18 +74,12 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     };
 
     static class CachedItem {
-        private final Map<String,DOMFragmentParser> parsers = new HashMap<String, DOMFragmentParser>();
+        private DOMFragmentParser parser;
         private final Matcher invalidXmlCharMatcher = invalidXmlCharacters.matcher("");
 
-        DOMFragmentParser getThreadLocalDomParser(String inputEncoding) throws SAXNotSupportedException, SAXNotRecognizedException {
-            if (inputEncoding == null) {
-                inputEncoding = "DEFAULT-ENC";
-            }
-            @SuppressWarnings("unchecked")
-            DOMFragmentParser parser = parsers.get(inputEncoding);
+        DOMFragmentParser getThreadLocalDomParser() throws SAXNotSupportedException, SAXNotRecognizedException {
             if (parser == null){
-                parser = getDomParser( inputEncoding);
-                parsers.put( inputEncoding, parser);
+                parser = getDomParser();
             }
             return parser;
         }
@@ -103,6 +97,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
     /**
      * This is where the magic lives.
      *
+     *
      * @param html
      *            A String whose contents we want to scan.
      * @return A <code>CleanResults</code> object with an
@@ -110,7 +105,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
      *         representation, as well as some scan statistics.
      * @throws ScanException
      */
-    public CleanResults scan(String html, String inputEncoding, final String outputEncoding) throws ScanException {
+    public CleanResults scan(String html) throws ScanException {
 
         if (html == null) {
             throw new ScanException(new NullPointerException("Null input"));
@@ -147,7 +142,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              */
 
 
-            DOMFragmentParser parser = cachedItem.getThreadLocalDomParser(inputEncoding);
+            DOMFragmentParser parser = cachedItem.getThreadLocalDomParser();
 
             try {
                 parser.parse(new InputSource(new StringReader(html)), dom);
@@ -169,7 +164,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
                     StringWriter out = new StringWriter();
 
                     @SuppressWarnings("deprecation")
-                    org.apache.xml.serialize.OutputFormat format = getOutputFormat(outputEncoding);
+                    org.apache.xml.serialize.OutputFormat format = getOutputFormat();
 
                     //noinspection deprecation
                     org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
@@ -196,11 +191,10 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     }
 
-    static DOMFragmentParser getDomParser(String inputEncoding)
+    static DOMFragmentParser getDomParser()
             throws SAXNotRecognizedException, SAXNotSupportedException {
         DOMFragmentParser parser = new DOMFragmentParser();
         parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
-        parser.setProperty("http://cyberneko.org/html/properties/default-encoding", inputEncoding);
 
         parser.setFeature("http://cyberneko.org/html/features/scanner/style/strip-cdata-delims", false);
         parser.setFeature("http://cyberneko.org/html/features/scanner/cdata-sections", true);

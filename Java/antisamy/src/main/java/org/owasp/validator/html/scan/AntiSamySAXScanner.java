@@ -83,7 +83,7 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 		return null;
 	}
 
-	public CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException {
+	public CleanResults scan(String html) throws ScanException {
 
 		if (html == null) {
 			throw new ScanException(new NullPointerException("Null input"));
@@ -119,7 +119,7 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
             transformer.setOutputProperty(OutputKeys.METHOD, useXhtml ? "xml" : "html");
 
             //noinspection deprecation
-            org.apache.xml.serialize.OutputFormat format = getOutputFormat(outputEncoding);
+            org.apache.xml.serialize.OutputFormat format = getOutputFormat();
             //noinspection deprecation
             org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
 			transformer.transform(source, new SAXResult(serializer));			

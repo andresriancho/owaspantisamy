@@ -1126,7 +1126,7 @@ public class AntiSamyTest {
 
         warmup();
 
-        int testReps = 99999;
+        int testReps = 9999;
 
         String html = "<body> hey you <img/> out there on your own </body>";
 

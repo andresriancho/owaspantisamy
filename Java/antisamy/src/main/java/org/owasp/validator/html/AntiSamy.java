@@ -24,18 +24,10 @@
 
 package org.owasp.validator.html;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.owasp.validator.html.scan.AntiSamyDOMScanner;
 import org.owasp.validator.html.scan.AntiSamySAXScanner;
-import org.owasp.validator.html.scan.Constants;
+
+import java.io.File;
 
 /**
  * 
@@ -49,9 +41,6 @@ import org.owasp.validator.html.scan.Constants;
  */
 
 public class AntiSamy {
-
-	private String inputEncoding = Constants.DEFAULT_ENCODING_ALGORITHM;
-	private String outputEncoding = Constants.DEFAULT_ENCODING_ALGORITHM;
 
 	public static int DOM = 0;
 	public static int SAX = 1;
@@ -71,17 +60,14 @@ public class AntiSamy {
 	 * 
 	 * @param taintedHTML
 	 *            Untrusted HTML which may contain malicious code.
-	 * @param inputEncoding
-	 *            The encoding of the input.
-	 * @param outputEncoding
-	 *            The encoding that the output should be in.
 	 * @return A <code>CleanResults</code> object which contains information
 	 *         about the scan (including the results).
-	 * @throws <code>ScanException</code> When there is a problem encountered
+	 * @throws ScanException When there is a problem encountered
 	 *         while scanning the HTML.
-	 * @throws <code>PolicyException</code> When there is a problem reading the
+	 * @throws PolicyException When there is a problem reading the
 	 *         policy file.
-	 */
+     *
+     */
 
 	public CleanResults scan(String taintedHTML) throws ScanException, PolicyException {
 
@@ -104,15 +90,15 @@ public class AntiSamy {
 	 * This method wraps <code>scan()</code> using the Policy object passed in.
 	 */
 	public CleanResults scan(String taintedHTML, Policy policy) throws ScanException, PolicyException {
-		return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
+		return new AntiSamyDOMScanner(policy).scan(taintedHTML);
 	}
 
 	public CleanResults scan(String taintedHTML, Policy policy, int scanType) throws ScanException, PolicyException {
 
 		if (scanType == DOM) {
-			return new AntiSamyDOMScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
+			return new AntiSamyDOMScanner(policy).scan(taintedHTML);
 		} else {
-			return new AntiSamySAXScanner(policy).scan(taintedHTML, inputEncoding, outputEncoding);
+			return new AntiSamySAXScanner(policy).scan(taintedHTML);
 		}
 	}
 
@@ -121,15 +107,9 @@ public class AntiSamy {
 	 */
 	public CleanResults scan(String taintedHTML, String filename) throws ScanException, PolicyException {
 
-		Policy policy = null;
+        Policy policy = Policy.getInstance(filename);
 
-		/*
-		 * Get or reload the policy document (antisamy.xml). We'll need to pass
-		 * that to the scanner so it knows what to look for.
-		 */
-		policy = Policy.getInstance(filename);
-
-		return this.scan(taintedHTML, policy);
+        return this.scan(taintedHTML, policy);
 	}
 
 	/**
@@ -138,108 +118,9 @@ public class AntiSamy {
 	 */
 	public CleanResults scan(String taintedHTML, File policyFile) throws ScanException, PolicyException {
 
-		Policy policy = null;
+        Policy policy = Policy.getInstance(policyFile);
 
-		/*
-		 * Get or reload the policy document (antisamy.xml). We'll need to pass
-		 * that to the scanner so it knows what to look for.
-		 */
-		policy = Policy.getInstance(policyFile);
-
-		return this.scan(taintedHTML, policy);
+        return this.scan(taintedHTML, policy);
 	}
 
-	/**
-	 * Main method for testing AntiSamy.
-	 * 
-	 * @param args
-	 *            Command line arguments. Only 1 argument is processed, and it
-	 *            should be a URL or filename to run through AntiSamy using the
-	 *            default policy location.
-	 */
-	public static void main(String[] args) {
-
-		if (args.length == 0) {
-			System.err.println("Please specify a URL or file name to filter - thanks!");
-			return;
-		}
-
-		try {
-
-			StringBuffer buff = new StringBuffer();
-
-			URL httpUrl = null;
-			FileReader fileUrl = null;
-			BufferedReader in = null;
-
-			try {
-
-				httpUrl = new URL(args[0]);
-				in = new BufferedReader(new InputStreamReader(httpUrl.openStream()));
-
-			} catch (MalformedURLException e) {
-
-				try {
-					fileUrl = new FileReader(new File(args[0]));
-				} catch (FileNotFoundException e1) {
-					System.err.println("Please specify a URL or file name to filter - thanks!");
-					return;
-				}
-
-				in = new BufferedReader(fileUrl);
-
-			} catch (IOException e) {
-
-				System.err.println("Encountered an IOException while reading URL: ");
-				e.printStackTrace();
-			}
-
-			String inputLine;
-
-			while ((inputLine = in.readLine()) != null)
-				buff.append(inputLine);
-
-			in.close();
-
-			AntiSamy as = new AntiSamy();
-
-			CleanResults test = as.scan(buff.toString(), Policy.getInstance("C:/Users/adabirsiaghi/workspace/AntiSamy Current Branch/resources/antisamy.xml"));
-
-			System.out.println("[1] Finished scan [" + test.getCleanHTML().length() + " bytes] in " + test.getScanTime() + " seconds\n");
-			System.out.println("[2] Clean HTML fragment:\n" + test.getCleanHTML());
-			System.out.println("[3] Error Messages (" + test.getNumberOfErrors() + "):");
-
-			for (int i = 0; i < test.getErrorMessages().size(); i++) {
-				String s = (String) test.getErrorMessages().get(i);
-				System.out.println(s);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public String getInputEncoding() {
-		return inputEncoding;
-	}
-
-	public void setInputEncoding(String inputEncoding) {
-		this.inputEncoding = inputEncoding;
-	}
-
-	public String getOutputEncoding() {
-		return outputEncoding;
-	}
-
-	public void setOutputEncoding(String outputEncoding) {
-		this.outputEncoding = outputEncoding;
-	}
-
-	public Policy getPolicy() {
-		return policy;
-	}
-
-	public void setPolicy(Policy policy) {
-		this.policy = policy;
-	}
 }

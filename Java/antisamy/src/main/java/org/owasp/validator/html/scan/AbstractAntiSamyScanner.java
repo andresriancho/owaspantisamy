@@ -42,7 +42,7 @@ public abstract class AbstractAntiSamyScanner {
 	protected boolean isNofollowAnchors = false;
 	protected boolean isValidateParamAsEmbed = false;
 
-	public abstract CleanResults scan(String html, String inputEncoding, String outputEncoding) throws ScanException;
+	public abstract CleanResults scan(String html) throws ScanException;
 
 	/** @noinspection UnusedDeclaration TODO: Investigate */
     public abstract CleanResults getResults();
@@ -68,10 +68,9 @@ public abstract class AbstractAntiSamyScanner {
 	}
 	
 	
-	protected OutputFormat getOutputFormat(String encoding) {
+	protected OutputFormat getOutputFormat() {
 
         OutputFormat format = new OutputFormat();
-        format.setEncoding(encoding);
         format.setOmitXMLDeclaration(policy.isOmitXmlDeclaration());
         format.setOmitDocumentType(policy.isOmitDoctypeDeclaration());
         format.setPreserveEmptyAttributes(true);
