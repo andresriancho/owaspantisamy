@@ -1121,10 +1121,18 @@ public class AntiSamyTest {
 
     @Test
     public void profileDom() throws IOException, ScanException, PolicyException {
+        runProfiledTest(AntiSamy.DOM);
+    }
 
+    @Test
+    public void profileSax() throws IOException, ScanException, PolicyException {
+        runProfiledTest(AntiSamy.SAX);
+    }
+
+    private void runProfiledTest(int scanType) throws ScanException, PolicyException {
         double totalDomTime;
 
-        warmup();
+        warmup(scanType);
 
         int testReps = 9999;
 
@@ -1135,44 +1143,22 @@ public class AntiSamyTest {
         for (int i = 0; i < repeats; i++){
             totalDomTime = 0;
             for (int j = 0; j < testReps; j++) {
-                totalDomTime += as.scan(html, policy, AntiSamy.DOM).getScanTime();
+                totalDomTime += as.scan(html, policy, scanType).getScanTime();
             }
             each = each + totalDomTime;
-            System.out.println("Total DOM time 9999 reps short string: " + totalDomTime);
+            System.out.println("Total " + (scanType == AntiSamy.DOM  ? "DOM" : "SAX") + " time 9999 reps short string: " + totalDomTime);
         }
         System.out.println("Average time: " + (each / repeats));
-
-
     }
 
-    private void warmup() throws ScanException, PolicyException {
+    private void warmup(int scanType) throws ScanException, PolicyException {
         int warmupReps = 15000;
 
         String html = "<body> hey you <img/> out there on your own </body>";
 
         for (int j = 0; j < warmupReps; j++) {
-            as.scan(html, policy, AntiSamy.DOM).getScanTime();
+            as.scan(html, policy, scanType).getScanTime();
         }
-
-        for (int j = 0; j < warmupReps; j++) {
-            as.scan(html, policy, AntiSamy.SAX).getScanTime();
-        }
-    }
-
-    @Test
-    public void profileSax() throws IOException, ScanException, PolicyException {
-
-        double totalDomTime = 0;
-
-        int testReps = 9999;
-
-        String html = "<body> hey you <img/> out there on your own </body>";
-
-        for (int j = 0; j < testReps; j++) {
-            totalDomTime += as.scan(html, policy, AntiSamy.SAX).getScanTime();
-        }
-
-        System.out.println("Total SAX time 9999 reps short string: " + totalDomTime);
     }
 
     @Test
