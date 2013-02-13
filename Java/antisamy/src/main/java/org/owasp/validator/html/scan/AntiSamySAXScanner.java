@@ -26,6 +26,8 @@ package org.owasp.validator.html.scan;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -46,12 +48,7 @@ import org.xml.sax.SAXNotSupportedException;
 
 public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
-    private static final ThreadLocal<CachedItem> cache = new ThreadLocal<CachedItem>(){
-        @Override
-        protected CachedItem initialValue() {
-            return new CachedItem(getNewTransformer(), getParser(), new MagicSAXFilter(messages));
-        }
-    };
+    private static final Queue<CachedItem> cachedItems = new ConcurrentLinkedQueue<CachedItem>();
 
     private static final TransformerFactory sTransformerFactory = TransformerFactory.newInstance();
 
@@ -100,7 +97,10 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 			
 			StringWriter out = new StringWriter();
 
-            CachedItem cachedItem = cache.get();
+            CachedItem cachedItem = cachedItems.poll();
+            if (cachedItem == null){
+                cachedItem = new CachedItem(getNewTransformer(), getParser(), new MagicSAXFilter(messages));
+            }
 
             SAXParser parser = cachedItem.saxParser;
             cachedItem.magicSAXFilter.reset(policy);
@@ -128,6 +128,7 @@ public class AntiSamySAXScanner extends AbstractAntiSamyScanner {
 
 			errorMessages.clear();
             errorMessages.addAll(cachedItem.magicSAXFilter.getErrorMessages());
+            cachedItems.add( cachedItem);
 			return new CleanResults(startOfScan, cleanHtml, null, errorMessages);
 
 		} catch (Exception e) {
