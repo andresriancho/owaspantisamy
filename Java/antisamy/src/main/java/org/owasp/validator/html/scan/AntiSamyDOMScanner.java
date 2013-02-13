@@ -46,6 +46,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,20 +68,19 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             Pattern.compile("[\\u0000-\\u001F\\uD800-\\uDFFF\\uFFFE-\\uFFFF&&[^\\u0009\\u000A\\u000D]]");
     private static final Pattern conditionalDirectives =
             Pattern.compile("<?!?\\[\\s*(?:end)?if[^]]*\\]>?");
-    private static final ThreadLocal<CachedItem> parsers = new ThreadLocal<CachedItem>(){
-        protected CachedItem initialValue() {
-            return new CachedItem();
-        }
-    };
+
+    private static final Queue<CachedItem> cachedItems = new ConcurrentLinkedQueue<CachedItem>();
 
     static class CachedItem {
-        private DOMFragmentParser parser;
+        private final DOMFragmentParser parser;
         private final Matcher invalidXmlCharMatcher = invalidXmlCharacters.matcher("");
 
-        DOMFragmentParser getThreadLocalDomParser() throws SAXNotSupportedException, SAXNotRecognizedException {
-            if (parser == null){
-                parser = getDomParser();
-            }
+
+        CachedItem() throws SAXNotSupportedException, SAXNotRecognizedException {
+            this.parser = getDomParser();
+        }
+
+        DOMFragmentParser getDomFragmentParser()  {
             return parser;
         }
     }
@@ -123,9 +123,13 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
         long startOfScan = System.currentTimeMillis();
 
-        CachedItem cachedItem = parsers.get();
-
         try {
+
+            CachedItem cachedItem;
+            cachedItem = cachedItems.poll();
+            if (cachedItem == null){
+                cachedItem = new CachedItem();
+            }
 
             /*
              * We have to replace any invalid XML characters to prevent NekoHTML
@@ -142,7 +146,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              */
 
 
-            DOMFragmentParser parser = cachedItem.getThreadLocalDomParser();
+            DOMFragmentParser parser = cachedItem.getDomFragmentParser();
 
             try {
                 parser.parse(new InputSource(new StringReader(html)), dom);
@@ -183,6 +187,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              */
             results = new CleanResults(startOfScan, cleanHtml, dom, errorMessages);
 
+            cachedItems.add( cachedItem);
             return results;
 
         } catch (SAXException e) {
