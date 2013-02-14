@@ -98,21 +98,6 @@ public class TestPolicy extends InternalPolicy {
         return new TestPolicy(this, this.directives, newRUles);
     }
 
-    /**
-     * This retrieves a Policy based on the InputStream object passed in
-     *
-     * @param inputStream An InputStream which contains thhe XML policy information.
-     * @return A populated Policy object based on the XML policy file pointed to by the inputStream parameter.
-     * @throws PolicyException If there is a problem parsing the input stream.
-     * @deprecated This method does not properly load included policy files. Use getInstance(URL) instead.
-     */
-    public static TestPolicy getInstance(InputStream inputStream) throws PolicyException {
-
-        //noinspection deprecation
-        return new TestPolicy(null, getSimpleParseContext(getTopLevelElement(inputStream)));
-
-    }
-
     private static Element getTopLevelElement(InputStream is) throws PolicyException {
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
