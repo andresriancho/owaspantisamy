@@ -85,6 +85,5 @@ public class PolicyTest extends TestCase {
         policy = Policy.getInstance(new ByteArrayInputStream(policyFile.getBytes()));
 
         assertTrue(policy.getAllowedEmptyTags().size() == Constants.defaultAllowedEmptyTags.size());
-
     }
 }

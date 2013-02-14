@@ -221,7 +221,7 @@ public class Policy {
 
     protected static ParseContext getSimpleParseContext(Element topLevelElement) throws PolicyException {
         ParseContext parseContext = new ParseContext();
-        if (getByTagName(topLevelElement, "include").iterator().hasNext()) {
+        if (getByTagName(topLevelElement, "include").iterator().hasNext()){
             throw new IllegalArgumentException("A policy file loaded with an InputStream cannot contain include references");
 
         }
@@ -261,7 +261,7 @@ public class Policy {
                 source.setSystemId(baseUrl.toExternalForm());
             }
 
-            return getTopLevelElement(source);
+            return getTopLevelElement( source);
         } catch (SAXException e) {
             throw new PolicyException(e);
         } catch (IOException e) {
@@ -287,6 +287,7 @@ public class Policy {
             throw new PolicyException(e);
         }
     }
+
 
 
     private static void parsePolicy(Element topLevelElement, ParseContext parseContext)
@@ -377,6 +378,18 @@ public class Policy {
         } catch (IOException e) {
             throw new PolicyException(e);
         }
+    }
+
+    /**
+     * Creates a copy of this policy with an added/changed directive.
+     * @param name The directive to add/modify
+     * @param value The value
+     * @return A clone of the policy with the updated directive
+     */
+    public Policy cloneWithDirective(String name, String value) {
+        Map<String, String> directives = new HashMap<String, String>(this.directives);
+        directives.put(name, value);
+        return new InternalPolicy(this, Collections.unmodifiableMap(directives), tagRules);
     }
 
 
@@ -579,6 +592,7 @@ public class Policy {
     }
 
 
+
     private static void parseTagRules(Element root, Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, Map<String, Tag> tagRules1) throws PolicyException {
 
         if (root == null) return;
@@ -597,7 +611,7 @@ public class Policy {
     }
 
     private static Map<String, Attribute> getTagAttributes(Map<String, Attribute> commonAttributes1, Map<String, AntiSamyPattern> commonRegularExpressions1, NodeList attributeList, String tagName) throws PolicyException {
-        Map<String, Attribute> tagAttributes = new HashMap<String, Attribute>();
+        Map<String,Attribute> tagAttributes = new HashMap<String, Attribute>();
         for (int j = 0; j < attributeList.getLength(); j++) {
 
             Element attributeNode = (Element) attributeList.item(j);
@@ -653,7 +667,7 @@ public class Policy {
 
     private static void parseCSSRules(Element root, Map<String, Property> cssRules1, Map<String, AntiSamyPattern> commonRegularExpressions1) throws PolicyException {
 
-        for (Element ele : getByTagName(root, "property")) {
+        for (Element ele : getByTagName(root, "property")){
 
             String name = getAttributeValue(ele, "name");
             String description = getAttributeValue(ele, "description");
@@ -678,7 +692,8 @@ public class Policy {
             } else {
                 onInvalidStr = DEFAULT_ONINVALID;
             }
-            Property property = new Property(name, allowedRegexp3, allowedValue, shortHandRefs, description, onInvalidStr);
+            Property property = new Property(name,allowedRegexp3, allowedValue, shortHandRefs, description, onInvalidStr );
+
 
 
             cssRules1.put(name.toLowerCase(), property);
@@ -780,11 +795,11 @@ public class Policy {
             return null;
     }
 
-    private static Iterable<Element> getGrandChildrenByTagName(Element parent, String immediateChildName, String subChild) {
+    private static Iterable<Element>  getGrandChildrenByTagName(Element parent, String immediateChildName, String subChild){
         NodeList elementsByTagName = parent.getElementsByTagName(immediateChildName);
         if (elementsByTagName.getLength() == 0) return Collections.emptyList();
         Element regExpListNode = (Element) elementsByTagName.item(0);
-        return getByTagName(regExpListNode, subChild);
+        return getByTagName( regExpListNode, subChild);
     }
 
     private static Iterable<Element> getByTagName(Element parent, String tagName) {

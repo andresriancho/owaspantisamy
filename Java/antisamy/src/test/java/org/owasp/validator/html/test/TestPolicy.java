@@ -79,7 +79,7 @@ public class TestPolicy extends InternalPolicy {
         return new TestPolicy(url, getParseContext(getTopLevelElement(url), url));
     }
 
-    public TestPolicy changeDirective(String name, String value) {
+    public TestPolicy cloneWithDirective(String name, String value) {
         Map<String, String> directives = new HashMap<String, String>(this.directives);
         directives.put(name, value);
         return new TestPolicy(this, Collections.unmodifiableMap(directives), tagRules);
@@ -96,21 +96,6 @@ public class TestPolicy extends InternalPolicy {
         Map<String, Tag> newRUles = new HashMap<String, Tag>(this.tagRules);
         newRUles.put( tag.getName().toLowerCase(), tag);
         return new TestPolicy(this, this.directives, newRUles);
-    }
-
-    private static Element getTopLevelElement(InputStream is) throws PolicyException {
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document dom = db.parse(is);
-            return dom.getDocumentElement();
-        } catch (SAXException e) {
-            throw new PolicyException(e);
-        } catch (ParserConfigurationException e) {
-            throw new PolicyException(e);
-        } catch (IOException e) {
-            throw new PolicyException(e);
-        }
     }
 
 }

@@ -480,7 +480,7 @@ public class AntiSamyTest {
         /* next followup - does non-CDATA parsing still work? */
 
         String s3 = "<style>P {\n\tmargin-bottom: 0.08in;\n}\n";
-        cr = as.scan(s3, policy.changeDirective(Policy.USE_XHTML, "false"), AntiSamy.DOM);
+        cr = as.scan(s3, policy.cloneWithDirective(Policy.USE_XHTML, "false"), AntiSamy.DOM);
         assertEquals("<style>P {\n\tmargin-bottom: 0.08in;\n}\n</style>\n", cr.getCleanHTML());
     }
 
@@ -488,7 +488,7 @@ public class AntiSamyTest {
     public void isssue31() throws ScanException, PolicyException {
 
             String test = "<b><u><g>foo";
-            Policy revised = policy.changeDirective("onUnknownTag", "encode");
+            Policy revised = policy.cloneWithDirective("onUnknownTag", "encode");
             CleanResults cr = as.scan(test, revised, AntiSamy.DOM);
             String s = cr.getCleanHTML();
             assertFalse(!s.contains("&lt;g&gt;"));
@@ -615,7 +615,7 @@ public class AntiSamyTest {
         /* issue #40 - handling <style> media attributes right */
 
         String s = "<style media=\"print, projection, screen\"> P { margin: 1em; }</style>";
-        Policy revised = policy.changeDirective(Policy.PRESERVE_SPACE, "true");
+        Policy revised = policy.cloneWithDirective(Policy.PRESERVE_SPACE, "true");
 
         CleanResults cr = as.scan(s, revised, AntiSamy.DOM);
         // System.out.println("here: " + cr.getCleanHTML());
@@ -632,14 +632,14 @@ public class AntiSamyTest {
     public void issue41() throws ScanException, PolicyException {
         /* issue #41 - comment handling */
 
-        Policy revised = policy.changeDirective(Policy.PRESERVE_SPACE, "true");
+        Policy revised = policy.cloneWithDirective(Policy.PRESERVE_SPACE, "true");
 
-        policy.changeDirective(Policy.PRESERVE_COMMENTS, "false");
+        policy.cloneWithDirective(Policy.PRESERVE_COMMENTS, "false");
 
         assertEquals("text ", as.scan("text <!-- comment -->", revised, AntiSamy.DOM).getCleanHTML());
         assertEquals("text ", as.scan("text <!-- comment -->", revised, AntiSamy.SAX).getCleanHTML());
 
-        Policy revised2 = policy.changeDirective(Policy.PRESERVE_COMMENTS, "true").changeDirective(Policy.PRESERVE_SPACE, "true").changeDirective(Policy.FORMAT_OUTPUT, "false");
+        Policy revised2 = policy.cloneWithDirective(Policy.PRESERVE_COMMENTS, "true").cloneWithDirective(Policy.PRESERVE_SPACE, "true").cloneWithDirective(Policy.FORMAT_OUTPUT, "false");
 
         /*
         * These make sure the regular comments are kept alive and that
@@ -763,7 +763,7 @@ public class AntiSamyTest {
     public void issue61() throws ScanException, PolicyException {
         /* issue #61 - input has newline appended if ends with an accepted tag */
         String dirtyInput = "blah <b>blah</b>.";
-        Policy revised = policy.changeDirective(Policy.FORMAT_OUTPUT, "false");
+        Policy revised = policy.cloneWithDirective(Policy.FORMAT_OUTPUT, "false");
         CleanResults cr = as.scan(dirtyInput, revised, AntiSamy.DOM);
         assertEquals(dirtyInput, cr.getCleanHTML());
 
@@ -923,7 +923,7 @@ public class AntiSamyTest {
 
     @Test
     public void issue112() throws ScanException, PolicyException {
-        TestPolicy revised = policy.changeDirective(Policy.PRESERVE_COMMENTS, "true").changeDirective(Policy.PRESERVE_SPACE, "true").changeDirective(Policy.FORMAT_OUTPUT, "false");
+        TestPolicy revised = policy.cloneWithDirective(Policy.PRESERVE_COMMENTS, "true").cloneWithDirective(Policy.PRESERVE_SPACE, "true").cloneWithDirective(Policy.FORMAT_OUTPUT, "false");
         StringBuilder sb;
 
 
@@ -945,7 +945,7 @@ public class AntiSamyTest {
 
         html = sb.toString();
 
-        Policy aTrue = revised.changeDirective(Policy.USE_XHTML, "true");
+        Policy aTrue = revised.cloneWithDirective(Policy.USE_XHTML, "true");
         crDom = as.scan(html, aTrue, AntiSamy.DOM).getCleanHTML();
         crSax = as.scan(html, aTrue, AntiSamy.SAX).getCleanHTML();
 
@@ -974,7 +974,7 @@ public class AntiSamyTest {
 
     @Test
     public void issue101InternationalCharacterSupport() throws ScanException, PolicyException {
-        Policy revised = policy.changeDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "false");
+        Policy revised = policy.cloneWithDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "false");
 
         String html = "<b>letter 'a' with umlaut: ä";
         String crDom = as.scan(html, revised, AntiSamy.DOM).getCleanHTML();
@@ -982,7 +982,7 @@ public class AntiSamyTest {
         assertTrue(crDom.contains("ä"));
         assertTrue(crSax.contains("ä"));
 
-        Policy revised2 = policy.changeDirective(Policy.USE_XHTML, "false").changeDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
+        Policy revised2 = policy.cloneWithDirective(Policy.USE_XHTML, "false").cloneWithDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
         crDom = as.scan(html, revised2, AntiSamy.DOM).getCleanHTML();
         crSax = as.scan(html, revised2, AntiSamy.SAX).getCleanHTML();
         assertTrue(!crDom.contains("ä"));
@@ -990,7 +990,7 @@ public class AntiSamyTest {
         assertTrue(!crSax.contains("ä"));
         assertTrue(crSax.contains("&auml;"));
 
-        Policy revised3 = policy.changeDirective(Policy.USE_XHTML, "true").changeDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
+        Policy revised3 = policy.cloneWithDirective(Policy.USE_XHTML, "true").cloneWithDirective(Policy.ENTITY_ENCODE_INTL_CHARS, "true");
         crDom = as.scan(html, revised3, AntiSamy.DOM).getCleanHTML();
         crSax = as.scan(html, revised3, AntiSamy.SAX).getCleanHTML();
         assertTrue(!crDom.contains("ä"));
@@ -1027,7 +1027,7 @@ public class AntiSamyTest {
             // if we have activated nofollowAnchors
             String val = policy.getDirective(Policy.ANCHORS_NOFOLLOW);
 
-            Policy revisedPolici = policy.changeDirective(Policy.ANCHORS_NOFOLLOW, "true");
+            Policy revisedPolici = policy.cloneWithDirective(Policy.ANCHORS_NOFOLLOW, "true");
 
             // adds when not present
 
@@ -1055,7 +1055,7 @@ public class AntiSamyTest {
             assertTrue(!as.scan("a href=\"blah\">link</a>", policy, AntiSamy.DOM).getCleanHTML().contains("nofollow"));
             assertTrue(!as.scan("a href=\"blah\">link</a>", policy, AntiSamy.SAX).getCleanHTML().contains("nofollow"));
 
-            policy.changeDirective(Policy.ANCHORS_NOFOLLOW, val);
+            policy.cloneWithDirective(Policy.ANCHORS_NOFOLLOW, val);
 
         } catch (Exception e) {
             fail("Caught exception in testNofollowAnchors(): " + e.getMessage());
@@ -1065,7 +1065,7 @@ public class AntiSamyTest {
     @Test
     public void validateParamAsEmbed() throws ScanException, PolicyException {
             // activate policy setting for this test
-            Policy revised = policy.changeDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true").changeDirective(Policy.FORMAT_OUTPUT, "false").changeDirective(Policy.USE_XHTML, "true");
+            Policy revised = policy.cloneWithDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true").cloneWithDirective(Policy.FORMAT_OUTPUT, "false").cloneWithDirective(Policy.USE_XHTML, "true");
 
             // let's start with a YouTube embed
             String input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
