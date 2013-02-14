@@ -25,7 +25,6 @@
 package org.owasp.validator.html.model;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * A model for HTML "tags" and the rules dictating their validation/filtration. Also contains information
@@ -75,7 +74,6 @@ public class Tag {
 
     public String getRegularExpression() {
 
-        StringBuffer regExp;
         /*
            * For such tags as <b>, <i>, <u>
            */
@@ -83,9 +81,15 @@ public class Tag {
             return "^<" + name + ">$";
         }
 
-        regExp = new StringBuffer("<" + ANY_NORMAL_WHITESPACES + name + OPEN_TAG_ATTRIBUTES);
+        StringBuilder regExp = new StringBuilder("<" + ANY_NORMAL_WHITESPACES + name + OPEN_TAG_ATTRIBUTES);
 
-        Iterator<Attribute> attributes = allowedAttributes.values().iterator();
+        List<Attribute> values = new ArrayList<Attribute>(allowedAttributes.values());
+        Collections.sort(values, new Comparator<Attribute>() {
+            public int compare(Attribute o1, Attribute o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        } );
+        Iterator<Attribute> attributes = values.iterator();
         while (attributes.hasNext()) {
             Attribute attr = attributes.next();
             regExp.append( attr.matcherRegEx(attributes.hasNext()));
