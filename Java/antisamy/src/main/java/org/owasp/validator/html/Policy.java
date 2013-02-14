@@ -99,8 +99,6 @@ public class Policy {
     /**
      * The path to the base policy file, used to resolve relative paths when reading included files
      */
-    protected static URL baseUrl = null; // Todo: Make not static
-
     public Tag getTagByLowercaseName(String tagName) {
         return tagRules.get(tagName);
     }
@@ -183,9 +181,7 @@ public class Policy {
      * @throws PolicyException If the file is not found or there is a problem parsing the file.
      */
     public static Policy getInstance(URL url) throws PolicyException {
-
-        if (baseUrl == null) setBaseURL(url);
-        return new InternalPolicy(getParseContext(getTopLevelElement(url)));
+        return new InternalPolicy(url, getParseContext(getTopLevelElement(url), url));
     }
 
 
@@ -218,7 +214,7 @@ public class Policy {
         return parseContext;
     }
 
-    protected static ParseContext getParseContext(Element topLevelElement) throws PolicyException {
+    protected static ParseContext getParseContext(Element topLevelElement, URL baseUrl) throws PolicyException {
         ParseContext parseContext = new ParseContext();
 
         /**
@@ -231,7 +227,7 @@ public class Policy {
         for (Element include : getByTagName(topLevelElement, "include")) {
             String href = getAttributeValue(include, "href");
 
-            Element includedPolicy = getPolicy(href);
+            Element includedPolicy = getPolicy(href, baseUrl);
             parsePolicy(includedPolicy, parseContext);
         }
 
@@ -240,14 +236,14 @@ public class Policy {
     }
 
 
-    protected static Element getTopLevelElement(URL url) throws PolicyException {
+    protected static Element getTopLevelElement(URL baseUrl) throws PolicyException {
         try {
-            InputSource source = resolveEntity(url.toExternalForm());
+            InputSource source = resolveEntity(baseUrl.toExternalForm(), baseUrl);
             if (source == null) {
-                source = new InputSource(url.toExternalForm());
-                source.setByteStream(url.openStream());
+                source = new InputSource(baseUrl.toExternalForm());
+                source.setByteStream(baseUrl.openStream());
             } else {
-                source.setSystemId(url.toExternalForm());
+                source.setSystemId(baseUrl.toExternalForm());
             }
 
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -286,7 +282,7 @@ public class Policy {
     /**
      * Returns the top level element of a loaded policy Document
      */
-    private static Element getPolicy(String href)
+    private static Element getPolicy(String href, URL baseUrl)
             throws PolicyException {
 
         try {
@@ -704,21 +700,10 @@ public class Policy {
     }
 
 
-
-
-    /**
-     * Set the base directory to use to resolve relative file paths when including other policy files.
-     *
-     * @param newValue The new base url
-     */
-    public static void setBaseURL(URL newValue) {
-        baseUrl = newValue;
-    }
-
     /**
      * Resolves public & system ids to files stored within the JAR.
      */
-    public static InputSource resolveEntity(final String systemId) throws IOException, SAXException {
+    public static InputSource resolveEntity(final String systemId, URL baseUrl) throws IOException, SAXException {
         InputSource source;
 
         // Can't resolve public id, but might be able to resolve relative

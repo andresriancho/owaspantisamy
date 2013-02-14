@@ -2,6 +2,7 @@ package org.owasp.validator.html;
 
 import org.owasp.validator.html.model.Tag;
 
+import java.net.URL;
 import java.util.Map;
 
 /**
@@ -29,7 +30,7 @@ public class InternalPolicy extends Policy {
     private final boolean isEncodeUnknownTag;
 
 
-    protected InternalPolicy(ParseContext parseContext) throws PolicyException {
+    protected InternalPolicy(URL baseUrl, ParseContext parseContext) throws PolicyException {
         super(parseContext);
         this.maxInputSize = determineMaxInputSize();
         this.isNofollowAnchors = isTrue(Policy.ANCHORS_NOFOLLOW);

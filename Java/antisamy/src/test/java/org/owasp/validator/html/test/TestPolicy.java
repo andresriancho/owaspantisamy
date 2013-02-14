@@ -49,8 +49,8 @@ import java.util.Map;
  */
 public class TestPolicy extends InternalPolicy {
 
-    protected TestPolicy(Policy.ParseContext parseContext) throws PolicyException {
-        super(parseContext);
+    protected TestPolicy(URL baseUrl, Policy.ParseContext parseContext) throws PolicyException {
+        super(baseUrl, parseContext);
     }
 
     protected TestPolicy(Policy old, Map<String, String> directives, Map<String, Tag> tagRules) {
@@ -76,8 +76,7 @@ public class TestPolicy extends InternalPolicy {
     }
 
     public static TestPolicy getInstance(URL url) throws PolicyException {
-        if (baseUrl == null) setBaseURL(url);
-        return new TestPolicy(getParseContext(getTopLevelElement(url)));
+        return new TestPolicy(url, getParseContext(getTopLevelElement(url), url));
     }
 
     public TestPolicy changeDirective(String name, String value) {
@@ -110,7 +109,7 @@ public class TestPolicy extends InternalPolicy {
     public static TestPolicy getInstance(InputStream inputStream) throws PolicyException {
 
         //noinspection deprecation
-        return new TestPolicy(getSimpleParseContext(getTopLevelElement(inputStream)));
+        return new TestPolicy(null, getSimpleParseContext(getTopLevelElement(inputStream)));
 
     }
 
