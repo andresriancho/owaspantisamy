@@ -26,6 +26,7 @@ package org.owasp.validator.html.test;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.owasp.validator.html.*;
 import org.owasp.validator.html.model.Attribute;
@@ -36,6 +37,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import static org.junit.Assert.*;
 
 
@@ -487,26 +489,26 @@ public class AntiSamyTest {
     @Test
     public void isssue31() throws ScanException, PolicyException {
 
-            String test = "<b><u><g>foo";
-            Policy revised = policy.cloneWithDirective("onUnknownTag", "encode");
-            CleanResults cr = as.scan(test, revised, AntiSamy.DOM);
-            String s = cr.getCleanHTML();
-            assertFalse(!s.contains("&lt;g&gt;"));
-            s = as.scan(test, revised, AntiSamy.SAX).getCleanHTML();
-            assertFalse(!s.contains("&lt;g&gt;"));
+        String test = "<b><u><g>foo";
+        Policy revised = policy.cloneWithDirective("onUnknownTag", "encode");
+        CleanResults cr = as.scan(test, revised, AntiSamy.DOM);
+        String s = cr.getCleanHTML();
+        assertFalse(!s.contains("&lt;g&gt;"));
+        s = as.scan(test, revised, AntiSamy.SAX).getCleanHTML();
+        assertFalse(!s.contains("&lt;g&gt;"));
 
         Tag tag = policy.getTagByLowercaseName("b").mutateAction("encode");
         Policy policy1 = policy.mutateTag(tag);
 
         cr = as.scan(test, policy1, AntiSamy.DOM);
-            s = cr.getCleanHTML();
+        s = cr.getCleanHTML();
 
-            assertFalse(!s.contains("&lt;b&gt;"));
+        assertFalse(!s.contains("&lt;b&gt;"));
 
-            cr = as.scan(test, policy1, AntiSamy.SAX);
-            s = cr.getCleanHTML();
+        cr = as.scan(test, policy1, AntiSamy.SAX);
+        s = cr.getCleanHTML();
 
-            assertFalse(!s.contains("&lt;b&gt;"));
+        assertFalse(!s.contains("&lt;b&gt;"));
     }
 
     @Test
@@ -1005,7 +1007,7 @@ public class AntiSamyTest {
 
         Policy revised;
 
-        Tag tag = new Tag("iframe", Collections.<String,Attribute>emptyMap(), Policy.ACTION_VALIDATE);
+        Tag tag = new Tag("iframe", Collections.<String, Attribute>emptyMap(), Policy.ACTION_VALIDATE);
         revised = policy.addTagRule(tag);
 
         String crDom = as.scan(html, revised, AntiSamy.DOM).getCleanHTML();
@@ -1064,40 +1066,40 @@ public class AntiSamyTest {
 
     @Test
     public void validateParamAsEmbed() throws ScanException, PolicyException {
-            // activate policy setting for this test
-            Policy revised = policy.cloneWithDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true").cloneWithDirective(Policy.FORMAT_OUTPUT, "false").cloneWithDirective(Policy.USE_XHTML, "true");
+        // activate policy setting for this test
+        Policy revised = policy.cloneWithDirective(Policy.VALIDATE_PARAM_AS_EMBED, "true").cloneWithDirective(Policy.FORMAT_OUTPUT, "false").cloneWithDirective(Policy.USE_XHTML, "true");
 
-            // let's start with a YouTube embed
-            String input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
-            String expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
-            CleanResults cr = as.scan(input, revised, AntiSamy.DOM);
-            assertTrue(cr.getCleanHTML().contains(expectedOutput));
+        // let's start with a YouTube embed
+        String input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+        String expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
+        CleanResults cr = as.scan(input, revised, AntiSamy.DOM);
+        assertTrue(cr.getCleanHTML().contains(expectedOutput));
 
-            String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>";
-            cr = as.scan(input, revised, AntiSamy.SAX);
-            assertTrue(cr.getCleanHTML().equals(saxExpectedOutput));
+        String saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>";
+        cr = as.scan(input, revised, AntiSamy.SAX);
+        assertTrue(cr.getCleanHTML().equals(saxExpectedOutput));
 
-            // now what if someone sticks malicious URL in the value of the
-            // value attribute in the param tag? remove that param tag
-            input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://supermaliciouscode.com/badstuff.swf\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
-            expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
-            saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>";
-            cr = as.scan(input, revised, AntiSamy.DOM);
-            assertTrue(cr.getCleanHTML().contains(expectedOutput));
+        // now what if someone sticks malicious URL in the value of the
+        // value attribute in the param tag? remove that param tag
+        input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://supermaliciouscode.com/badstuff.swf\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+        expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed allowfullscreen=\"true\" allowscriptaccess=\"always\" height=\"340\" src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" width=\"560\" /></object>";
+        saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /><embed src=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\" /></object>";
+        cr = as.scan(input, revised, AntiSamy.DOM);
+        assertTrue(cr.getCleanHTML().contains(expectedOutput));
 
-            cr = as.scan(input, revised, AntiSamy.SAX);
-            assertTrue(cr.getCleanHTML().equals(saxExpectedOutput));
+        cr = as.scan(input, revised, AntiSamy.SAX);
+        assertTrue(cr.getCleanHTML().equals(saxExpectedOutput));
 
-            // now what if someone sticks malicious URL in the value of the src
-            // attribute in the embed tag? remove that embed tag
-            input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://hereswhereikeepbadcode.com/ohnoscary.swf\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
-            expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
-            saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
+        // now what if someone sticks malicious URL in the value of the src
+        // attribute in the embed tag? remove that embed tag
+        input = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&hl=en&fs=1&\"></param><param name=\"allowFullScreen\" value=\"true\"></param><param name=\"allowscriptaccess\" value=\"always\"></param><embed src=\"http://hereswhereikeepbadcode.com/ohnoscary.swf\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\" width=\"560\" height=\"340\"></embed></object>";
+        expectedOutput = "<object height=\"340\" width=\"560\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
+        saxExpectedOutput = "<object width=\"560\" height=\"340\"><param name=\"movie\" value=\"http://www.youtube.com/v/IyAyd4WnvhU&amp;hl=en&amp;fs=1&amp;\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"allowscriptaccess\" value=\"always\" /></object>";
 
-            cr = as.scan(input, revised, AntiSamy.DOM);
-            assertTrue(cr.getCleanHTML().contains(expectedOutput));
+        cr = as.scan(input, revised, AntiSamy.DOM);
+        assertTrue(cr.getCleanHTML().contains(expectedOutput));
         CleanResults scan = as.scan(input, revised, AntiSamy.SAX);
-        assertTrue( scan.getCleanHTML().equals(saxExpectedOutput));
+        assertTrue(scan.getCleanHTML().equals(saxExpectedOutput));
     }
 
     @Test
@@ -1140,13 +1142,13 @@ public class AntiSamyTest {
 
         Double each = 0D;
         int repeats = 10;
-        for (int i = 0; i < repeats; i++){
+        for (int i = 0; i < repeats; i++) {
             totalDomTime = 0;
             for (int j = 0; j < testReps; j++) {
                 totalDomTime += as.scan(html, policy, scanType).getScanTime();
             }
             each = each + totalDomTime;
-            System.out.println("Total " + (scanType == AntiSamy.DOM  ? "DOM" : "SAX") + " time 9999 reps short string: " + totalDomTime);
+            System.out.println("Total " + (scanType == AntiSamy.DOM ? "DOM" : "SAX") + " time 9999 reps short string: " + totalDomTime);
         }
         System.out.println("Average time: " + (each / repeats));
     }
@@ -1214,8 +1216,18 @@ public class AntiSamyTest {
     public void issue144() throws ScanException, PolicyException {
         String pinata = "pi\u00f1ata";
         System.out.println(pinata);
-        CleanResults results = as.scan(pinata, policy,  AntiSamy.DOM);
+        CleanResults results = as.scan(pinata, policy, AntiSamy.DOM);
         String cleanHTML = results.getCleanHTML();
-        assertEquals( pinata, cleanHTML);
+        assertEquals(pinata, cleanHTML);
+    }
+
+    @Test
+    @Ignore("Needs to be fixed")
+    public void testWhitespaceBeingMangled() throws ScanException, PolicyException {
+        String test = "<select name=\"name\"><option value=\"Something\">Something</select>";
+        String expected = "<select name=\"name\"><option value=\"Something\">Something</option></select>";
+        CleanResults results = as.scan(test, policy, AntiSamy.DOM);
+        assertEquals(expected, results.getCleanHTML());
+
     }
 }
