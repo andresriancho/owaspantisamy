@@ -1222,12 +1222,11 @@ public class AntiSamyTest {
     }
 
     @Test
-    @Ignore("Needs to be fixed")
-    public void testWhitespaceBeingMangled() throws ScanException, PolicyException {
+    public void testWhitespaceNotBeingMangled() throws ScanException, PolicyException {
         String test = "<select name=\"name\"><option value=\"Something\">Something</select>";
         String expected = "<select name=\"name\"><option value=\"Something\">Something</option></select>";
-        CleanResults results = as.scan(test, policy, AntiSamy.DOM);
-        assertEquals(expected, results.getCleanHTML());
-
+        Policy preserveSpace = policy.cloneWithDirective( Policy.PRESERVE_SPACE, "true" );
+        CleanResults preserveSpaceResults = as.scan(test, preserveSpace, AntiSamy.SAX);
+        assertEquals( expected, preserveSpaceResults.getCleanHTML() );
     }
 }
