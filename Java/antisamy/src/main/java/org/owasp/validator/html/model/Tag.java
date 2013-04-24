@@ -58,6 +58,14 @@ public class Tag {
         return action;
     }
 
+    /** Indicates if the action for this tag matches the supplied action
+     * @param action The action to match against
+     * @return True if it matches
+     */
+    public boolean isAction(String action){
+        return action.equals( this.action);
+    }
+
     public Tag mutateAction(String action) {
         return new Tag(this.name, this.allowedAttributes, action);
     }

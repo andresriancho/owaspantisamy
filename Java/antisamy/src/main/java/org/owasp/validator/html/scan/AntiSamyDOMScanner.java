@@ -274,13 +274,13 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             tagRule = Constants.BASIC_PARAM_TAG_RULE;
         }
 
-        if ((tagRule == null && policy.isEncodeUnknownTag()) || (tagRule != null && "encode".equals(tagRule.getAction()))) {
+        if ((tagRule == null && policy.isEncodeUnknownTag()) || (tagRule != null && tagRule.isAction( "encode"))) {
             encodeTag(currentStackDepth, ele, tagName, eleChildNodes);
-        } else if (tagRule == null || Policy.ACTION_FILTER.equals(tagRule.getAction())) {
+        } else if (tagRule == null || tagRule.isAction( Policy.ACTION_FILTER)) {
             actionFilter(currentStackDepth, ele, tagName, tagRule, eleChildNodes);
-        } else if (Policy.ACTION_VALIDATE.equals(tagRule.getAction())) {
+        } else if (tagRule.isAction( Policy.ACTION_VALIDATE)) {
             actionValidate(currentStackDepth, ele, parentNode, tagName, tagNameLowerCase, tagRule, masqueradingParam, embedTag, eleChildNodes);
-        } else if (Policy.ACTION_TRUNCATE.equals(tagRule.getAction())) {
+        } else if (tagRule.isAction( Policy.ACTION_TRUNCATE)) {
             actionTruncate(ele, tagName, eleChildNodes);
         } else {
             /*
@@ -294,7 +294,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     private boolean isMasqueradingParam(Tag tagRule, Tag embedTag, String tagNameLowerCase){
         if (tagRule == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
-            if (embedTag != null && Policy.ACTION_VALIDATE.equals(embedTag.getAction())) {
+            if (embedTag != null && embedTag.isAction( Policy.ACTION_VALIDATE)) {
                 return true;
             }
         }

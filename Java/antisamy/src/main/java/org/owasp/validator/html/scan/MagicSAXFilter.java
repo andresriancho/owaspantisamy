@@ -223,7 +223,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		String embedValue = null;
 		if (tag == null && isValidateParamAsEmbed && "param".equals(tagNameLowerCase)) {
 			Tag embedPolicy = policy.getEmbedTag();
-			if (embedPolicy != null && Policy.ACTION_VALIDATE.equals(embedPolicy.getAction())) {
+			if (embedPolicy != null && embedPolicy.isAction( Policy.ACTION_VALIDATE)) {
 				tag = embedPolicy;// Constants.BASIC_PARAM_TAG_RULE;
 				masqueradingParam = true;
 				// take <param name=x value=y> and turn into
@@ -241,7 +241,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 			// we are in removal-mode, so remove this tag as well
 			// we also remove all child elements of a style element
 			this.operations.push("remove");
-		} else if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && "encode".equals(tag.getAction()))) {
+		} else if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && tag.isAction( "encode"))) {
 			String name = "<" + element.localpart + ">";
 			super.characters(new XMLString(name.toCharArray(), 0, name.length()), augs);
 			this.operations.push("filter");
@@ -250,12 +250,12 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 				HTMLEntityEncoder.htmlEntityEncode(element.localpart)
 			});
 			this.operations.push("filter");
-		} else if ("filter".equals(tag.getAction())) {
+		} else if (tag.isAction( "filter")) {
 			addError(ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[] {
 				HTMLEntityEncoder.htmlEntityEncode(element.localpart)
 			});
 			this.operations.push("filter");
-		} else if ("validate".equals(tag.getAction())) {
+		} else if (tag.isAction( "validate")) {
 
 			boolean isStyle = "style".endsWith(element.localpart);
 
@@ -357,7 +357,7 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 					this.operations.push("keep");
 				}
 			}
-		} else if ("truncate".equals(tag.getAction())) {
+		} else if (tag.isAction( "truncate")) {
 			this.operations.push("truncate");
 		} else {
 			// no options left, so the tag will be removed
