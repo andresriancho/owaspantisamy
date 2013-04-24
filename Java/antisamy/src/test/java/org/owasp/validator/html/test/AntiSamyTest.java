@@ -1229,4 +1229,18 @@ public class AntiSamyTest {
         CleanResults preserveSpaceResults = as.scan(test, preserveSpace, AntiSamy.SAX);
         assertEquals( expected, preserveSpaceResults.getCleanHTML() );
     }
+
+    public void testXSSInAntiSamy151() throws ScanException, PolicyException {
+        String test = "<bogus>whatever</bogus><img src=\"https://ssl.gstatic.com/codesite/ph/images/defaultlogo.png\" "
+            + "onmouseover=\"alert('xss')\">";
+        CleanResults results_sax = as.scan(test, policy, AntiSamy.SAX);
+
+
+        CleanResults results_dom = as.scan(test, policy, AntiSamy.DOM);
+
+
+        assertEquals( results_sax.getCleanHTML(), results_dom.getCleanHTML());
+        assertEquals("whatever<img src=\"https://ssl.gstatic.com/codesite/ph/images/defaultlogo.png\" />", results_dom.getCleanHTML());
+    }
+
 }

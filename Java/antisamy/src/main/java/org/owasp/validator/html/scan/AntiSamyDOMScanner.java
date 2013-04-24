@@ -659,8 +659,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
     private void processChildren(NodeList childNodes, int currentStackDepth ) throws ScanException {
         Node tmp;
-        int length = childNodes.getLength();
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < childNodes.getLength(); i++) {
 
             tmp = childNodes.item(i);
 
@@ -671,7 +670,6 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
              */
             if (tmp.getParentNode() == null) {
                 i--;
-                length--;
             }
         }
     }
