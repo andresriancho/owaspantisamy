@@ -111,6 +111,7 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             throw new ScanException(new NullPointerException("Null input"));
         }
 
+        errorMessages.clear();
         int maxInputSize = policy.getMaxInputSize();
 
         if (maxInputSize < html.length()) {
