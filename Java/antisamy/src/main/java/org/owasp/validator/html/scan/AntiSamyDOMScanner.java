@@ -42,6 +42,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
@@ -164,22 +165,25 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
 
 
             final String trimmedHtml = html;
-            Callable<String> cleanHtml = new Callable<String>() {
-                public String call() throws Exception {
-                    StringWriter out = new StringWriter();
 
-                    @SuppressWarnings("deprecation")
-                    org.apache.xml.serialize.OutputFormat format = getOutputFormat();
+            StringWriter out = new StringWriter();
 
-                    //noinspection deprecation
-                    org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
-                    serializer.serialize(dom);
+            @SuppressWarnings("deprecation")
+            org.apache.xml.serialize.OutputFormat format = getOutputFormat();
+
+            //noinspection deprecation
+            org.apache.xml.serialize.HTMLSerializer serializer = getHTMLSerializer(out, format);
+            serializer.serialize(dom);
 
                     /*
                     * Get the String out of the StringWriter and rip out the XML
                     * declaration if the Policy says we should.
                     */
-                    return trim(trimmedHtml, out.getBuffer().toString());
+            final String trimmed = trim( trimmedHtml, out.getBuffer().toString() );
+
+            Callable<String> cleanHtml = new Callable<String>() {
+                public String call() throws Exception {
+                    return trimmed;
                 }
             };
 
@@ -191,7 +195,11 @@ public class AntiSamyDOMScanner extends AbstractAntiSamyScanner {
             cachedItems.add( cachedItem);
             return results;
 
+
         } catch (SAXException e) {
+            throw new ScanException(e);
+        }
+        catch ( IOException e ) {
             throw new ScanException(e);
         }
 

@@ -1253,7 +1253,8 @@ public class AntiSamyTest {
         CleanResults results_dom = as.scan(test, policy, AntiSamy.DOM);
 
         assertEquals( results_sax.getCleanHTML(), results_dom.getCleanHTML());
-        assertEquals("whatever<img src=\"https://ssl.gstatic.com/codesite/ph/images/defaultlogo.png\" />", results_dom.getCleanHTML());
+        assertEquals("<a href=\"http://example.com\" rel=\"nofollow\">foo</a>", results_dom.getCleanHTML());
     }
+
 
 }
