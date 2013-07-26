@@ -55,7 +55,10 @@ import org.owasp.validator.html.util.HTMLEntityEncoder;
  */
 public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
-	private final Stack<String> operations = new Stack<String>();
+    private static enum Ops {
+        CSS, FILTER, REMOVE, TRUNCATE, KEEP
+    }
+	private final Stack<Ops> operations = new Stack<Ops>();
 	private List<String> errorMessages = new ArrayList<String>();
 	private StringBuffer cssContent = null;
 	private XMLAttributes cssAttributes = null;
@@ -92,9 +95,10 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
     }
 
 	public void characters(XMLString text, Augmentations augs) throws XNIException {
-		if (!operations.empty() && "remove".equals(operations.peek())) {
+        //noinspection StatementWithEmptyBody
+        if (!operations.empty() && Ops.REMOVE.equals( operations.peek() )) {
 			// content is removed altogether
-		} else if (!operations.empty() && "css".equals(operations.peek())) {
+		} else if (!operations.empty() && Ops.CSS.equals(operations.peek())) {
 			// we record the style element's text content
 			// to filter it later
 			cssContent.append(text.ch, text.offset, text.length);
@@ -134,13 +138,13 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 	}
 
 	public void endElement(QName element, Augmentations augs) throws XNIException {
-		if (!operations.empty() && "remove".equals(operations.peek())) {
+		if (!operations.empty() && Ops.REMOVE.equals( operations.peek() )) {
 			// content is removed altogether
 			operations.pop();
-		} else if (!operations.empty() && "filter".equals(operations.peek())) {
+		} else if (!operations.empty() && Ops.FILTER.equals(operations.peek())) {
 			// content is removed, but child nodes not
 			operations.pop();
-		} else if (!operations.empty() && "css".equals(operations.peek())) {
+		} else if (!operations.empty() && Ops.CSS.equals(operations.peek())) {
 			operations.pop();
 			// now scan the CSS.
 			CssScanner cssScanner = makeCssScanner();
@@ -155,7 +159,8 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 				 * left with an empty style tag and break all CSS. To prevent
 				 * that, we have this check.
 				 */
-				if (results.getCleanHTML() == null || results.getCleanHTML().equals("")) {
+                //noinspection StatementWithEmptyBody
+                if (results.getCleanHTML() == null || results.getCleanHTML().equals("")) {
 					// we do not generate empty style elements
 				} else {
 					// XMLAttributes attributes = new XMLAttributesImpl();
@@ -237,30 +242,29 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		}
 
 		XMLAttributes validattributes = new XMLAttributesImpl();
-		if (!operations.isEmpty() && ("remove".equals(operations.peek()) || "css".equals(operations.peek()))) {
+		if (!operations.isEmpty() && ( Ops.REMOVE.equals(operations.peek()) || Ops.CSS.equals( operations.peek() ))) {
 			// we are in removal-mode, so remove this tag as well
 			// we also remove all child elements of a style element
-			this.operations.push("remove");
-		} else if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && tag.isAction( "encode"))) {
+			this.operations.push( Ops.REMOVE);
+		} else if ((tag == null && policy.isEncodeUnknownTag()) || (tag != null && tag.isAction( "encode" ))) {
 			String name = "<" + element.localpart + ">";
-			super.characters(new XMLString(name.toCharArray(), 0, name.length()), augs);
-			this.operations.push("filter");
+			super.characters( new XMLString( name.toCharArray(), 0, name.length() ), augs );
+			this.operations.push(Ops.FILTER);
 		} else if (tag == null) {
-			addError(ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY, new Object[] {
-				HTMLEntityEncoder.htmlEntityEncode(element.localpart)
-			});
-			this.operations.push("filter");
+			addError( ErrorMessageUtil.ERROR_TAG_NOT_IN_POLICY,
+                      new Object[]{ HTMLEntityEncoder.htmlEntityEncode( element.localpart ) } );
+			this.operations.push(Ops.FILTER);
 		} else if (tag.isAction( "filter")) {
 			addError(ErrorMessageUtil.ERROR_TAG_FILTERED, new Object[] {
 				HTMLEntityEncoder.htmlEntityEncode(element.localpart)
 			});
-			this.operations.push("filter");
+			this.operations.push(Ops.FILTER);
 		} else if (tag.isAction( "validate")) {
 
 			boolean isStyle = "style".endsWith(element.localpart);
 
 			if (isStyle) {
-				this.operations.push("css");
+				this.operations.push(Ops.CSS);
 				cssContent = new StringBuffer();
 				cssAttributes = attributes;
 			} else {
@@ -339,9 +343,9 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 				}
 
 				if (removeTag) {
-					this.operations.push("remove");
+					this.operations.push(Ops.REMOVE);
 				} else if (filterTag) {
-					this.operations.push("filter");
+					this.operations.push(Ops.FILTER);
 				} else {
 
 					if (isNofollowAnchors && "a".equals(element.localpart)) {
@@ -354,23 +358,23 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 						validattributes.addAttribute(makeSimpleQname("value"), "CDATA", embedValue);
 					}
 
-					this.operations.push("keep");
+					this.operations.push(Ops.KEEP);
 				}
 			}
 		} else if (tag.isAction( "truncate")) {
-			this.operations.push("truncate");
+			this.operations.push(Ops.TRUNCATE);
 		} else {
 			// no options left, so the tag will be removed
 			addError(ErrorMessageUtil.ERROR_TAG_DISALLOWED, new Object[] {
 				HTMLEntityEncoder.htmlEntityEncode(element.localpart)
 			});
-			this.operations.push("remove");
+			this.operations.push(Ops.REMOVE);
 		}
 		// now we know exactly what to do, let's do it
-		if ("truncate".equals(operations.peek())) {
+		if ( Ops.TRUNCATE.equals( operations.peek() )) {
 			// copy the element, but remove all attributes
 			super.startElement(element, new XMLAttributesImpl(), augs);
-		} else if ("keep".equals(operations.peek())) {
+		} else if ( Ops.KEEP.equals(operations.peek())) {
 			// copy the element, but only copy accepted attributes
 			super.startElement(element, validattributes, augs);
 		}
