@@ -96,9 +96,11 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 
 	public void characters(XMLString text, Augmentations augs) throws XNIException {
         //noinspection StatementWithEmptyBody
-        if (!operations.empty() && Ops.REMOVE.equals( operations.peek() )) {
+        Ops topOp = peekTop();
+        //noinspection StatementWithEmptyBody
+        if (topOp ==  Ops.REMOVE) {
 			// content is removed altogether
-		} else if (!operations.empty() && Ops.CSS.equals(operations.peek())) {
+		} else if (topOp == Ops.CSS) {
 			// we record the style element's text content
 			// to filter it later
 			cssContent.append(text.ch, text.offset, text.length);
@@ -137,14 +139,19 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		this.endElement(element, augs);
 	}
 
+    private Ops peekTop(){
+         return operations.empty() ? null : operations.peek();
+    }
+
 	public void endElement(QName element, Augmentations augs) throws XNIException {
-		if (!operations.empty() && Ops.REMOVE.equals( operations.peek() )) {
+        Ops topOp = peekTop();
+        if (Ops.REMOVE == topOp) {
 			// content is removed altogether
 			operations.pop();
-		} else if (!operations.empty() && Ops.FILTER.equals(operations.peek())) {
+		} else if (Ops.FILTER == topOp) {
 			// content is removed, but child nodes not
 			operations.pop();
-		} else if (!operations.empty() && Ops.CSS.equals(operations.peek())) {
+		} else if (Ops.CSS == topOp) {
 			operations.pop();
 			// now scan the CSS.
 			CssScanner cssScanner = makeCssScanner();
@@ -242,7 +249,8 @@ public class MagicSAXFilter extends DefaultFilter implements XMLDocumentFilter {
 		}
 
 		XMLAttributes validattributes = new XMLAttributesImpl();
-		if (!operations.isEmpty() && ( Ops.REMOVE.equals(operations.peek()) || Ops.CSS.equals( operations.peek() ))) {
+        Ops topOp = peekTop();
+        if (Ops.REMOVE == topOp || Ops.CSS == topOp) {
 			// we are in removal-mode, so remove this tag as well
 			// we also remove all child elements of a style element
 			this.operations.push( Ops.REMOVE);
