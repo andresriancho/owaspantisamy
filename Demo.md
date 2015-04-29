@@ -1,0 +1,1 @@
+[This](http://antisamysmoketest.com) is a live "smoketest" page where you can test AntiSamy against a few policy files.
